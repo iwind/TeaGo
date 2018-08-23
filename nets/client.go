@@ -15,59 +15,59 @@ type Client struct {
 	udpLocalAddr  *net.UDPAddr
 }
 
-func (client *Client) Id() int {
-	return client.id
+func (this *Client) Id() int {
+	return this.id
 }
 
-func (client *Client) WriteString(message string) {
-	client.Write([]byte(message))
+func (this *Client) WriteString(message string) {
+	this.Write([]byte(message))
 }
 
-func (client *Client) Writeln(message string) {
-	client.Write([]byte(message + "\n"))
+func (this *Client) Writeln(message string) {
+	this.Write([]byte(message + "\n"))
 }
 
-func (client *Client) Write(bytes []byte) {
-	if client.connection != nil {
-		client.connection.Write(bytes)
+func (this *Client) Write(bytes []byte) {
+	if this.connection != nil {
+		this.connection.Write(bytes)
 	}
-	if client.udpConn != nil && client.udpLocalAddr != nil {
-		client.udpConn.WriteToUDP(bytes, client.udpLocalAddr)
-	}
-}
-
-func (client *Client) Close() {
-	if client.connection != nil {
-		client.connection.Close()
+	if this.udpConn != nil && this.udpLocalAddr != nil {
+		this.udpConn.WriteToUDP(bytes, this.udpLocalAddr)
 	}
 }
 
-func (client *Client) Connect(network string, address string) error {
+func (this *Client) Close() {
+	if this.connection != nil {
+		this.connection.Close()
+	}
+}
+
+func (this *Client) Connect(network string, address string) error {
 	conn, err := net.Dial(network, address)
 	if err != nil {
 		return err
 	}
-	client.connection = conn
+	this.connection = conn
 	return nil
 }
 
-func (client *Client) Receive(receiver func(data []byte)) {
-	scanner := bufio.NewScanner(client.connection)
+func (this *Client) Receive(receiver func(data []byte)) {
+	scanner := bufio.NewScanner(this.connection)
 	for scanner.Scan() {
 		receiver(scanner.Bytes())
 	}
 }
 
-func (client *Client) RemoteAddr() net.Addr {
-	if client.udpRemoteAddr != nil {
-		return client.udpRemoteAddr
+func (this *Client) RemoteAddr() net.Addr {
+	if this.udpRemoteAddr != nil {
+		return this.udpRemoteAddr
 	}
-	return client.connection.RemoteAddr()
+	return this.connection.RemoteAddr()
 }
 
-func (client *Client) LocalAddr() net.Addr {
-	if client.udpLocalAddr != nil {
-		return client.udpLocalAddr
+func (this *Client) LocalAddr() net.Addr {
+	if this.udpLocalAddr != nil {
+		return this.udpLocalAddr
 	}
-	return client.connection.LocalAddr()
+	return this.connection.LocalAddr()
 }

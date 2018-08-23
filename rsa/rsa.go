@@ -94,21 +94,21 @@ func NewRSAPair(publicFile string, privateKeyFile string) (*RSA, error) {
 	return rsaObject, nil
 }
 
-func (rsaObject *RSA) Encrypt(data []byte) ([]byte, error) {
-	result, err := rsa.EncryptPKCS1v15(rand.Reader, rsaObject.PublicKey, data)
+func (this *RSA) Encrypt(data []byte) ([]byte, error) {
+	result, err := rsa.EncryptPKCS1v15(rand.Reader, this.PublicKey, data)
 	if err != nil {
 		return nil, err
 	}
 	return []byte(base64.StdEncoding.EncodeToString(result)), err
 }
 
-func (rsaObject *RSA) Decrypt(data []byte) ([]byte, error) {
+func (this *RSA) Decrypt(data []byte) ([]byte, error) {
 	encryptedData, err := base64.StdEncoding.DecodeString(string(data))
 	if err != nil {
 		return nil, err
 	}
 
-	dataBytes, err := rsa.DecryptPKCS1v15(rand.Reader, rsaObject.PrivateKey, encryptedData)
+	dataBytes, err := rsa.DecryptPKCS1v15(rand.Reader, this.PrivateKey, encryptedData)
 	if err != nil {
 		return nil, err
 	}

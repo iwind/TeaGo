@@ -4,7 +4,6 @@ import (
 	"sync"
 	"reflect"
 	"strings"
-	"fmt"
 	"github.com/iwind/TeaGo/types"
 )
 
@@ -71,44 +70,44 @@ func NewModel(modelPointer interface{}) *Model {
 	return model
 }
 
-func (model *Model) convertValue(value interface{}, toKind reflect.Kind) interface{} {
+func (this *Model) convertValue(value interface{}, toKind reflect.Kind) interface{} {
 	switch toKind {
 	case reflect.Bool:
 		return types.Bool(value)
 	case reflect.Int:
-		return int(types.Int64(value))
+		return types.Int(value)
 	case reflect.Int8:
-		return int8(types.Int64(value))
+		return types.Int8(value)
 	case reflect.Int16:
-		return int16(types.Int64(value))
+		return types.Int16(value)
 	case reflect.Int32:
-		return int32(types.Int64(value))
+		return types.Int32(value)
 	case reflect.Int64:
-		return int64(types.Int64(value))
+		return types.Int64(value)
 	case reflect.Uint:
-		return uint(types.Int64(value))
+		return types.Uint(value)
 	case reflect.Uint8:
-		return uint8(types.Int64(value))
+		return types.Uint8(value)
 	case reflect.Uint16:
-		return uint16(types.Int64(value))
+		return types.Uint16(value)
 	case reflect.Uint32:
-		return uint32(types.Int64(value))
+		return types.Uint32(value)
 	case reflect.Uint64:
-		return uint64(types.Int64(value))
+		return types.Uint64(value)
 	case reflect.String:
-		return fmt.Sprintf("%v", value)
+		return types.String(value)
 	case reflect.Float32:
-		return float32(types.Float64(value))
+		return types.Float32(value)
 	case reflect.Float64:
 		return types.Float64(value)
 	}
 	return nil
 }
 
-func (model *Model) findAttrWithField(field string) (attr string, found bool) {
-	for index, fieldName := range model.Fields {
+func (this *Model) findAttrWithField(field string) (attr string, found bool) {
+	for index, fieldName := range this.Fields {
 		if fieldName == field {
-			return model.Attrs[index], true
+			return this.Attrs[index], true
 		}
 	}
 	return "", false

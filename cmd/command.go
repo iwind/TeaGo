@@ -13,18 +13,18 @@ type Command struct {
 	SubCodeString string
 }
 
-func (command *Command) SubCode() string {
-	return command.SubCodeString
+func (this *Command) SubCode() string {
+	return this.SubCodeString
 }
 
-func (command *Command) Arg(index int) (value string, found bool) {
+func (this *Command) Arg(index int) (value string, found bool) {
 	if index >= len(commandArgs) {
 		return "", false
 	}
 	return commandArgs[index], true
 }
 
-func (command *Command) Output(message ... interface{}) {
+func (this *Command) Output(message ... interface{}) {
 	for index, arg := range message {
 
 		_, ok := arg.(string)
@@ -40,23 +40,23 @@ func (command *Command) Output(message ... interface{}) {
 	}
 }
 
-func (command *Command) Println(message ... interface{}) {
+func (this *Command) Println(message ... interface{}) {
 	logs.Println(message ...)
 }
 
-func (command *Command) Printf(format string, args ... interface{}) {
+func (this *Command) Printf(format string, args ... interface{}) {
 	logs.Printf(format, args ...)
 }
 
-func (command *Command) Error(err error) {
-	command.Output("<error>"+err.Error()+"</error>", "\n")
+func (this *Command) Error(err error) {
+	this.Output("<error>"+err.Error()+"</error>", "\n")
 }
 
-func (command *Command) ErrorString(err string) {
-	command.Output("<error>"+err+"</error>", "\n")
+func (this *Command) ErrorString(err string) {
+	this.Output("<error>"+err+"</error>", "\n")
 }
 
-func (command *Command) Param(key string) (value string, found bool) {
+func (this *Command) Param(key string) (value string, found bool) {
 	if len(key) == 0 {
 		return "", false
 	}

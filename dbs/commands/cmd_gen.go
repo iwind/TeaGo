@@ -20,44 +20,44 @@ type GenModelCommand struct {
 	*cmd.Command
 }
 
-func (command *GenModelCommand) Name() string {
+func (this *GenModelCommand) Name() string {
 	return "generate model and dao files"
 }
 
-func (command *GenModelCommand) Codes() []string {
+func (this *GenModelCommand) Codes() []string {
 	return []string{":db.gen"}
 }
 
-func (command *GenModelCommand) Usage() string {
+func (this *GenModelCommand) Usage() string {
 	return ":db.gen [MODEL_NAME] [-db=[DB ID] -dir=[TARGET DIR]]"
 }
 
-func (command *GenModelCommand) Run() {
-	model, found := command.Arg(1)
+func (this *GenModelCommand) Run() {
+	model, found := this.Arg(1)
 	if !found {
-		command.Error(errors.New("please specify model name"))
+		this.Error(errors.New("please specify model name"))
 		return
 	}
-	dbId, found := command.Param("db")
+	dbId, found := this.Param("db")
 	var db *dbs.DB
 	var err error
 	if found {
 		db, err = dbs.Instance(dbId)
 		if err != nil {
-			command.Error(err)
+			this.Error(err)
 			return
 		}
 	} else {
 		db, err = dbs.Default()
 		if err != nil {
-			command.Error(err)
+			this.Error(err)
 			return
 		}
 	}
 
 	// 模型目录
 	subPackage := "models"
-	dir, _ := command.Param("dir")
+	dir, _ := this.Param("dir")
 	config, _ := db.Config()
 	if len(config.Models.Package) > 0 {
 		dir = strings.TrimSuffix(config.Models.Package+Tea.DS+dir, Tea.DS)
@@ -84,16 +84,16 @@ func (command *GenModelCommand) Run() {
 	}
 
 	// 取得对应表
-	subTableName, err := command.modelToTable(model)
+	subTableName, err := this.modelToTable(model)
 	if err != nil {
-		command.Error(err)
+		this.Error(err)
 		return
 	}
 	tableName := db.TablePrefix() + subTableName
 
 	tableNames, err := db.TableNames()
 	if err != nil {
-		command.Error(err)
+		this.Error(err)
 		return
 	}
 	lowerTableName := strings.Replace(strings.ToLower(tableName), "_", "", -1)
@@ -106,11 +106,11 @@ func (command *GenModelCommand) Run() {
 
 	table, err := db.FindTable(tableName)
 	if err != nil {
-		command.Error(err)
+		this.Error(err)
 		return
 	}
 	if table == nil {
-		command.Println("not found table named '" + tableName + "'")
+		this.Println("not found table named '" + tableName + "'")
 		return
 	}
 
@@ -133,7 +133,7 @@ type ` + model + ` struct {`
 	}
 
 	for _, field := range table.Fields {
-		var attr = command.convertFieldNameStyle(field.Name)
+		var attr = this.convertFieldNameStyle(field.Name)
 		var dataType = field.ValueTypeName()
 		modelString += "\t" + attr + " " + dataType + " `field:\"" + field.Name + "\"` //" + field.Comment + "\n"
 	}
@@ -146,7 +146,7 @@ type ` + model + ` struct {`
 	modelString += "\n"
 
 	for _, field := range table.Fields {
-		var attr = command.convertFieldNameStyle(field.Name)
+		var attr = this.convertFieldNameStyle(field.Name)
 		modelString += "\t" + attr + " interface{}" + " // " + field.Comment + "\n"
 	}
 
@@ -170,16 +170,16 @@ func New` + model + `Operator() *` + model + `Operator {
 		fmt.Println("~~~")
 	} else {
 		// 写入文件
-		target := os.Getenv("GOPATH") + Tea.DS + dir + Tea.DS + command.convertToUnderlineName(model) + "_model.go"
+		target := os.Getenv("GOPATH") + Tea.DS + dir + Tea.DS + this.convertToUnderlineName(model) + "_model.go"
 		file := files.NewFile(target)
 		if file.Exists() {
-			command.Output("<error>write failed: '" + strings.TrimPrefix(target, os.Getenv("GOPATH")) + "' already exists</error>\n")
+			this.Output("<error>write failed: '" + strings.TrimPrefix(target, os.Getenv("GOPATH")) + "' already exists</error>\n")
 		} else {
 			err := file.WriteString(modelString)
 			if err != nil {
-				command.Error(err)
+				this.Error(err)
 			} else {
-				command.Output("<ok>write '" + strings.TrimPrefix(target, os.Getenv("GOPATH")) + "' ok</ok>\n")
+				this.Output("<ok>write '" + strings.TrimPrefix(target, os.Getenv("GOPATH")) + "' ok</ok>\n")
 			}
 		}
 	}
@@ -277,16 +277,16 @@ func (this *${daoName}) Find${model}Name(${pkName} ${pkNameType}) (string, error
 		fmt.Println("~~~")
 	} else {
 		// 写入文件
-		target := os.Getenv("GOPATH") + Tea.DS + dir + Tea.DS + command.convertToUnderlineName(model) + "_dao.go"
+		target := os.Getenv("GOPATH") + Tea.DS + dir + Tea.DS + this.convertToUnderlineName(model) + "_dao.go"
 		file := files.NewFile(target)
 		if file.Exists() {
-			command.Output("<error>write failed: '" + strings.TrimPrefix(target, os.Getenv("GOPATH")) + "' already exists</error>\n")
+			this.Output("<error>write failed: '" + strings.TrimPrefix(target, os.Getenv("GOPATH")) + "' already exists</error>\n")
 		} else {
 			err := file.WriteString(daoString)
 			if err != nil {
-				command.Error(err)
+				this.Error(err)
 			} else {
-				command.Output("<ok>write '" + strings.TrimPrefix(target, os.Getenv("GOPATH")) + "' ok</ok>\n")
+				this.Output("<ok>write '" + strings.TrimPrefix(target, os.Getenv("GOPATH")) + "' ok</ok>\n")
 			}
 		}
 	}
@@ -310,22 +310,22 @@ import (
 		fmt.Println("~~~")
 	} else {
 		// 写入文件
-		target := os.Getenv("GOPATH") + Tea.DS + dir + Tea.DS + command.convertToUnderlineName(model) + "_dao_test.go"
+		target := os.Getenv("GOPATH") + Tea.DS + dir + Tea.DS + this.convertToUnderlineName(model) + "_dao_test.go"
 		file := files.NewFile(target)
 		if file.Exists() {
-			command.Output("<error>write failed: '" + strings.TrimPrefix(target, os.Getenv("GOPATH")) + "' already exists</error>\n")
+			this.Output("<error>write failed: '" + strings.TrimPrefix(target, os.Getenv("GOPATH")) + "' already exists</error>\n")
 		} else {
 			err := file.WriteString(testString)
 			if err != nil {
-				command.Error(err)
+				this.Error(err)
 			} else {
-				command.Output("<ok>write '" + strings.TrimPrefix(target, os.Getenv("GOPATH")) + "' ok</ok>\n")
+				this.Output("<ok>write '" + strings.TrimPrefix(target, os.Getenv("GOPATH")) + "' ok</ok>\n")
 			}
 		}
 	}
 }
 
-func (command *GenModelCommand) modelToTable(modelName string) (string, error) {
+func (this *GenModelCommand) modelToTable(modelName string) (string, error) {
 	var tableName = modelName + "s"
 
 	// ies
@@ -363,7 +363,7 @@ func (command *GenModelCommand) modelToTable(modelName string) (string, error) {
 	return tableName, nil
 }
 
-func (command *GenModelCommand) convertFieldNameStyle(fieldName string) string {
+func (this *GenModelCommand) convertFieldNameStyle(fieldName string) string {
 	pieces := strings.Split(fieldName, "_")
 	newPieces := []string{}
 	for _, piece := range pieces {
@@ -372,7 +372,7 @@ func (command *GenModelCommand) convertFieldNameStyle(fieldName string) string {
 	return strings.Join(newPieces, "")
 }
 
-func (command *GenModelCommand) convertToUnderlineName(modelName string) string {
+func (this *GenModelCommand) convertToUnderlineName(modelName string) string {
 	reg := regexp.MustCompile("[A-Z]")
 	return strings.TrimPrefix(reg.ReplaceAllStringFunc(modelName, func(s string) string {
 		return "_" + strings.ToLower(s)

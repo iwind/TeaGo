@@ -20,22 +20,22 @@ func NewList(slice interface{}) *List {
 	}
 }
 
-func (list *List) Reverse() {
-	list.compareFunc = func(i, j int) bool {
+func (this *List) Reverse() {
+	this.compareFunc = func(i, j int) bool {
 		return i > j
 	}
-	sort.Sort(list)
+	sort.Sort(this)
 }
 
 // 对该List进行排序
-func (list *List) Sort(compareFunc func(i, j int) bool) {
-	list.compareFunc = compareFunc
-	sort.Sort(list)
+func (this *List) Sort(compareFunc func(i, j int) bool) {
+	this.compareFunc = compareFunc
+	sort.Sort(this)
 }
 
 // 遍历List
-func (list *List) Each(iterator func(k int, v interface{})) {
-	value := reflect.ValueOf(list.Slice)
+func (this *List) Each(iterator func(k int, v interface{})) {
+	value := reflect.ValueOf(this.Slice)
 	count := value.Len()
 	for i := 0; i < count; i ++ {
 		iterator(i, value.Index(i).Interface())
@@ -43,8 +43,8 @@ func (list *List) Each(iterator func(k int, v interface{})) {
 }
 
 // 对容器中元素应用迭代器,并将每次执行的结果放入新List中
-func (list *List) Map(mapFunc func(k int, v interface{}) interface{}) *List {
-	value := reflect.ValueOf(list.Slice)
+func (this *List) Map(mapFunc func(k int, v interface{}) interface{}) *List {
+	value := reflect.ValueOf(this.Slice)
 
 	newValue := reflect.New(value.Type()).Elem()
 	result := &List{
@@ -60,13 +60,13 @@ func (list *List) Map(mapFunc func(k int, v interface{}) interface{}) *List {
 }
 
 // 同 FindAll()
-func (list *List) Filter(filterFunc func(k int, v interface{}) bool) *List {
-	return list.FindAll(filterFunc)
+func (this *List) Filter(filterFunc func(k int, v interface{}) bool) *List {
+	return this.FindAll(filterFunc)
 }
 
 // 对容器中元素应用迭代器,并判断是否全部返回真
-func (list *List) All(iterator func(k int, v interface{}) bool) bool {
-	value := reflect.ValueOf(list.Slice)
+func (this *List) All(iterator func(k int, v interface{}) bool) bool {
+	value := reflect.ValueOf(this.Slice)
 	count := value.Len()
 	if count == 0 {
 		return true
@@ -81,8 +81,8 @@ func (list *List) All(iterator func(k int, v interface{}) bool) bool {
 }
 
 // 对容器中元素应用迭代器,并判断是否至少有一次返回真
-func (list *List) Any(iterator func(k int, v interface{}) bool) bool {
-	value := reflect.ValueOf(list.Slice)
+func (this *List) Any(iterator func(k int, v interface{}) bool) bool {
+	value := reflect.ValueOf(this.Slice)
 	count := value.Len()
 	if count == 0 {
 		return true
@@ -96,8 +96,8 @@ func (list *List) Any(iterator func(k int, v interface{}) bool) bool {
 	return false
 }
 
-func (list *List) Find(iterator func(k int, v interface{}) bool) interface{} {
-	value := reflect.ValueOf(list.Slice)
+func (this *List) Find(iterator func(k int, v interface{}) bool) interface{} {
+	value := reflect.ValueOf(this.Slice)
 	count := value.Len()
 	if count == 0 {
 		return nil
@@ -112,8 +112,8 @@ func (list *List) Find(iterator func(k int, v interface{}) bool) interface{} {
 }
 
 // 对容器中元素应用迭代器,将所有返回真的元素放入一个List中
-func (list *List) FindAll(iterator func(k int, v interface{}) bool) *List {
-	value := reflect.ValueOf(list.Slice)
+func (this *List) FindAll(iterator func(k int, v interface{}) bool) *List {
+	value := reflect.ValueOf(this.Slice)
 	count := value.Len()
 
 	newValue := reflect.New(value.Type()).Elem()
@@ -134,27 +134,27 @@ func (list *List) FindAll(iterator func(k int, v interface{}) bool) *List {
 }
 
 // 随机截取List片段
-func (list *List) Rand(size int) *List {
-	newList := list.Copy()
+func (this *List) Rand(size int) *List {
+	newList := this.Copy()
 	newList.Shuffle()
 	newList.Slice = reflect.ValueOf(newList.Slice).Slice(0, size).Interface()
 	return newList
 }
 
 // 在尾部加入一个或多个元素
-func (list *List) Push(items ... interface{}) {
-	value := reflect.ValueOf(list.Slice)
+func (this *List) Push(items ... interface{}) {
+	value := reflect.ValueOf(this.Slice)
 
 	for _, item := range items {
 		value = reflect.Append(value, reflect.ValueOf(item))
 	}
 
-	list.Slice = value.Interface()
+	this.Slice = value.Interface()
 }
 
 // 在指定位置插入新的元素，index参数支持负值
-func (list *List) Insert(index int, v interface{}) {
-	value := reflect.ValueOf(list.Slice)
+func (this *List) Insert(index int, v interface{}) {
+	value := reflect.ValueOf(this.Slice)
 	size := value.Len()
 
 	if index < 0 {
@@ -169,23 +169,23 @@ func (list *List) Insert(index int, v interface{}) {
 	newValue = reflect.Append(newValue, reflect.ValueOf(v))
 	newValue = reflect.AppendSlice(newValue, value.Slice(index, size))
 
-	list.Slice = newValue.Interface()
+	this.Slice = newValue.Interface()
 }
 
-func (list *List) Pop() interface{} {
-	value := reflect.ValueOf(list.Slice)
+func (this *List) Pop() interface{} {
+	value := reflect.ValueOf(this.Slice)
 	size := value.Len()
 	if size == 0 {
 		return nil
 	}
 	lastValue := value.Slice(size-1, size)
 	newValue := value.Slice(0, size-1)
-	list.Slice = newValue.Interface()
+	this.Slice = newValue.Interface()
 	return lastValue.Index(0).Interface()
 }
 
-func (list *List) First() interface{} {
-	value := reflect.ValueOf(list.Slice)
+func (this *List) First() interface{} {
+	value := reflect.ValueOf(this.Slice)
 	size := value.Len()
 	if size == 0 {
 		return nil
@@ -193,8 +193,8 @@ func (list *List) First() interface{} {
 	return value.Slice(0, 1).Index(0).Interface()
 }
 
-func (list *List) Last() interface{} {
-	value := reflect.ValueOf(list.Slice)
+func (this *List) Last() interface{} {
+	value := reflect.ValueOf(this.Slice)
 	size := value.Len()
 	if size == 0 {
 		return nil
@@ -202,8 +202,8 @@ func (list *List) Last() interface{} {
 	return value.Slice(size-1, size).Index(0).Interface()
 }
 
-func (list *List) Get(index int) interface{} {
-	value := reflect.ValueOf(list.Slice)
+func (this *List) Get(index int) interface{} {
+	value := reflect.ValueOf(this.Slice)
 	size := value.Len()
 	if size == 0 || index < 0 || index >= size {
 		return nil
@@ -211,18 +211,18 @@ func (list *List) Get(index int) interface{} {
 	return value.Slice(index, index+1).Index(0).Interface()
 }
 
-func (list *List) isEmpty() bool {
-	return list.Size() == 0
+func (this *List) isEmpty() bool {
+	return this.Size() == 0
 }
 
-func (list *List) Size() int {
-	return list.Len()
+func (this *List) Size() int {
+	return this.Len()
 }
 
 // 删除某个位置上的值
 // 支持负值
-func (list *List) Remove(index int) {
-	value := reflect.ValueOf(list.Slice)
+func (this *List) Remove(index int) {
+	value := reflect.ValueOf(this.Slice)
 	size := value.Len()
 	if index < 0 {
 		index = size + index + 1
@@ -232,12 +232,12 @@ func (list *List) Remove(index int) {
 	}
 
 	newValue := reflect.AppendSlice(value.Slice(0, index), value.Slice(index+1, size))
-	list.Slice = newValue.Interface()
+	this.Slice = newValue.Interface()
 }
 
 // 从数组中删除某个值
-func (list *List) RemoveIf(iterator func(k int, v interface{}) bool) {
-	value := reflect.ValueOf(list.Slice)
+func (this *List) RemoveIf(iterator func(k int, v interface{}) bool) {
+	value := reflect.ValueOf(this.Slice)
 	size := value.Len()
 	if size == 0 {
 		return
@@ -249,11 +249,11 @@ func (list *List) RemoveIf(iterator func(k int, v interface{}) bool) {
 			newValue = reflect.Append(newValue, itemValue)
 		}
 	}
-	list.Slice = newValue.Interface()
+	this.Slice = newValue.Interface()
 }
 
-func (list *List) KeepIf(iterator func(k int, v interface{}) bool) {
-	value := reflect.ValueOf(list.Slice)
+func (this *List) KeepIf(iterator func(k int, v interface{}) bool) {
+	value := reflect.ValueOf(this.Slice)
 	size := value.Len()
 	if size == 0 {
 		return
@@ -265,56 +265,56 @@ func (list *List) KeepIf(iterator func(k int, v interface{}) bool) {
 			newValue = reflect.Append(newValue, itemValue)
 		}
 	}
-	list.Slice = newValue.Interface()
+	this.Slice = newValue.Interface()
 }
 
-func (list *List) Clear() {
-	value := reflect.ValueOf(list.Slice)
-	list.Slice = reflect.MakeSlice(value.Type(), 0, 0)
+func (this *List) Clear() {
+	value := reflect.ValueOf(this.Slice)
+	this.Slice = reflect.MakeSlice(value.Type(), 0, 0)
 }
 
 // 设置某个索引位置上的值
-func (list *List) Set(index int, v interface{}) {
-	value := reflect.ValueOf(list.Slice)
+func (this *List) Set(index int, v interface{}) {
+	value := reflect.ValueOf(this.Slice)
 	value.Index(index).Set(reflect.ValueOf(v))
 }
 
-func (list *List) Shuffle() {
-	list.Sort(func(i, j int) bool {
+func (this *List) Shuffle() {
+	this.Sort(func(i, j int) bool {
 		var source = rand.NewSource(time.Now().UnixNano())
 		return source.Int63()%2 == 0
 	})
 }
 
-func (list *List) Copy() *List {
-	newValue := reflect.New(reflect.TypeOf(list.Slice)).Elem()
+func (this *List) Copy() *List {
+	newValue := reflect.New(reflect.TypeOf(this.Slice)).Elem()
 	newList := &List{
 		Slice: newValue.Interface(),
 	}
-	list.Each(func(k int, v interface{}) {
+	this.Each(func(k int, v interface{}) {
 		newValue = reflect.Append(newValue, reflect.ValueOf(v))
 	})
 	newList.Slice = newValue.Interface()
 	return newList
 }
 
-func (list *List) asJSON() (string, error) {
-	jsonBytes, err := ffjson.Marshal(list.Slice)
+func (this *List) asJSON() (string, error) {
+	jsonBytes, err := ffjson.Marshal(this.Slice)
 	return string(jsonBytes), err
 }
 
-func (list *List) asPrettyJSON() (string, error) {
-	jsonBytes, err := json.MarshalIndent(list.Slice, "", "   ")
+func (this *List) asPrettyJSON() (string, error) {
+	jsonBytes, err := json.MarshalIndent(this.Slice, "", "   ")
 	return string(jsonBytes), err
 }
 
-func (list *List) Len() int {
-	value := reflect.ValueOf(list.Slice)
+func (this *List) Len() int {
+	value := reflect.ValueOf(this.Slice)
 	return value.Len()
 }
 
-func (list *List) Swap(i, j int) {
-	value := reflect.ValueOf(list.Slice)
+func (this *List) Swap(i, j int) {
+	value := reflect.ValueOf(this.Slice)
 	item1 := value.Index(i).Interface()
 	item2 := value.Index(j).Interface()
 
@@ -322,6 +322,6 @@ func (list *List) Swap(i, j int) {
 	value.Index(j).Set(reflect.ValueOf(item1))
 }
 
-func (list *List) Less(i, j int) bool {
-	return list.compareFunc(i, j)
+func (this *List) Less(i, j int) bool {
+	return this.compareFunc(i, j)
 }

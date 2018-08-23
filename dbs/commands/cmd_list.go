@@ -18,43 +18,43 @@ type ListModelsCommand struct {
 	*cmd.Command
 }
 
-func (command *ListModelsCommand) Name() string {
+func (this *ListModelsCommand) Name() string {
 	return "list models"
 }
 
-func (command *ListModelsCommand) Codes() []string {
+func (this *ListModelsCommand) Codes() []string {
 	return []string{":db.list", ":db.ls", ":db.latest"}
 }
 
-func (command *ListModelsCommand) Usage() string {
+func (this *ListModelsCommand) Usage() string {
 	return ":db.[list|ls] [KEYWORD]\n   " + ":db.latest [KEYWORD]"
 }
 
-func (command *ListModelsCommand) Run() {
-	keyword, _ := command.Arg(1)
+func (this *ListModelsCommand) Run() {
+	keyword, _ := this.Arg(1)
 
 	// 所有的模型
 	db, err := dbs.Default()
 	if err != nil {
-		command.Error(err)
+		this.Error(err)
 		return
 	}
 
 	config, err := db.Config()
 	if err != nil {
-		command.Error(err)
+		this.Error(err)
 		return
 	}
 
 	pkg := config.Models.Package
 	if len(pkg) == 0 {
-		command.Println("'models.package' should be configured for db '" + db.Id() + "'")
+		this.Println("'models.package' should be configured for db '" + db.Id() + "'")
 		return
 	}
 
 	dir := files.NewFile(os.Getenv("GOPATH") + Tea.DS + pkg)
 	if !dir.Exists() {
-		command.Println("'" + pkg + "' does not exist")
+		this.Println("'" + pkg + "' does not exist")
 		return
 	}
 
@@ -71,7 +71,7 @@ func (command *ListModelsCommand) Run() {
 
 		content, err := file.ReadAllString()
 		if err != nil {
-			command.Error(err)
+			this.Error(err)
 			return
 		}
 
@@ -100,7 +100,7 @@ func (command *ListModelsCommand) Run() {
 
 			// 最近的...
 			modifiedTime, _ := file.LastModified()
-			if command.SubCode() == ":db.latest" {
+			if this.SubCode() == ":db.latest" {
 				if time.Since(modifiedTime).Seconds() > 86400 {
 					return
 				}
@@ -120,9 +120,9 @@ func (command *ListModelsCommand) Run() {
 			return models[i] < models[j]
 		})
 		for _, model := range models {
-			command.Output(model + "\n")
+			this.Output(model + "\n")
 		}
 	} else {
-		command.Output("not found any models\n")
+		this.Output("not found any models\n")
 	}
 }

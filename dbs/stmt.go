@@ -79,7 +79,7 @@ func (this *Stmt) FindOnes(args ... interface{}) (results []map[string]interface
 }
 
 func (this *Stmt) FindOne(args ... interface{}) (result map[string]interface{}, err error) {
-	ones, _, err := stmt.FindOnes(args ...)
+	ones, _, err := this.FindOnes(args ...)
 	if err != nil {
 		return nil, err
 	}
@@ -135,14 +135,14 @@ func (this *Stmt) FindCol(colIndex int, args ... interface{}) (interface{}, erro
 	return nil, nil
 }
 
-func (stmt *Stmt) Exec(args ... interface{}) (sql.Result, error) {
-	return stmt.sqlStmt.Exec(args ...)
+func (this *Stmt) Exec(args ... interface{}) (sql.Result, error) {
+	return this.sqlStmt.Exec(args ...)
 }
 
-func (stmt *Stmt) Close() error {
-	return stmt.sqlStmt.Close()
+func (this *Stmt) Close() error {
+	return this.sqlStmt.Close()
 }
 
-func (stmt *Stmt) OriginStmt() *sql.Stmt {
-	return stmt.sqlStmt
+func (this *Stmt) OriginStmt() *sql.Stmt {
+	return this.sqlStmt
 }

@@ -19,42 +19,42 @@ func NewSessionManager() *SessionManager {
 	}
 }
 
-func (manager *SessionManager) Init(config *actions.SessionConfig) {
-	manager.config = config
+func (this *SessionManager) Init(config *actions.SessionConfig) {
+	this.config = config
 	client, err := Client()
 	if err != nil {
 		logs.Errorf("%s", err.Error())
 		return
 	}
-	manager.client = client
+	this.client = client
 }
 
-func (manager *SessionManager) Read(sid string) map[string]string {
+func (this *SessionManager) Read(sid string) map[string]string {
 	sid = "SESSION_" + sid
 
-	if manager.client == nil {
+	if this.client == nil {
 		return map[string]string{}
 	}
-	result, err := manager.client.HGetAll(sid)
+	result, err := this.client.HGetAll(sid)
 	if err != nil {
 		return map[string]string{}
 	}
 
 	// 延长时间
 	// @TODO 设定为 10% 的几率延长时间
-	manager.client.ExpireAt(sid, time.Now().Add(time.Duration(manager.config.Life)*time.Second))
+	this.client.ExpireAt(sid, time.Now().Add(time.Duration(this.config.Life)*time.Second))
 
 	return result
 }
 
-func (manager *SessionManager) WriteItem(sid string, key string, value string) bool {
+func (this *SessionManager) WriteItem(sid string, key string, value string) bool {
 	sid = "SESSION_" + sid
 
-	if manager.client == nil {
+	if this.client == nil {
 		return false
 	}
-	_, err := manager.client.HSet(sid, key, value)
-	manager.client.ExpireAt(sid, time.Now().Add(time.Duration(manager.config.Life)*time.Second))
+	_, err := this.client.HSet(sid, key, value)
+	this.client.ExpireAt(sid, time.Now().Add(time.Duration(this.config.Life)*time.Second))
 	if err != nil {
 		logs.Errorf("%s", err.Error())
 		return false
@@ -62,13 +62,13 @@ func (manager *SessionManager) WriteItem(sid string, key string, value string) b
 	return true
 }
 
-func (manager *SessionManager) Delete(sid string) bool {
+func (this *SessionManager) Delete(sid string) bool {
 	sid = "SESSION_" + sid
 
-	if manager.client == nil {
+	if this.client == nil {
 		return false
 	}
-	_, err := manager.client.Del(sid)
+	_, err := this.client.Del(sid)
 	if err != nil {
 		logs.Errorf("%s", err.Error())
 		return false

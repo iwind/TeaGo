@@ -16,9 +16,9 @@ func NewReader(path string) (*Reader, error) {
 	return NewFile(path).Reader()
 }
 
-func (reader *Reader) Read(size int64) []byte {
+func (this *Reader) Read(size int64) []byte {
 	data := make([]byte, size)
-	n, err := reader.file.Read(data)
+	n, err := this.file.Read(data)
 	if err != nil {
 		if err != io.EOF {
 			logs.Error(err)
@@ -32,14 +32,14 @@ func (reader *Reader) Read(size int64) []byte {
 	return data
 }
 
-func (reader *Reader) ReadByte() []byte {
-	return reader.Read(1)
+func (this *Reader) ReadByte() []byte {
+	return this.Read(1)
 }
 
-func (reader *Reader) ReadLine() []byte {
+func (this *Reader) ReadLine() []byte {
 	line := []byte{}
 	for {
-		b := reader.ReadByte()
+		b := this.ReadByte()
 		if len(b) == 0 {
 			return line
 		}
@@ -52,40 +52,40 @@ func (reader *Reader) ReadLine() []byte {
 	return line
 }
 
-func (reader *Reader) ReadAll() []byte {
-	stat, err := reader.file.Stat()
+func (this *Reader) ReadAll() []byte {
+	stat, err := this.file.Stat()
 	if err != nil {
 		logs.Error(err)
 		return []byte{}
 	}
 
-	return reader.Read(stat.Size())
+	return this.Read(stat.Size())
 }
 
-func (reader *Reader) ReadJSON(ptr interface{}) error {
-	data := reader.ReadAll()
+func (this *Reader) ReadJSON(ptr interface{}) error {
+	data := this.ReadAll()
 	return ffjson.Unmarshal(data, ptr)
 }
 
-func (reader *Reader) ReadYAML(ptr interface{}) error {
-	data := reader.ReadAll()
+func (this *Reader) ReadYAML(ptr interface{}) error {
+	data := this.ReadAll()
 	return yaml.Unmarshal(data, ptr)
 }
 
-func (reader *Reader) Seek(offset int64, whence ... int) (ret int64, err error) {
+func (this *Reader) Seek(offset int64, whence ... int) (ret int64, err error) {
 	if len(whence) > 0 {
-		return reader.file.Seek(offset, whence[0])
+		return this.file.Seek(offset, whence[0])
 	}
-	return reader.file.Seek(offset, 0)
+	return this.file.Seek(offset, 0)
 }
 
-func (reader *Reader) Reset() error {
-	_, err := reader.Seek(0)
+func (this *Reader) Reset() error {
+	_, err := this.Seek(0)
 	return err
 }
 
-func (reader *Reader) Length() (length int64, err error) {
-	stat, err := reader.file.Stat()
+func (this *Reader) Length() (length int64, err error) {
+	stat, err := this.file.Stat()
 	if err != nil {
 		return 0, err
 	}
@@ -93,6 +93,6 @@ func (reader *Reader) Length() (length int64, err error) {
 	return stat.Size(), nil
 }
 
-func (reader *Reader) Close() error {
-	return reader.file.Close()
+func (this *Reader) Close() error {
+	return this.file.Close()
 }

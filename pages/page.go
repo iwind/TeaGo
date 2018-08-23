@@ -10,7 +10,7 @@ type Page struct {
 	Length int
 }
 
-func New(total int, size int, index int) *Page {
+func NewPage(total int, size int, index int) *Page {
 	page := &Page{
 		Total: total,
 		Size:  size,

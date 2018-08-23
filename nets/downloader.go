@@ -25,50 +25,50 @@ func NewDownloader() *downloader {
 	}
 }
 
-func (downloader *downloader) Add(url string, tag string, target string) {
-	downloader.items = append(downloader.items, &DownloaderItem{
+func (this *downloader) Add(url string, tag string, target string) {
+	this.items = append(this.items, &DownloaderItem{
 		url:    url,
 		tag:    tag,
 		target: target,
 	})
 }
 
-func (downloader *downloader) OnStart(fn func(item *DownloaderItem)) {
-	downloader.onStartFn = fn
+func (this *downloader) OnStart(fn func(item *DownloaderItem)) {
+	this.onStartFn = fn
 }
 
-func (downloader *downloader) OnBeforeWriteFn(fn func(item *DownloaderItem)) {
-	downloader.onBeforeWriteFn = fn
+func (this *downloader) OnBeforeWriteFn(fn func(item *DownloaderItem)) {
+	this.onBeforeWriteFn = fn
 }
 
-func (downloader *downloader) OnAfterWriteFn(fn func(item *DownloaderItem)) {
-	downloader.onAfterWriteFn = fn
+func (this *downloader) OnAfterWriteFn(fn func(item *DownloaderItem)) {
+	this.onAfterWriteFn = fn
 }
 
-func (downloader *downloader) OnProgress(fn func(item *DownloaderItem)) {
-	downloader.onProgressFn = fn
+func (this *downloader) OnProgress(fn func(item *DownloaderItem)) {
+	this.onProgressFn = fn
 }
 
-func (downloader *downloader) OnCompleteFn(fn func(item *DownloaderItem)) {
-	downloader.onCompleteFn = fn
+func (this *downloader) OnCompleteFn(fn func(item *DownloaderItem)) {
+	this.onCompleteFn = fn
 }
 
-func (downloader *downloader) OnErrorFn(fn func(item *DownloaderItem)) {
-	downloader.onErrorFn = fn
+func (this *downloader) OnErrorFn(fn func(item *DownloaderItem)) {
+	this.onErrorFn = fn
 }
 
-func (downloader *downloader) OnAllCompleteFn(fn func()) {
-	downloader.onAllCompleteFn = fn
+func (this *downloader) OnAllCompleteFn(fn func()) {
+	this.onAllCompleteFn = fn
 }
 
-func (downloader *downloader) Concurrent(concurrent uint) {
-	downloader.concurrent = concurrent
+func (this *downloader) Concurrent(concurrent uint) {
+	this.concurrent = concurrent
 }
 
 // 等待下载的条目
-func (downloader *downloader) waitingItems() []*DownloaderItem {
+func (this *downloader) waitingItems() []*DownloaderItem {
 	items := []*DownloaderItem{}
-	for _, item := range downloader.items {
+	for _, item := range this.items {
 		if item.isDownloading {
 			continue
 		}
@@ -80,25 +80,25 @@ func (downloader *downloader) waitingItems() []*DownloaderItem {
 	return items
 }
 
-func (downloader *downloader) Start() {
-	downloader.waitTasks(false)
+func (this *downloader) Start() {
+	this.waitTasks(false)
 }
 
-func (downloader *downloader) Wait() {
-	downloader.waitTasks(true)
+func (this *downloader) Wait() {
+	this.waitTasks(true)
 }
 
-func (downloader *downloader) waitTasks(loop bool) {
+func (this *downloader) waitTasks(loop bool) {
 	go func() {
 		// 放在循环中，以便支持动态添加的新的下载任务
 		for {
-			concurrent := downloader.concurrent
+			concurrent := this.concurrent
 			if concurrent == 0 {
 				concurrent = 1
 			}
 
 			// 是否有未完成的Items
-			items := downloader.waitingItems()
+			items := this.waitingItems()
 			countItems := uint(len(items))
 			if countItems == 0 {
 				if !loop {
@@ -121,35 +121,35 @@ func (downloader *downloader) waitTasks(loop bool) {
 			for _, item := range items {
 				go func(item *DownloaderItem) {
 					item.onStartFn = func() {
-						if downloader.onStartFn != nil {
-							downloader.onStartFn(item)
+						if this.onStartFn != nil {
+							this.onStartFn(item)
 						}
 					}
 					item.onErrorFn = func() {
-						if downloader.onErrorFn != nil {
-							downloader.onErrorFn(item)
+						if this.onErrorFn != nil {
+							this.onErrorFn(item)
 						}
 					}
 					item.onCompleteFn = func() {
 						wg.Add(-1)
 
-						if downloader.onCompleteFn != nil {
-							downloader.onCompleteFn(item)
+						if this.onCompleteFn != nil {
+							this.onCompleteFn(item)
 						}
 					}
 					item.onBeforeWrite = func() {
-						if downloader.onBeforeWriteFn != nil {
-							downloader.onBeforeWriteFn(item)
+						if this.onBeforeWriteFn != nil {
+							this.onBeforeWriteFn(item)
 						}
 					}
 					item.onAfterWrite = func() {
-						if downloader.onAfterWriteFn != nil {
-							downloader.onAfterWriteFn(item)
+						if this.onAfterWriteFn != nil {
+							this.onAfterWriteFn(item)
 						}
 					}
 					item.onProgressFn = func() {
-						if downloader.onProgressFn != nil {
-							downloader.onProgressFn(item)
+						if this.onProgressFn != nil {
+							this.onProgressFn(item)
 						}
 					}
 					item.Start()
@@ -161,17 +161,17 @@ func (downloader *downloader) waitTasks(loop bool) {
 
 			// 移除完成的任务
 			leftItems := []*DownloaderItem{}
-			for _, item := range downloader.items {
+			for _, item := range this.items {
 				if item.isCompleted {
 					continue
 				}
 				leftItems = append(leftItems, item)
 			}
 
-			downloader.items = leftItems
+			this.items = leftItems
 
-			if len(leftItems) == 0 && downloader.onAllCompleteFn != nil {
-				downloader.onAllCompleteFn()
+			if len(leftItems) == 0 && this.onAllCompleteFn != nil {
+				this.onAllCompleteFn()
 			}
 		}
 	}()

@@ -26,35 +26,35 @@ func NewServer(network, address string) *Server {
 	}
 }
 
-func (server *Server) AcceptClient(callback func(client *Client)) {
-	server.onAccept = callback
+func (this *Server) AcceptClient(callback func(client *Client)) {
+	this.onAccept = callback
 }
 
-func (server *Server) CloseClient(callback func(client *Client)) {
-	server.onClose = callback
+func (this *Server) CloseClient(callback func(client *Client)) {
+	this.onClose = callback
 }
 
-func (server *Server) ReceiveClient(callback func(client *Client, data []byte)) {
-	server.onReceive = callback
+func (this *Server) ReceiveClient(callback func(client *Client, data []byte)) {
+	this.onReceive = callback
 }
 
-func (server *Server) Listen() error {
-	switch server.network {
+func (this *Server) Listen() error {
+	switch this.network {
 	case "udp", "udp4", "udp6":
-		return server.listenUDP()
+		return this.listenUDP()
 	default:
-		return server.listenTCP()
+		return this.listenTCP()
 	}
 
 	return nil
 }
 
-func (server *Server) listenTCP() error {
-	listener, err := net.Listen(server.network, server.address)
+func (this *Server) listenTCP() error {
+	listener, err := net.Listen(this.network, this.address)
 	if err != nil {
 		return err
 	}
-	server.listener = listener
+	this.listener = listener
 
 	var id int
 	for {
@@ -70,37 +70,37 @@ func (server *Server) listenTCP() error {
 			id:         id,
 			connection: conn,
 		}
-		if server.onAccept != nil {
-			server.onAccept(client)
+		if this.onAccept != nil {
+			this.onAccept(client)
 		}
 		go func(client *Client) {
 			input := bufio.NewScanner(client.connection)
 			for input.Scan() {
-				if server.onReceive != nil {
-					server.onReceive(client, input.Bytes())
+				if this.onReceive != nil {
+					this.onReceive(client, input.Bytes())
 				}
 			}
 
 			defer func() {
 				client.connection.Close()
-				if server.onClose != nil {
-					server.onClose(client)
+				if this.onClose != nil {
+					this.onClose(client)
 				}
 			}()
 		}(client)
 	}
 }
 
-func (server *Server) listenUDP() error {
-	addr, err := net.ResolveUDPAddr(server.network, server.address)
+func (this *Server) listenUDP() error {
+	addr, err := net.ResolveUDPAddr(this.network, this.address)
 	if err != nil {
 		return err
 	}
-	conn, err := net.ListenUDP(server.network, addr)
+	conn, err := net.ListenUDP(this.network, addr)
 	if err != nil {
 		return err
 	}
-	server.udpConn = conn
+	this.udpConn = conn
 
 	for {
 		data := make([]byte, 1024)
@@ -115,18 +115,18 @@ func (server *Server) listenUDP() error {
 			udpRemoteAddr: addr,
 			udpLocalAddr:  remoteAddr,
 		}
-		if server.onReceive != nil {
-			server.onReceive(client, data[:n])
+		if this.onReceive != nil {
+			this.onReceive(client, data[:n])
 		}
 	}
 }
 
-func (server *Server) Close() error {
-	if server.udpConn != nil {
-		return server.udpConn.Close()
+func (this *Server) Close() error {
+	if this.udpConn != nil {
+		return this.udpConn.Close()
 	}
-	if server.listener != nil {
-		return server.listener.Close()
+	if this.listener != nil {
+		return this.listener.Close()
 	}
 	return nil
 }

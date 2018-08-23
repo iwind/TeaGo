@@ -10,20 +10,20 @@ type SecretCommand struct {
 	*cmd.Command
 }
 
-func (command *SecretCommand) Name() string {
+func (this *SecretCommand) Name() string {
 	return "generate secret string"
 }
 
-func (command *SecretCommand) Codes() []string {
+func (this *SecretCommand) Codes() []string {
 	return []string{":db.secret"}
 }
 
-func (command *SecretCommand) Usage() string {
+func (this *SecretCommand) Usage() string {
 	return ":db.secret [LENGTH]"
 }
 
-func (command *SecretCommand) Run() {
-	lengthArg, found := command.Arg(1)
+func (this *SecretCommand) Run() {
+	lengthArg, found := this.Arg(1)
 	length := 32
 	if found {
 		lengthInt := types.Int(lengthArg)
@@ -31,5 +31,5 @@ func (command *SecretCommand) Run() {
 			length = lengthInt
 		}
 	}
-	command.Output("<code>" + stringutil.Rand(length) + "</code>\n")
+	this.Output("<code>" + stringutil.Rand(length) + "</code>\n")
 }

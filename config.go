@@ -23,7 +23,7 @@ type serverConfig struct {
 	Errors map[string]interface{} `yaml:"errors"` // 错误配置
 }
 
-func (config *serverConfig) Load() {
+func (this *serverConfig) Load() {
 	configFile := Tea.ConfigFile("server.conf")
 	_, err := os.Stat(configFile)
 	if err != nil {
@@ -36,44 +36,44 @@ func (config *serverConfig) Load() {
 		logs.Errorf("%s", err.Error())
 		return
 	}
-	err = yaml.Unmarshal(fileBytes, config)
+	err = yaml.Unmarshal(fileBytes, this)
 	if err != nil {
 		logs.Errorf("%s", err.Error())
 	} else {
 		// maxSize
-		maxSize, err := stringutil.ParseFileSize(config.Upload.MaxSize)
+		maxSize, err := stringutil.ParseFileSize(this.Upload.MaxSize)
 		if err != nil {
 			logs.Errorf("%s", err.Error())
 		} else {
-			config.Upload.maxSizeFloat = maxSize
+			this.Upload.maxSizeFloat = maxSize
 		}
 
 		// env
-		if config.Env == "" {
-			config.Env = "dev"
+		if this.Env == "" {
+			this.Env = "dev"
 		}
-		if config.Env != Tea.EnvDev && config.Env != Tea.EnvTest && config.Env != Tea.EnvProd {
+		if this.Env != Tea.EnvDev && this.Env != Tea.EnvTest && this.Env != Tea.EnvProd {
 			logs.Errorf("'env' should be 'dev', 'test' or 'prod'")
 		}
-		Tea.Env = config.Env
+		Tea.Env = this.Env
 
 		// 字符集
-		if len(config.Charset) == 0 {
-			config.Charset = "utf-8"
+		if len(this.Charset) == 0 {
+			this.Charset = "utf-8"
 		}
 	}
 }
 
-func (config *serverConfig) MaxSize() float64 {
-	return config.Upload.maxSizeFloat
+func (this *serverConfig) MaxSize() float64 {
+	return this.Upload.maxSizeFloat
 }
 
-func (config *serverConfig) processError(request *http.Request, response io.Writer, code int, message string) {
-	if config.Errors == nil {
+func (this *serverConfig) processError(request *http.Request, response io.Writer, code int, message string) {
+	if this.Errors == nil {
 		http.Error(response.(http.ResponseWriter), message, code)
 		return
 	}
-	errorConfig, found := config.Errors[strconv.Itoa(code)]
+	errorConfig, found := this.Errors[strconv.Itoa(code)]
 	if !found {
 		http.Error(response.(http.ResponseWriter), message, code)
 		return

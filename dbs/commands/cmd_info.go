@@ -10,31 +10,31 @@ type InfoCommand struct {
 	*cmd.Command
 }
 
-func (command *InfoCommand) Name() string {
+func (this *InfoCommand) Name() string {
 	return "print database info"
 }
 
-func (command *InfoCommand) Codes() []string {
+func (this *InfoCommand) Codes() []string {
 	return []string{":db.info"}
 }
 
-func (command *InfoCommand) Usage() string {
+func (this *InfoCommand) Usage() string {
 	return ":db.info"
 }
 
-func (command *InfoCommand) Run() {
+func (this *InfoCommand) Run() {
 	db, err := dbs.Default()
 	if err != nil {
-		command.Error(err)
+		this.Error(err)
 		return
 	}
 
 	config, _ := db.Config()
 	yamlBytes, err := yaml.Marshal(config)
 	if err != nil {
-		command.Error(err)
+		this.Error(err)
 		return
 	}
 
-	command.Output("<code>" + string(yamlBytes) + "</code>")
+	this.Output("<code>" + string(yamlBytes) + "</code>")
 }

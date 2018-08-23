@@ -9,8 +9,8 @@ import "github.com/iwind/TeaGo/actions"
 
 type HelloAction actions.Action
 
-func (action *HelloAction) Run()  {
-	action.Write("Hello")
+func (this *HelloAction) Run()  {
+	this.Write("Hello")
 }
 ~~~
 
@@ -22,11 +22,11 @@ import "github.com/iwind/TeaGo/actions"
 
 type HelloAction actions.Action
 
-func (action *HelloAction) Run(params struct {
+func (this *HelloAction) Run(params struct {
 	Name string
 	Age  int
 }) {
-	action.WriteFormat("Name:%s, Age:%d",
+	this.WriteFormat("Name:%s, Age:%d",
 		params.Name,
 		params.Age)
 }
@@ -39,14 +39,14 @@ package MeloySearch
 
 import (
 	"github.com/iwind/TeaGo"
-	"github.com/iwind/MeloySearch/actions"
+	"github.com/iwind/MyProject/actions"
 )
 
 func Start() {
 	var server = TeaGo.NewServer()
 	
 	// 注册路由
-	server.Get("/hello", &actions.HelloAction{})
+	server.Get("/hello", new(actions.HelloAction))
 	
 	// 启动服务
 	server.Start("0.0.0.0:8000")

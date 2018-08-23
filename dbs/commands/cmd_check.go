@@ -14,45 +14,45 @@ type CheckModelCommand struct {
 	*cmd.Command
 }
 
-func (command *CheckModelCommand) Name() string {
+func (this *CheckModelCommand) Name() string {
 	return "check model's modification"
 }
 
-func (command *CheckModelCommand) Codes() []string {
+func (this *CheckModelCommand) Codes() []string {
 	return []string{":db.check"}
 }
 
-func (command *CheckModelCommand) Usage() string {
+func (this *CheckModelCommand) Usage() string {
 	return ":db.check"
 }
 
-func (command *CheckModelCommand) Run() {
+func (this *CheckModelCommand) Run() {
 	// 所有的模型
 	db, err := dbs.Default()
 	if err != nil {
-		command.Error(err)
+		this.Error(err)
 		return
 	}
 
 	config, err := db.Config()
 	if err != nil {
-		command.Error(err)
+		this.Error(err)
 		return
 	}
 
 	pkg := config.Models.Package
 	if len(pkg) == 0 {
-		command.Println("'models.package' should be configured for db '" + db.Id() + "'")
+		this.Println("'models.package' should be configured for db '" + db.Id() + "'")
 		return
 	}
 
 	dir := files.NewFile(os.Getenv("GOPATH") + Tea.DS + pkg)
 	if !dir.Exists() {
-		command.Println("'" + pkg + "' does not exist")
+		this.Println("'" + pkg + "' does not exist")
 		return
 	}
 
-	command.Output("<code>checking ...</code>\n~~~\n")
+	this.Output("<code>checking ...</code>\n~~~\n")
 
 	tables := []*dbs.Table{}                     // Model name => *Table
 	models := map[string]map[string]*dbs.Field{} // Model name => { fields:... }
@@ -70,7 +70,7 @@ func (command *CheckModelCommand) Run() {
 
 		content, err := file.ReadAllString()
 		if err != nil {
-			command.Error(err)
+			this.Error(err)
 			return
 		}
 
@@ -88,8 +88,8 @@ func (command *CheckModelCommand) Run() {
 			table, err := db.FindTable(tableName)
 			if err != nil || table == nil {
 				path, _ := file.AbsPath()
-				command.Output("<code>-[" + modelName + "] remove model</code>\n")
-				command.outputFile(path)
+				this.Output("<code>-[" + modelName + "] remove model</code>\n")
+				this.outputFile(path)
 
 				countIssues ++
 				return
@@ -132,20 +132,20 @@ func (command *CheckModelCommand) Run() {
 		modelName := table.MappingName
 		oldFields, found := models[modelName]
 		if !found {
-			command.Output("+[" + modelName + "] gen model\n")
+			this.Output("+[" + modelName + "] gen model\n")
 		} else {
 			// 新增字段或修改字段
 			for _, field := range table.Fields {
 				oldField, found := oldFields[field.Name]
 				if !found {
-					command.Output("<code>+[" + modelName + "] field: " + command.convertFieldNameStyle(field.Name) + " " + field.ValueTypeName() + " `field:\"" + field.Name + "\"` // " + field.Comment + "</code>\n")
-					command.outputFile(modelFiles[modelName])
+					this.Output("<code>+[" + modelName + "] field: " + this.convertFieldNameStyle(field.Name) + " " + field.ValueTypeName() + " `field:\"" + field.Name + "\"` // " + field.Comment + "</code>\n")
+					this.outputFile(modelFiles[modelName])
 					countIssues ++
 				} else {
 					// 对比
 					if field.ValueTypeName() != oldField.MappingKindName {
-						command.Output("<code>*[" + modelName + "] field: " + oldField.MappingName + " " + field.ValueTypeName() + " `field:\"" + field.Name + "\"` // " + field.Comment + "</code>\n")
-						command.outputFile(modelFiles[modelName])
+						this.Output("<code>*[" + modelName + "] field: " + oldField.MappingName + " " + field.ValueTypeName() + " `field:\"" + field.Name + "\"` // " + field.Comment + "</code>\n")
+						this.outputFile(modelFiles[modelName])
 						countIssues ++
 					}
 				}
@@ -155,8 +155,8 @@ func (command *CheckModelCommand) Run() {
 			for _, oldField := range oldFields {
 				field := table.FindFieldWithName(oldField.Name)
 				if field == nil {
-					command.Output("<code>-[" + modelName + "] field: " + oldField.MappingName + "</code>\n")
-					command.outputFile(modelFiles[modelName])
+					this.Output("<code>-[" + modelName + "] field: " + oldField.MappingName + "</code>\n")
+					this.outputFile(modelFiles[modelName])
 					countIssues ++
 				}
 			}
@@ -164,14 +164,14 @@ func (command *CheckModelCommand) Run() {
 	}
 
 	if countIssues == 0 {
-		command.Output("<ok>Everything goes ok</ok>\n")
+		this.Output("<ok>Everything goes ok</ok>\n")
 	} else {
-		command.Output("~~~\n")
-		command.Output("<error>There are", countIssues, "issues to be fixed</error>\n")
+		this.Output("~~~\n")
+		this.Output("<error>There are", countIssues, "issues to be fixed</error>\n")
 	}
 }
 
-func (command *CheckModelCommand) convertFieldNameStyle(fieldName string) string {
+func (this *CheckModelCommand) convertFieldNameStyle(fieldName string) string {
 	pieces := strings.Split(fieldName, "_")
 	newPieces := []string{}
 	for _, piece := range pieces {
@@ -180,7 +180,7 @@ func (command *CheckModelCommand) convertFieldNameStyle(fieldName string) string
 	return strings.Join(newPieces, "")
 }
 
-func (command *CheckModelCommand) outputFile(file string) {
+func (this *CheckModelCommand) outputFile(file string) {
 	goPath := os.Getenv("GOPATH")
-	command.Output("   ", strings.TrimPrefix(file, goPath), "\n")
+	this.Output("   ", strings.TrimPrefix(file, goPath), "\n")
 }

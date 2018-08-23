@@ -5,7 +5,7 @@ import (
 )
 
 func TestListMap(t *testing.T) {
-	var list = New([]map[string]interface{}{
+	var list = NewList([]map[string]interface{}{
 		{
 			"id":   10,
 			"name": "Zhang San",
@@ -32,7 +32,7 @@ func TestListMap(t *testing.T) {
 }
 
 func TestListFilter(t *testing.T) {
-	var list = New([]map[string]interface{}{
+	var list = NewList([]map[string]interface{}{
 		{
 			"id":   10,
 			"name": "Zhang San",
@@ -63,7 +63,7 @@ func TestListFilter(t *testing.T) {
 }
 
 func TestListSize(t *testing.T) {
-	var list = New([]map[string]interface{}{
+	var list = NewList([]map[string]interface{}{
 		{
 			"id":   10,
 			"name": "Zhang San",
@@ -90,26 +90,26 @@ func TestListSize(t *testing.T) {
 }
 
 func TestList_Push(t *testing.T) {
-	var list = New([]string{"a", "b", "c"})
+	var list = NewList([]string{"a", "b", "c"})
 	list.Push("d", "f", "g")
 	t.Log(list)
 }
 
 func TestList_Insert(t *testing.T) {
-	var list = New([]string{"a", "b", "c", "d"})
+	var list = NewList([]string{"a", "b", "c", "d"})
 	list.Insert(-1, "E")
 	t.Log(list)
 }
 
 func TestList_Pop(t *testing.T) {
-	var list = New([]string{"a", "b", "c"})
+	var list = NewList([]string{"a", "b", "c"})
 	result := list.Pop()
 	t.Log(result.(string))
 	t.Log(list)
 }
 
 func TestList_First(t *testing.T) {
-	var list = New([]string{"a", "b", "c", "d", "e"})
+	var list = NewList([]string{"a", "b", "c", "d", "e"})
 	t.Log(list.First(), list.Last())
 	t.Log(list.Get(1), list.Get(3), list.Get(-1))
 	t.Log(list.asJSON())
@@ -120,7 +120,7 @@ func TestList_First(t *testing.T) {
 }
 
 func TestList_Remove(t *testing.T) {
-	var list = New([]string{"a", "b", "c", "d", "e"})
+	var list = NewList([]string{"a", "b", "c", "d", "e"})
 	//list.Remove(-2)
 	//t.Log(list.Slice)
 
@@ -131,20 +131,20 @@ func TestList_Remove(t *testing.T) {
 }
 
 func TestList_Set(t *testing.T) {
-	var list = New([]string{"a", "b", "c"})
+	var list = NewList([]string{"a", "b", "c"})
 	list.Set(1, "e")
 	t.Log(list)
 }
 
 func TestList_Find(t *testing.T) {
-	var list = New([]string{"a", "b", "c"})
+	var list = NewList([]string{"a", "b", "c"})
 	t.Log(list.Find(func(k int, v interface{}) bool {
 		return k == 2
 	}))
 }
 
 func TestList_FindAll(t *testing.T) {
-	var list = New([]string{"a", "b", "c", "d", "e"})
+	var list = NewList([]string{"a", "b", "c", "d", "e"})
 	var result = list.FindAll(func(k int, v interface{}) bool {
 		return k%2 == 0
 	})
@@ -153,12 +153,12 @@ func TestList_FindAll(t *testing.T) {
 }
 
 func TestList_Rand(t *testing.T) {
-	var list = New([]string{"a", "b", "c", "d", "e"})
+	var list = NewList([]string{"a", "b", "c", "d", "e"})
 	t.Log(list.Rand(3))
 	t.Log(list)
 }
 
 func TestList_Copy(t *testing.T) {
-	var list = New([]string{"a", "b", "c", "d", "e"})
+	var list = NewList([]string{"a", "b", "c", "d", "e"})
 	t.Log(list.Copy())
 }

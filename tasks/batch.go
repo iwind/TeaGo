@@ -14,15 +14,15 @@ func NewBatch() *batch {
 	}
 }
 
-func (batch *batch) Add(fn func()) {
-	batch.tasks = append(batch.tasks, fn)
+func (this *batch) Add(fn func()) {
+	this.tasks = append(this.tasks, fn)
 }
 
-func (batch *batch) Run() {
-	countTasks := len(batch.tasks)
+func (this *batch) Run() {
+	countTasks := len(this.tasks)
 	wg := &sync.WaitGroup{}
 	wg.Add(countTasks)
-	for _, taskFn := range batch.tasks {
+	for _, taskFn := range this.tasks {
 		go func(taskFn func()) {
 			defer wg.Add(-1)
 			taskFn()

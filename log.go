@@ -20,32 +20,32 @@ type DefaultLogWriter struct {
 	queue chan string
 }
 
-func (writer *DefaultLogWriter) Init() {
-	writer.queue = make(chan string, 10000)
+func (this *DefaultLogWriter) Init() {
+	this.queue = make(chan string, 10000)
 	go func() {
 		for {
-			msg := <- writer.queue
+			msg := <-this.queue
 			log.Println(msg)
 		}
 	}()
 }
 
-func (writer *DefaultLogWriter) Print(t time.Time, response *responseWriter, request *http.Request) {
+func (this *DefaultLogWriter) Print(t time.Time, response *responseWriter, request *http.Request) {
 	var tag = "ok"
 	if response.status >= 400 {
 		tag = "error"
 	}
 
-	writer.queue <- logs.Sprintf("\n  <"+tag+">Request:\"%s %s %s\"</"+tag+">\n  RemoteAddr:%s\n  Status:%d\n  Bytes:%d\n  Referer:\"%s\"\n  UserAgent:\"%s\"\n  Cost:%.3fms",
+	this.queue <- logs.Sprintf("\n  <"+tag+">Request:\"%s %s %s\"</"+tag+">\n  RemoteAddr:%s\n  Status:%d\n  Bytes:%d\n  Referer:\"%s\"\n  UserAgent:\"%s\"\n  Cost:%.3fms",
 		request.Method, request.RequestURI, request.Proto, request.RemoteAddr, response.status, response.bytes,
 		request.Referer(), request.UserAgent(), float32(time.Since(t).Nanoseconds())/1000000)
 }
 
-func (writer *DefaultLogWriter) Write(logMessage string) {
-	writer.queue <- logMessage
+func (this *DefaultLogWriter) Write(logMessage string) {
+	this.queue <- logMessage
 }
 
-func (writer *DefaultLogWriter) Close() {
+func (this *DefaultLogWriter) Close() {
 
 }
 
@@ -54,36 +54,36 @@ type FileLogWriter struct {
 	fileWriter io.Writer
 }
 
-func (writer *FileLogWriter) Init() {
-	if len(writer.File) == 0 {
-		writer.File = "logs/server.log"
+func (this *FileLogWriter) Init() {
+	if len(this.File) == 0 {
+		this.File = "logs/server.log"
 	}
-	file, err := os.OpenFile(writer.File, os.O_CREATE|os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+	file, err := os.OpenFile(this.File, os.O_CREATE|os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 	if err != nil {
 		log.Println("can not write file to 'logs/access.log':" + err.Error())
 		return
 	}
-	writer.fileWriter = file
+	this.fileWriter = file
 }
 
-func (writer *FileLogWriter) Print(t time.Time, response *responseWriter, request *http.Request) {
+func (this *FileLogWriter) Print(t time.Time, response *responseWriter, request *http.Request) {
 	logs.Printf("\n  Request:\"%s %s %s\"\n  RemoteAddr:%s\n  Status:%d\n  Bytes:%d\n  Referer:\"%s\"\n  UserAgent:\"%s\"\n  Cost:%.3fms",
 		request.Method, request.RequestURI, request.Proto, request.RemoteAddr, response.status, response.bytes,
 		request.Referer(), request.UserAgent(), float32(time.Since(t).Nanoseconds())/1000000)
 }
 
-func (writer *FileLogWriter) Write(logMessage string) {
-	if writer.fileWriter == nil {
+func (this *FileLogWriter) Write(logMessage string) {
+	if this.fileWriter == nil {
 		return
 	}
-	_, err := writer.fileWriter.Write([]byte(logMessage))
+	_, err := this.fileWriter.Write([]byte(logMessage))
 	if err != nil {
 		log.Println("Error:", err.Error())
 	}
 }
 
-func (writer *FileLogWriter) Close() {
-	if writer.fileWriter != nil {
-		writer.fileWriter.(*os.File).Close()
+func (this *FileLogWriter) Close() {
+	if this.fileWriter != nil {
+		this.fileWriter.(*os.File).Close()
 	}
 }

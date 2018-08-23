@@ -18,21 +18,21 @@ func newResponseWriter(writer http.ResponseWriter) *responseWriter {
 	}
 }
 
-func (writer *responseWriter) Header() http.Header {
-	return writer.responseWriter.Header()
+func (this *responseWriter) Header() http.Header {
+	return this.responseWriter.Header()
 }
 
-func (writer *responseWriter) WriteHeader(status int) {
-	writer.done = true
-	writer.status = status
-	writer.responseWriter.WriteHeader(status)
+func (this *responseWriter) WriteHeader(status int) {
+	this.done = true
+	this.status = status
+	this.responseWriter.WriteHeader(status)
 }
 
-func (writer *responseWriter) Write(b []byte) (int, error) {
-	writer.done = true
-	length, err := writer.responseWriter.Write(b)
+func (this *responseWriter) Write(b []byte) (int, error) {
+	this.done = true
+	length, err := this.responseWriter.Write(b)
 	if err == nil {
-		writer.bytes += length
+		this.bytes += length
 	}
 	return length, err
 }

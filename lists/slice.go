@@ -32,3 +32,21 @@ func Contains(slice interface{}, item interface{}) bool {
 	}
 	return false
 }
+
+func Delete(slice interface{}, item interface{}) interface{} {
+	value := reflect.ValueOf(slice)
+	size := value.Len()
+
+	newSlice := reflect.Indirect(reflect.New(value.Type()))
+
+	for i := 0; i < size; i ++ {
+		currentItem := value.Index(i)
+		if currentItem.Interface() == item {
+			continue
+		}
+
+		newSlice = reflect.Append(newSlice, currentItem)
+	}
+
+	return newSlice.Interface()
+}

@@ -24,63 +24,63 @@ func NewProcess(command string, args ... string) *Process {
 	}
 }
 
-func (process *Process) Out(out *os.File) {
-	process.out = out
+func (this *Process) Out(out *os.File) {
+	this.out = out
 }
 
-func (process *Process) Start() error {
-	if process.out == nil {
-		process.out = os.Stdout
+func (this *Process) Start() error {
+	if this.out == nil {
+		this.out = os.Stdout
 	}
 
 	attrs := os.ProcAttr{
 		Dir:   Tea.Root,
 		Env:   os.Environ(),
-		Files: []*os.File{os.Stdin, process.out, os.Stderr},
+		Files: []*os.File{os.Stdin, this.out, os.Stderr},
 	}
 
-	p, err := os.StartProcess(process.command, append([]string{process.command}, process.args ...), &attrs)
+	p, err := os.StartProcess(this.command, append([]string{this.command}, this.args ...), &attrs)
 	if err != nil {
 		return err
 	}
 
-	process.pid = p.Pid
-	process.native = p
+	this.pid = p.Pid
+	this.native = p
 	return nil
 }
 
-func (process *Process) StartBackground() error {
-	if process.out == nil {
-		process.out = os.Stdout
+func (this *Process) StartBackground() error {
+	if this.out == nil {
+		this.out = os.Stdout
 	}
 
 	attrs := os.ProcAttr{
 		Dir:   Tea.Root,
 		Env:   os.Environ(),
-		Files: []*os.File{os.Stdin, process.out, os.Stderr},
+		Files: []*os.File{os.Stdin, this.out, os.Stderr},
 		Sys: &syscall.SysProcAttr{
 			HideWindow: true,
 		},
 	}
 
-	p, err := os.StartProcess(process.command, append([]string{process.command}, process.args ...), &attrs)
+	p, err := os.StartProcess(this.command, append([]string{this.command}, this.args ...), &attrs)
 	if err != nil {
 		return err
 	}
 
-	process.pid = p.Pid
-	process.native = p
+	this.pid = p.Pid
+	this.native = p
 	return nil
 }
 
-func (process *Process) Wait() error {
-	if process.native == nil {
+func (this *Process) Wait() error {
+	if this.native == nil {
 		return errors.New("should not be start")
 	}
-	_, err := process.native.Wait()
+	_, err := this.native.Wait()
 	return err
 }
 
-func (process *Process) Pid() int {
-	return process.pid
+func (this *Process) Pid() int {
+	return this.pid
 }
