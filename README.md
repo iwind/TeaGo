@@ -1,28 +1,28 @@
 # TeaGo - Go语言快速开发框架
 
 ## 定义不带参数的Action
-*actions/hello.go*
+*actions/hello/index.go*
 ~~~go
-package actions
+package hello
 
 import "github.com/iwind/TeaGo/actions"
 
-type HelloAction actions.Action
+type IndexAction actions.Action
 
-func (this *HelloAction) Run()  {
+func (this *IndexAction) Run()  {
 	this.Write("Hello")
 }
 ~~~
 
 ## 定义带参数的Action
 ~~~go
-package actions
+package hello
 
 import "github.com/iwind/TeaGo/actions"
 
-type HelloAction actions.Action
+type IndexAction actions.Action
 
-func (this *HelloAction) Run(params struct {
+func (this *IndexAction) Run(params struct {
 	Name string
 	Age  int
 }) {
@@ -35,18 +35,18 @@ func (this *HelloAction) Run(params struct {
 
 ## 使用Action
 ~~~go
-package MeloySearch
+package MyProject
 
 import (
 	"github.com/iwind/TeaGo"
-	"github.com/iwind/MyProject/actions"
+	"github.com/iwind/MyProject/actions/hello/index"
 )
 
 func Start() {
 	var server = TeaGo.NewServer()
 	
 	// 注册路由
-	server.Get("/hello", new(actions.HelloAction))
+	server.Get("/hello", new(hello.IndexAction))
 	
 	// 启动服务
 	server.Start("0.0.0.0:8000")
