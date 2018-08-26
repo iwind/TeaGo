@@ -388,6 +388,22 @@ func TestQueryJoin(t *testing.T) {
 	t.Log(float64(time.Since(now).Nanoseconds()) / 1000 / 1000)
 }
 
+func TestQuery_UseIndex(t *testing.T) {
+	query := setupUserQuery()
+	query.UseIndex("a", "b")
+	query.UseIndex("c").For(QueryForOrderBy)
+	query.UseIndex()
+	query.IgnoreIndex("d", "e")
+	query.ForceIndex("f")
+	t.Log(query.AsSQL())
+}
+
+func TestQuery_UseIndex2(t *testing.T) {
+	query := setupUserQuery()
+	query.UseIndex("id")
+	t.Log(query.AsSQL())
+}
+
 func TestFuncAbs(t *testing.T) {
 	var query = setupUserQuery()
 	t.Log(query.Result(FuncAbs(SQL("id"))).DescPk().FindCol(0))
@@ -440,7 +456,7 @@ func TestFuncLpad(t *testing.T) {
 }
 
 func setupUserQuery() *Query {
-	db, err := Instance("db1")
+	db, err := Instance("dev")
 	if err != nil {
 		logs.Errorf(err.Error())
 	}

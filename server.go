@@ -19,6 +19,8 @@ import (
 	"mime"
 	"github.com/iwind/TeaGo/files"
 	"github.com/iwind/TeaGo/types"
+	"log"
+	"github.com/iwind/TeaGo/processes"
 )
 
 type Server struct {
@@ -84,6 +86,9 @@ func (this *Server) Init() {
 
 	// 日志
 	this.LogWriter(&DefaultLogWriter{})
+
+	// 执行参数
+	this.execArgs()
 
 	// 检查PID
 	this.checkPid()
@@ -385,36 +390,43 @@ func (this *Server) Head(path string, actionPtr interface{}) *Server {
 	return this
 }
 
+// 设置 DELETE 方法路由映射
 func (this *Server) Delete(path string, actionPtr interface{}) *Server {
 	this.router(path, "delete", actionPtr)
 	return this
 }
 
+// 设置 PURGE 方法路由映射
 func (this *Server) Purge(path string, actionPtr interface{}) *Server {
 	this.router(path, "purge", actionPtr)
 	return this
 }
 
+// 设置 PUT 方法路由映射
 func (this *Server) Put(path string, actionPtr interface{}) *Server {
 	this.router(path, "put", actionPtr)
 	return this
 }
 
+// 设置 OPTIONS 方法路由映射
 func (this *Server) Options(path string, actionPtr interface{}) *Server {
 	this.router(path, "options", actionPtr)
 	return this
 }
 
+// 设置 TRACE 方法路由映射
 func (this *Server) Trace(path string, actionPtr interface{}) *Server {
 	this.router(path, "trace", actionPtr)
 	return this
 }
 
+// 设置 CONNECT 方法路由映射
 func (this *Server) Connect(path string, actionPtr interface{}) *Server {
 	this.router(path, "connect", actionPtr)
 	return this
 }
 
+// 设置一组方法路由映射
 func (this *Server) Any(methods []string, path string, actionPtr interface{}) *Server {
 	for _, method := range methods {
 		this.router(path, method, actionPtr)
@@ -422,11 +434,13 @@ func (this *Server) Any(methods []string, path string, actionPtr interface{}) *S
 	return this
 }
 
+// 将所有方法映射到路由
 func (this *Server) All(path string, actionPtr interface{}) *Server {
 	this.router(path, "*", actionPtr)
 	return this
 }
 
+// 添加静态目录
 func (this *Server) Static(prefix string, dir string) *Server {
 	this.staticDirs = append(this.staticDirs, ServerStaticDir{
 		prefix: prefix,
@@ -435,11 +449,13 @@ func (this *Server) Static(prefix string, dir string) *Server {
 	return this
 }
 
+// 设置SESSION管理器
 func (this *Server) Session(sessionManager interface{}) *Server {
 	this.sessionManager = sessionManager
 	return this
 }
 
+// 设置日志writer
 func (this *Server) LogWriter(logWriter LogWriter) *Server {
 	if this.logWriter != nil {
 		this.logWriter.Close()
@@ -450,6 +466,7 @@ func (this *Server) LogWriter(logWriter LogWriter) *Server {
 	return this
 }
 
+// 设置是否打印访问日志
 func (this *Server) AccessLog(bool bool) *Server {
 	this.accessLog = bool
 	return this
@@ -474,20 +491,83 @@ func (this *Server) outputMimeType(writer http.ResponseWriter, path string) {
 	writer.Header().Set("Content-Type", mimeType+"; charset="+this.config.Charset)
 }
 
-// 检查PID
-func (this *Server) checkPid() {
+// 执行参数，如果找到可执行的参数，则返回 true
+func (this *Server) execArgs() {
+	if len(os.Args) <= 1 {
+		return
+	}
+
+	cmd := os.Args[0]
+	arg := os.Args[1]
+	if arg == "start" { // 启动
+		process := processes.NewProcess(cmd)
+		process.StartBackground()
+		log.Println("started in background")
+		os.Exit(0)
+	} else if arg == "stop" { // 停止
+		defer os.Exit(0)
+
+		pid := this.findPid()
+		if pid == 0 {
+			log.Println("server not started")
+			return
+		}
+
+		process, err := os.FindProcess(pid)
+		if err != nil {
+			log.Println("server not started")
+			return
+		}
+
+		this.writeNewPid(0)
+
+		process.Kill()
+
+		log.Println("kill pid", pid)
+
+		return
+	} else if arg == "restart" { // 重启
+		pid := this.findPid()
+		if pid > 0 {
+			process, err := os.FindProcess(pid)
+			if err == nil {
+				process.Kill()
+			}
+		}
+
+		process := processes.NewProcess(cmd)
+		process.StartBackground()
+		log.Println("started in background")
+		os.Exit(0)
+	}
+
+	return
+}
+
+// 查找PID
+func (this *Server) findPid() int {
 	pidFile := files.NewFile(Tea.Root + "/bin/pid")
 	if !pidFile.IsFile() {
-		return
+		return 0
 	}
 
 	pidString, err := pidFile.ReadAllString()
 	if err != nil {
-		return
+		return 0
 	}
 
 	pid := types.Int(pidString)
 	if pid <= 0 {
+		return 0
+	}
+
+	return pid
+}
+
+// 检查PID
+func (this *Server) checkPid() {
+	pid := this.findPid()
+	if pid == 0 {
 		return
 	}
 
@@ -506,6 +586,21 @@ func (this *Server) checkPid() {
 // 写入当前程序的PID，以便后续的管理
 func (this *Server) writePid() {
 	pid := os.Getpid()
+	pidDir := files.NewFile(Tea.Root + "/bin")
+	if !pidDir.IsDir() {
+		err := pidDir.Mkdir()
+		if err == nil {
+			pidFile := pidDir.Child("pid")
+			pidFile.WriteFormat("%d", pid)
+		}
+	} else {
+		pidFile := pidDir.Child("pid")
+		pidFile.WriteFormat("%d", pid)
+	}
+}
+
+// 写入新的PID
+func (this *Server) writeNewPid(pid int) {
 	pidDir := files.NewFile(Tea.Root + "/bin")
 	if !pidDir.IsDir() {
 		err := pidDir.Mkdir()

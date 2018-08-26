@@ -13,6 +13,7 @@ import (
 	"github.com/iwind/TeaGo/Tea"
 	"path/filepath"
 	"github.com/iwind/TeaGo/types"
+	"github.com/iwind/TeaGo/maps"
 )
 
 type DB struct {
@@ -298,7 +299,7 @@ func (this *DB) PrepareOnce(query string) (*Stmt, error) {
 	}
 }
 
-func (this *DB) FindOnes(query string, args ... interface{}) (results []map[string]interface{}, columnNames []string, err error) {
+func (this *DB) FindOnes(query string, args ... interface{}) (results []maps.Map, columnNames []string, err error) {
 	stmt, err := this.Prepare(query)
 	if err != nil {
 		logs.Errorf("DB.FindOnes():%s", err.Error())
@@ -310,7 +311,7 @@ func (this *DB) FindOnes(query string, args ... interface{}) (results []map[stri
 	return stmt.FindOnes(args ...)
 }
 
-func (this *DB) FindOne(query string, args ... interface{}) (map[string]interface{}, error) {
+func (this *DB) FindOne(query string, args ... interface{}) (maps.Map, error) {
 	results, _, err := this.FindOnes(query, args ...)
 	if err != nil {
 		logs.Errorf("DB.FindOne():%s", err.Error())

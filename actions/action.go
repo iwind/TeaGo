@@ -399,7 +399,7 @@ func runActionCopy(actionType reflect.Type, module string, request *http.Request
 	var actionValue = reflect.Indirect(actionPtrValue)
 	var afterFuncs = []func(){}
 
-	// 执行helper.After()
+	// 执行helper.AfterAction()
 	defer func() {
 		if len(afterFuncs) > 0 {
 			for i := len(afterFuncs) - 1; i >= 0; i -- {
@@ -407,6 +407,12 @@ func runActionCopy(actionType reflect.Type, module string, request *http.Request
 			}
 		}
 	}()
+
+	// 执行After()
+	afterMethod := actionPtrValue.MethodByName("After")
+	if afterMethod.IsValid() {
+		defer afterMethod.Call([]reflect.Value{})
+	}
 
 	// 捕获message
 	defer func() {
@@ -493,6 +499,7 @@ func runActionCopy(actionType reflect.Type, module string, request *http.Request
 			return
 		}
 	}
+
 	var runMethodType = runMethodValue.Type()
 	if runMethodType.NumIn() == 0 {
 		runMethodValue.Call([]reflect.Value{})
@@ -692,6 +699,20 @@ func runActionCopy(actionType reflect.Type, module string, request *http.Request
 		}
 	}
 
+	// Before
+	beforeMethod := actionPtrValue.MethodByName("Before")
+	if beforeMethod.IsValid() {
+		returnValues := beforeMethod.Call([]reflect.Value{})
+		if len(returnValues) > 0 {
+			result := returnValues[0]
+
+			if result.Interface() != nil && result.Type().Kind() == reflect.Bool && !result.Bool() {
+				return
+			}
+		}
+	}
+
+	// 执行Run
 	runMethodValue.Call([]reflect.Value{argValue})
 }
 

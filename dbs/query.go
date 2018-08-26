@@ -55,6 +55,13 @@ const (
 	QuerySqlCacheOff     = 2
 )
 
+const (
+	QueryForAll     = ""
+	QueryForJoin    = "JOIN"
+	QueryForOrderBy = "ORDER BY"
+	QueryForGroupBy = "GROUP BY"
+)
+
 var queryParamPrefixIndex = int64(0) // 参数前缀，为了组合多个Query的时候不会冲突
 var queryParamLocker = &sync.Mutex{}
 
@@ -84,6 +91,7 @@ type Query struct {
 	results    []string
 	joins      []QueryJoin
 	partitions []string
+	useIndexes []*QueryUseIndex
 
 	sqlCache int
 	lock     string
@@ -93,8 +101,8 @@ type Query struct {
 
 	debug bool
 
-	filterFn func(one map[string]interface{}) bool
-	mapFn    func(one map[string]interface{}) map[string]interface{}
+	filterFn func(one maps.Map) bool
+	mapFn    func(one maps.Map) maps.Map
 
 	namedParamPrefix string // 命名参数名前缀
 	namedParams      map[string]interface{}
@@ -119,6 +127,12 @@ type QueryJoin struct {
 	DAO  *DAOObject
 	Type int
 	On   string
+}
+
+type QueryUseIndex struct {
+	Keyword string
+	For     string
+	Indexes []string
 }
 
 func NewQuery(model interface{}) *Query {
@@ -151,6 +165,7 @@ func (this *Query) Init(model interface{}) *Query {
 	this.results = []string{}
 	this.joins = []QueryJoin{}
 	this.partitions = []string{}
+	this.useIndexes = []*QueryUseIndex{}
 	this.savingFields = maps.NewOrderedMap()
 	this.replacingFields = maps.NewOrderedMap()
 
@@ -331,10 +346,15 @@ func (this *Query) Where(wheres ... string) *Query {
 }
 
 // 设置Group查询条件
-func (this *Query) Group(field string, order int) *Query {
+func (this *Query) Group(field string, order ... int) *Query {
+	realOrder := QueryOrderDefault
+	if len(order) > 0 {
+		realOrder = order[0]
+	}
+
 	var group = QueryGroup{
 		Field: field,
-		Order: order,
+		Order: realOrder,
 	}
 	this.groups = append(this.groups, group)
 	return this
@@ -358,6 +378,51 @@ func (this *Query) SQLCache(sqlCache int) *Query {
 // 行锁定
 func (this *Query) Lock(lock string) *Query {
 	this.lock = lock
+	return this
+}
+
+// 使用索引
+func (this *Query) UseIndex(index ... string) *Query {
+	userIndex := &QueryUseIndex{
+		Keyword: "USE",
+		For:     "",
+		Indexes: index,
+	}
+	this.useIndexes = append(this.useIndexes, userIndex)
+	return this
+}
+
+// 屏蔽索引
+func (this *Query) IgnoreIndex(index ... string) *Query {
+	userIndex := &QueryUseIndex{
+		Keyword: "IGNORE",
+		For:     "",
+		Indexes: index,
+	}
+	this.useIndexes = append(this.useIndexes, userIndex)
+	return this
+}
+
+// 强制使用索引
+func (this *Query) ForceIndex(index ... string) *Query {
+	userIndex := &QueryUseIndex{
+		Keyword: "FORCE",
+		For:     "",
+		Indexes: index,
+	}
+	this.useIndexes = append(this.useIndexes, userIndex)
+	return this
+}
+
+// 针对的操作
+// 和 UserIndex, IgnoreIndex, ForceIndex 配合使用
+func (this *Query) For(clause string) *Query {
+	if len(this.useIndexes) == 0 {
+		return this
+	}
+
+	lastIndex := this.useIndexes[len(this.useIndexes)-1]
+	lastIndex.For = clause
 	return this
 }
 
@@ -403,9 +468,9 @@ func (this *Query) Between(field string, min interface{}, max interface{}) *Quer
 }
 
 // 设置一组查询的字段
-func (this *Query) Attrs(attrs map[string]interface{}) *Query {
+func (this *Query) Attrs(attrs maps.Map) *Query {
 	for key, value := range attrs {
-		this.Attr(key, value)
+		this.Attr(types.String(key), value)
 	}
 	return this
 }
@@ -451,13 +516,13 @@ func (this *Query) SQL(sql string) *Query {
 }
 
 // 指定筛选程序
-func (this *Query) Filter(filterFn func(one map[string]interface{}) bool) *Query {
+func (this *Query) Filter(filterFn func(one maps.Map) bool) *Query {
 	this.filterFn = filterFn
 	return this
 }
 
 // 指定映射程序
-func (this *Query) Map(mapFn func(one map[string]interface{}) map[string]interface{}) *Query {
+func (this *Query) Map(mapFn func(one maps.Map) maps.Map) *Query {
 	this.mapFn = mapFn
 	return this
 }
@@ -495,6 +560,21 @@ func (this *Query) AsSQL() (string, error) {
 
 			sql += "\n  " + resultString + "\n FROM "
 			sql += this.wrapTable(this.table)
+
+			// use indexes
+			if len(this.useIndexes) > 0 {
+				for _, useIndex := range this.useIndexes {
+					sql += "\n  " + useIndex.Keyword + " INDEX"
+					if len(useIndex.For) > 0 {
+						sql += " FOR " + useIndex.For
+					}
+					quotedIndexes := []string{}
+					for _, indexName := range useIndex.Indexes {
+						quotedIndexes = append(quotedIndexes, this.wrapKeyword(indexName))
+					}
+					sql += " (" + strings.Join(quotedIndexes, ", ") + ")"
+				}
+			}
 
 			// joins
 			if len(this.joins) > 0 {
@@ -707,7 +787,7 @@ func (this *Query) AsSQL() (string, error) {
 }
 
 // 查找一组数据，返回map数据
-func (this *Query) FindOnes() (results []map[string]interface{}, columnNames []string, err error) {
+func (this *Query) FindOnes() (results []maps.Map, columnNames []string, err error) {
 	this.action = QueryActionFind
 	sql, err := this.AsSQL()
 	if err != nil {
@@ -727,7 +807,7 @@ func (this *Query) FindOnes() (results []map[string]interface{}, columnNames []s
 	ones, columnNames, err := stmt.FindOnes(this.params ...)
 
 	// 执行 filterFn 和 mapFn
-	results = []map[string]interface{}{}
+	results = []maps.Map{}
 	for _, one := range ones {
 		if this.filterFn != nil {
 			if !this.filterFn(one) {
@@ -744,7 +824,7 @@ func (this *Query) FindOnes() (results []map[string]interface{}, columnNames []s
 }
 
 // 查找一行数据
-func (this *Query) FindOne() (results map[string]interface{}, columnNames []string, err error) {
+func (this *Query) FindOne() (results maps.Map, columnNames []string, err error) {
 	this.limit = 1
 	if this.offset < 0 {
 		this.offset = 0
@@ -1043,7 +1123,7 @@ func (this *Query) Update() (rowsAffected int64, err error) {
 
 // 插入或更改
 // 依据要插入的数据中的unique键来决定是插入数据还是替换数据
-func (this *Query) InsertOrUpdate(insertingValues map[string]interface{}, updatingValues map[string]interface{}) (rowsAffected int64, lastInsertId int64, err error) {
+func (this *Query) InsertOrUpdate(insertingValues maps.Map, updatingValues maps.Map) (rowsAffected int64, lastInsertId int64, err error) {
 	if insertingValues == nil || len(insertingValues) == 0 {
 		return 0, 0, errors.New("[Query.InsertOrUpdate()]inserting values should be set")
 	}
@@ -1292,7 +1372,7 @@ func (this *Query) orderCode(order int) string {
 }
 
 // 拷贝模型值
-func (this *Query) copyModelValue(valueType reflect.Type, data map[string]interface{}) interface{} {
+func (this *Query) copyModelValue(valueType reflect.Type, data maps.Map) interface{} {
 	var pointerValue = reflect.New(valueType)
 	var value = reflect.Indirect(pointerValue)
 	for index, fieldName := range this.model.Fields {

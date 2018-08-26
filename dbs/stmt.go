@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"errors"
 	"sync"
+	"github.com/iwind/TeaGo/maps"
 )
 
 type Stmt struct {
@@ -25,7 +26,7 @@ func (this *Stmt) Query(args ... interface{}) (*sql.Rows, error) {
 	return this.sqlStmt.Query(args ...)
 }
 
-func (this *Stmt) FindOnes(args ... interface{}) (results []map[string]interface{}, columnNames []string, err error) {
+func (this *Stmt) FindOnes(args ... interface{}) (results []maps.Map, columnNames []string, err error) {
 	if this.sqlStmt == nil {
 		return nil, nil, errors.New("stmt not be prepared")
 	}
@@ -42,7 +43,7 @@ func (this *Stmt) FindOnes(args ... interface{}) (results []map[string]interface
 		return nil, nil, err
 	}
 
-	results = []map[string]interface{}{}
+	results = []maps.Map{}
 
 	var countColumns = len(columnNames)
 	var valuePointers = []interface{}{}
@@ -57,7 +58,7 @@ func (this *Stmt) FindOnes(args ... interface{}) (results []map[string]interface
 			return nil, nil, err
 		}
 
-		var rowMap = map[string]interface{}{}
+		var rowMap = maps.Map{}
 		for i := 0; i < countColumns; i ++ {
 			var pointer = valuePointers[i]
 			var value = *pointer.(*interface{})
@@ -78,7 +79,7 @@ func (this *Stmt) FindOnes(args ... interface{}) (results []map[string]interface
 	return results, columnNames, nil
 }
 
-func (this *Stmt) FindOne(args ... interface{}) (result map[string]interface{}, err error) {
+func (this *Stmt) FindOne(args ... interface{}) (result maps.Map, err error) {
 	ones, _, err := this.FindOnes(args ...)
 	if err != nil {
 		return nil, err
