@@ -2,15 +2,15 @@ package logs
 
 import (
 	"testing"
-	"github.com/syndtr/goleveldb/leveldb/errors"
+	"errors"
 )
 
 func TestDump(t *testing.T) {
 	var m = map[string]interface{}{
 		"name": "Liu",
-		"age": 20,
+		"age":  20,
 		"book": map[string]interface{}{
-			"name": "Golang",
+			"name":  "Golang",
 			"price": 20.00,
 		},
 	}
@@ -18,5 +18,5 @@ func TestDump(t *testing.T) {
 }
 
 func TestError(t *testing.T) {
-	Error(errors.New("this is error!!!"))
+	Error(errors.New("This is error!!!"))
 }

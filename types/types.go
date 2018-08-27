@@ -655,3 +655,30 @@ func Compare(value1 interface{}, value2 interface{}) bool {
 	}
 	return String(value1) > String(value2)
 }
+
+// 判断是否为数字
+func IsNumber(value interface{}) bool {
+	switch value.(type) {
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64:
+		return true
+	}
+	return false
+}
+
+// 判断是否为整形数字
+func IsInteger(value interface{}) bool {
+	switch value.(type) {
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		return true
+	}
+	return false
+}
+
+// 判断是否为浮点型数字
+func IsFloat(value interface{}) bool {
+	switch value.(type) {
+	case float32, float64:
+		return true
+	}
+	return false
+}

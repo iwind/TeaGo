@@ -8,7 +8,7 @@ import (
 	"os"
 	"bytes"
 	"strings"
-	"runtime/debug"
+	"path/filepath"
 )
 
 type Writer interface {
@@ -145,21 +145,31 @@ func Warnf(format string, args ...interface{}) {
 func Errorf(format string, args ... interface{}) {
 	errorString := fmt.Sprintf(format, args ...)
 
-	// 调用trace
-	stack := bytes.Split(debug.Stack(), []byte("\n"))
-	next := 0
-	for i := 0; i < len(stack); i ++ {
-		if bytes.HasPrefix(stack[i], []byte("github.com/iwind/TeaGo/logs.Errorf(")) {
-			next = 1
-		}
+	// 调用stack
+	_, currentFilename, _, currentOk := runtime.Caller(0)
+	if currentOk {
+		for i := 1; i < 32; i ++ {
+			_, filename, lineNo, ok := runtime.Caller(i)
+			if !ok {
+				break
+			}
 
-		if next == 3 || next == 4 {
-			errorString += "\n\t\t" + string(stack[i])
-			next ++
-			continue
-		}
+			if filename == currentFilename {
+				continue
+			}
 
-		next ++
+			goPath := os.Getenv("GOPATH")
+			if len(goPath) > 0 {
+				absGoPath, err := filepath.Abs(goPath)
+				if err == nil {
+					filename = strings.TrimPrefix(filename, absGoPath)[1:]
+				}
+			}
+
+			errorString += "\n\t\t" + string(filename) + ":" + fmt.Sprintf("%d", lineNo)
+
+			break
+		}
 	}
 
 	Printf("%s", errorString)
@@ -171,23 +181,6 @@ func Error(err error) {
 		return
 	}
 	errorString := err.Error()
-
-	// 调用trace
-	stack := bytes.Split(debug.Stack(), []byte("\n"))
-	next := 0
-	for i := 0; i < len(stack); i ++ {
-		if bytes.HasPrefix(stack[i], []byte("github.com/iwind/TeaGo/logs.Error(")) {
-			next = 1
-		}
-
-		if next == 3 || next == 4 {
-			errorString += "\n\t\t" + string(stack[i])
-			next ++
-			continue
-		}
-
-		next ++
-	}
 
 	Errorf("%s", errorString)
 }

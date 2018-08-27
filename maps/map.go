@@ -3,9 +3,11 @@ package maps
 import (
 	"github.com/iwind/TeaGo/types"
 	"reflect"
+	"github.com/pquerna/ffjson/ffjson"
+	"encoding/json"
 )
 
-type Map map[interface{}]interface{}
+type Map map[string]interface{}
 
 // 新建Map
 func NewMap(maps ... interface{}) Map {
@@ -17,10 +19,20 @@ func NewMap(maps ... interface{}) Map {
 		}
 
 		for _, k := range v.MapKeys() {
-			m[k.Interface()] = v.MapIndex(k).Interface()
+			m[types.String(k.Interface())] = v.MapIndex(k).Interface()
 		}
 	}
 	return m
+}
+
+// 从字节数据中解码map
+func DecodeJSON(jsonData []byte) (Map, error) {
+	m := Map{}
+	err := ffjson.Unmarshal(jsonData, &m)
+	if err != nil {
+		return m, err
+	}
+	return m, nil
 }
 
 // 取得所有键
@@ -42,83 +54,83 @@ func (this Map) Values() []interface{} {
 }
 
 // 判断是否有某个键值
-func (this Map) Has(key interface{}) bool {
+func (this Map) Has(key string) bool {
 	_, found := this[key]
 	return found
 }
 
 // 取得键值
-func (this Map) Get(key interface{}) interface{} {
+func (this Map) Get(key string) interface{} {
 	return this[key]
 }
 
 // 取得bool类型的键值
-func (this Map) GetBool(key interface{}) bool {
+func (this Map) GetBool(key string) bool {
 	return types.Bool(this[key])
 }
 
 // 取得uint类型的键值
-func (this Map) GetUint(key interface{}) uint {
+func (this Map) GetUint(key string) uint {
 	return types.Uint(this[key])
 }
 
 // 取得uint8类型的键值
-func (this Map) GetUint8(key interface{}) uint8 {
+func (this Map) GetUint8(key string) uint8 {
 	return types.Uint8(this[key])
 }
 
 // 取得uint16类型的键值
-func (this Map) GetUint16(key interface{}) uint16 {
+func (this Map) GetUint16(key string) uint16 {
 	return types.Uint16(this[key])
 }
 
 // 取得uint32类型的键值
-func (this Map) GetUint32(key interface{}) uint32 {
+func (this Map) GetUint32(key string) uint32 {
 	return types.Uint32(this[key])
 }
 
 // 取得uint64类型的键值
-func (this Map) GetUint64(key interface{}) uint64 {
+func (this Map) GetUint64(key string) uint64 {
 	return types.Uint64(this[key])
 }
 
 // 取得int类型的键值
-func (this Map) GetInt(key interface{}) int {
+func (this Map) GetInt(key string) int {
 	return types.Int(this[key])
 }
 
 // 取得int8类型的键值
-func (this Map) GetInt8(key interface{}) int8 {
+func (this Map) GetInt8(key string) int8 {
 	return types.Int8(this[key])
 }
 
 // 取得int16类型的键值
-func (this Map) GetInt16(key interface{}) int16 {
+func (this Map) GetInt16(key string) int16 {
 	return types.Int16(this[key])
 }
 
 // 取得int32类型的键值
-func (this Map) GetInt32(key interface{}) int32 {
+func (this Map) GetInt32(key string) int32 {
 	return types.Int32(this[key])
 }
 
 // 取得int64类型的键值
-func (this Map) GetInt64(key interface{}) int64 {
+func (this Map) GetInt64(key string) int64 {
 	return types.Int64(this[key])
 }
 
 // 取得float32类型的键值
-func (this Map) GetFloat32(key interface{}) float32 {
+func (this Map) GetFloat32(key string) float32 {
 	return types.Float32(this[key])
 }
 
 // 取得float64类型的键值
-func (this Map) GetFloat64(key interface{}) float64 {
+func (this Map) GetFloat64(key string) float64 {
 	return types.Float64(this[key])
 }
 
 // 给某个键值增加数值（可以为负），并返回操作后的值
-func (this Map) Increase(key interface{}, delta interface{}) interface{} {
+func (this Map) Increase(key string, delta interface{}) interface{} {
 	value, found := this[key]
 	if !found || value == nil {
 		this[key] = delta
@@ -155,23 +167,46 @@ func (this Map) Increase(key interface{}, delta interface{}) interface{} {
 }
 
 // 取得字符串类型的键值
-func (this Map) GetString(key interface{}) string {
+func (this Map) GetString(key string) string {
 	return types.String(this[key])
 }
 
 // 删除键
-func (this Map) Delete(key ... interface{}) {
+func (this Map) Delete(key ... string) {
 	for _, oneKey := range key {
 		delete(this, oneKey)
 	}
 }
 
 // 添加键值
-func (this Map) Put(key interface{}, value interface{}) {
+func (this Map) Put(key string, value interface{}) {
 	this[key] = value
 }
 
 // 取得键值数量
 func (this Map) Len() int {
 	return len(this)
+}
+
+// 转换为map[string]interface{}
+func (this Map) GoMap() map[string]interface{} {
+	return map[string]interface{}(this)
+}
+
+// 转换为JSON
+func (this Map) AsJSON() []byte {
+	data, err := ffjson.Marshal(this)
+	if err != nil {
+		return []byte{}
+	}
+	return data
+}
+
+// 转换为格式化后的JSON
+func (this Map) AsPrettyJSON() []byte {
+	data, err := json.MarshalIndent(this, "", "   ")
+	if err != nil {
+		return []byte{}
+	}
+	return data
 }

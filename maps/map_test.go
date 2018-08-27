@@ -1,6 +1,9 @@
 package maps
 
-import "testing"
+import (
+	"testing"
+	"github.com/iwind/TeaGo/assert"
+)
 
 func TestMap(t *testing.T) {
 	m := Map{
@@ -9,8 +12,11 @@ func TestMap(t *testing.T) {
 		"price":    123.45,
 		"isOnline": true,
 	}
+
+	a := assert.NewAssertion(t)
+
 	t.Log(m)
-	t.Log(m.GetInt("price"))
+	a.IsTrue(m.GetInt("price") == 123, "price=123")
 
 	m["price"] = 234.5670
 	t.Log(m.GetInt("price"))
@@ -45,4 +51,32 @@ func TestMapConvert(t *testing.T) {
 	})
 
 	t.Log(NewMap(m))
+}
+
+func TestMap_JSON(t *testing.T) {
+	m := NewMap(map[string]interface{}{
+		"name":     "Lu",
+		"age":      20,
+		"price":    123.45,
+		"isOnline": true,
+	})
+
+	t.Log(string(m.AsPrettyJSON()))
+}
+
+func TestMap_DecodeJSON(t *testing.T)  {
+	m := NewMap(map[string]interface{}{
+		"name":     "Lu",
+		"age":      20,
+		"price":    123.45,
+		"isOnline": true,
+	})
+	jsonData := m.AsPrettyJSON()
+
+	m, err := DecodeJSON(jsonData)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(m)
 }
