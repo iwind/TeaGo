@@ -319,6 +319,17 @@ func (this *Server) router(pattern string, method string, actionPtr interface{})
 }
 
 func (this *Server) buildHandle(actionPtr interface{}) func(writer http.ResponseWriter, request *http.Request) {
+	actionWrapper, ok := actionPtr.(actions.ActionWrapper)
+	if !ok {
+		logs.Errorf("actionPtr should be pointer")
+		return func(writer http.ResponseWriter, request *http.Request) {
+
+		}
+	}
+
+	spec := actions.NewActionSpec(actionPtr.(actions.ActionWrapper))
+	spec.Module = this.lastModule
+
 	return func(writer http.ResponseWriter, request *http.Request) {
 		// URI Query
 		var params = actions.Params{}
@@ -344,14 +355,9 @@ func (this *Server) buildHandle(actionPtr interface{}) func(writer http.Response
 			}
 		}
 
-		actionWrapper, ok := actionPtr.(actions.ActionWrapper)
-		if !ok {
-			logs.Errorf("actionPtr for path '%s' should be pointer", request.URL.Path)
-			return
-		}
 		actionWrapper.Object().SetMaxSize(this.config.MaxSize())
 		actionWrapper.Object().SetSessionManager(this.sessionManager)
-		actions.RunAction(actionPtr, request, writer, params)
+		actions.RunAction(actionPtr, spec, request, writer, params)
 	}
 }
 

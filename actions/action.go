@@ -167,8 +167,10 @@ func (this *ActionObject) Error(error string, code int) {
 }
 
 // 输出内容
-func (this *ActionObject) WriteString(output string) {
-	this.Write([]byte(output))
+func (this *ActionObject) WriteString(output ... string) {
+	for _, outputArg := range output {
+		this.Write([]byte(outputArg))
+	}
 }
 
 // 输出二进制字节
@@ -383,20 +385,23 @@ func (this *ActionObject) RedirectURL(url string) {
 }
 
 // 执行某个Action
-func RunAction(actionPtr interface{}, request *http.Request, responseWriter http.ResponseWriter, params Params) interface{} {
-	var actionValue = reflect.Indirect(reflect.ValueOf(actionPtr))
-
+func RunAction(actionPtr interface{},
+	spec *ActionSpec,
+	request *http.Request,
+	responseWriter http.ResponseWriter,
+	params Params) interface{} {
 	// 运行
-	runActionCopy(actionValue.Type(), actionPtr.(ActionWrapper).Object().Module, request, responseWriter, params, actionPtr.(ActionWrapper).Object().SessionManager, actionPtr.(ActionWrapper).Object().maxSize)
+	action := actionPtr.(ActionWrapper).Object()
+	runActionCopy(spec, request, responseWriter, params, action.SessionManager, action.maxSize)
 
 	return actionPtr
 }
 
 // 执行Action副本（为了防止同一个Action多次调用会相互影响）
-func runActionCopy(actionType reflect.Type, module string, request *http.Request, responseWriter http.ResponseWriter, params Params, sessionManager interface{}, maxSize float64) {
-	var actionPtrValue = reflect.New(actionType)
+func runActionCopy(spec *ActionSpec, request *http.Request,
+	responseWriter http.ResponseWriter, params Params, sessionManager interface{}, maxSize float64) {
+	var actionPtrValue = spec.NewPtrValue()
 	var actionObject = actionPtrValue.Interface().(ActionWrapper).Object()
-	var actionValue = reflect.Indirect(actionPtrValue)
 	var afterFuncs = []func(){}
 
 	// 执行helper.AfterAction()
@@ -409,9 +414,8 @@ func runActionCopy(actionType reflect.Type, module string, request *http.Request
 	}()
 
 	// 执行After()
-	afterMethod := actionPtrValue.MethodByName("After")
-	if afterMethod.IsValid() {
-		defer afterMethod.Call([]reflect.Value{})
+	if spec.AfterFunc != nil {
+		defer spec.AfterFunc.Call([]reflect.Value{actionPtrValue})
 	}
 
 	// 捕获message
@@ -445,8 +449,8 @@ func runActionCopy(actionType reflect.Type, module string, request *http.Request
 	}()
 
 	// 设置模板
-	pkgPath := actionType.PkgPath()
-	className := actionType.String()
+	pkgPath := spec.PkgPath
+	className := spec.ClassName
 	actionPkg := pkgPath[strings.LastIndex(pkgPath, "/actions/")+len("/actions/"):]
 	actionClass := strings.TrimSuffix(className[strings.LastIndex(className, ".")+1:], "Action")
 
@@ -462,7 +466,7 @@ func runActionCopy(actionType reflect.Type, module string, request *http.Request
 	actionObject.View(actionPkg[separatorIndex+1:] + "/" + strings.ToLower(actionClass[0:1]) + actionClass[1:])
 
 	// 设置变量
-	actionObject.Module = module
+	actionObject.Module = spec.Module
 	actionObject.Request = request
 	if responseWriter != nil {
 		actionObject.ResponseWriter = responseWriter
@@ -487,12 +491,12 @@ func runActionCopy(actionType reflect.Type, module string, request *http.Request
 
 	// 执行
 	var requestRun = "Run" + strings.ToUpper(string(request.Method[0])) + strings.ToLower(string(request.Method[1:]))
-	var runMethodValue = actionPtrValue.MethodByName(requestRun)
-	if !runMethodValue.IsValid() {
-		runMethodValue = actionPtrValue.MethodByName("Run")
+	runFuncValue, found := spec.Funcs[requestRun]
+	if !found {
+		runFuncValue, found = spec.Funcs["Run"]
 
-		if !runMethodValue.IsValid() {
-			logs.Errorf("'Action.Run()' or 'Action." + requestRun + "()' method should be implemented in '" + actionValue.Type().Name() + "' (at " + actionValue.Type().PkgPath() + "/" + actionValue.Type().Name() + ")")
+		if !found {
+			logs.Errorf("'Action.Run()' or 'Action." + requestRun + "()' method should be implemented in '" + spec.Type.Name() + "' (at " + spec.Type.PkgPath() + "/" + spec.Type.Name() + ")")
 			if responseWriter != nil {
 				http.Error(responseWriter.(http.ResponseWriter), "500 Internal Error", http.StatusInternalServerError)
 			}
@@ -500,12 +504,12 @@ func runActionCopy(actionType reflect.Type, module string, request *http.Request
 		}
 	}
 
-	var runMethodType = runMethodValue.Type()
-	if runMethodType.NumIn() == 0 {
-		runMethodValue.Call([]reflect.Value{})
+	var runMethodType = runFuncValue.Type()
+	if runMethodType.NumIn() == 1 {
+		runFuncValue.Call([]reflect.Value{actionPtrValue})
 		return
 	}
-	if runMethodType.NumIn() > 1 {
+	if runMethodType.NumIn() > 2 {
 		logs.Errorf("Action.Run() method should contains only one argument")
 		if responseWriter != nil {
 			http.Error(responseWriter.(http.ResponseWriter), "500 Internal Error", http.StatusInternalServerError)
@@ -513,7 +517,8 @@ func runActionCopy(actionType reflect.Type, module string, request *http.Request
 		return
 	}
 
-	var argType = runMethodType.In(0)
+	var argType = runMethodType.In(1)
+
 	if argType.Kind() != reflect.Struct {
 		logs.Errorf("Action.Run() method should contains only struct argument")
 		if responseWriter != nil {
@@ -700,9 +705,8 @@ func runActionCopy(actionType reflect.Type, module string, request *http.Request
 	}
 
 	// Before
-	beforeMethod := actionPtrValue.MethodByName("Before")
-	if beforeMethod.IsValid() {
-		returnValues := beforeMethod.Call([]reflect.Value{})
+	if spec.BeforeFunc != nil {
+		returnValues := spec.BeforeFunc.Call([]reflect.Value{actionPtrValue})
 		if len(returnValues) > 0 {
 			result := returnValues[0]
 
@@ -713,7 +717,7 @@ func runActionCopy(actionType reflect.Type, module string, request *http.Request
 	}
 
 	// 执行Run
-	runMethodValue.Call([]reflect.Value{argValue})
+	runFuncValue.Call([]reflect.Value{actionPtrValue, argValue})
 }
 
 // 调用参数中的 Helper BeforeAction
