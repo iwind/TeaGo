@@ -78,7 +78,10 @@ func (this *DAOObject) Query() *Query {
 		log.Fatal(err)
 	}
 
-	return NewQuery(this.Model).DB(db).Table(this.Table).PkName(this.PkName)
+	return NewQuery(this.Model).
+		DB(db).
+		Table(this.Table).
+		PkName(this.PkName)
 }
 
 // 查找
@@ -216,14 +219,14 @@ func NewDAO(daoPointer interface{}) interface{} {
 	defer daoMappingLocker.Unlock()
 
 	// 如果已经在缓存里直接返回
-	var pointerValue = reflect.ValueOf(daoPointer)
-	var pointerType = pointerValue.Type().String()
+	var pointerType = reflect.TypeOf(daoPointer).String()
 	cachedDAO, ok := daoMapping.Load(pointerType)
 	if ok {
 		return cachedDAO
 	}
 
 	// 初始化
+	var pointerValue = reflect.ValueOf(daoPointer)
 	pointerValue.MethodByName("Init").Call([]reflect.Value{})
 
 	daoMapping.Store(pointerType, daoPointer)

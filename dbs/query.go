@@ -764,7 +764,7 @@ func (this *Query) AsSQL() (string, error) {
 		}
 		var matchedParams = reg.FindAllStringSubmatch(sql, -1)
 		this.params = []interface{}{}
-		if matchedParams != nil {
+		if matchedParams != nil && len(matchedParams) > 0 {
 			for _, param := range matchedParams {
 				value, ok := this.namedParams[param[1]]
 				if ok {
@@ -1224,13 +1224,30 @@ func (this *Query) stringValue(value interface{}) interface{} {
 
 // 包装值
 func (this *Query) wrapAttr(value interface{}) (placeholder string, isArray bool) {
-	var valueType = reflect.TypeOf(value)
-	var valueTypeName = valueType.Name()
+	switch value := value.(type) {
+	case SQL:
+		return string(value), false
+	case *DBFunc:
+		return value.prepareForQuery(this), false
+	case *Query:
+		value.isSub = true
+		sql, err := value.AsSQL()
+		if err != nil {
+			logs.Errorf("%s", err.Error())
+			return
+		}
 
-	if valueTypeName == "SQL" {
-		return string(value.(SQL)), false
+		for paramName, paramValue := range value.namedParams {
+			this.namedParams[paramName] = paramValue
+			this.namedParamIndex ++
+		}
+
+		return "IN (" + sql + ")", true
+	case *lists.List:
+		return this.wrapAttr(value.Slice)
 	}
 
+	var valueType = reflect.TypeOf(value)
 	if valueType.Kind() == reflect.Slice {
 		var params = []string{}
 		var reflectValue = reflect.ValueOf(value)
@@ -1246,39 +1263,6 @@ func (this *Query) wrapAttr(value interface{}) (placeholder string, isArray bool
 			return "IN (" + strings.Join(params, ", ") + ")", true
 		}
 		return "IN ()", true
-	}
-
-	if valueType.String() == "*dbs.DBFunc" {
-		valueFunc, ok := value.(*DBFunc)
-		if ok {
-			return valueFunc.prepareForQuery(this), false
-		}
-	}
-
-	if valueType.String() == "*dbs.Query" {
-		valueQuery, ok := value.(*Query)
-		if ok {
-			valueQuery.isSub = true
-			sql, err := valueQuery.AsSQL()
-			if err != nil {
-				logs.Errorf("%s", err.Error())
-				return
-			}
-
-			for paramName, paramValue := range valueQuery.namedParams {
-				this.namedParams[paramName] = paramValue
-				this.namedParamIndex ++
-			}
-
-			return "IN (" + sql + ")", true
-		}
-	}
-
-	if valueType.String() == "*lists.List" {
-		valueList, ok := value.(*lists.List)
-		if ok {
-			return this.wrapAttr(valueList.Slice)
-		}
 	}
 
 	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)

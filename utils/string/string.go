@@ -9,9 +9,11 @@ import (
 	"strings"
 	"strconv"
 	"errors"
+	"sync"
 )
 
 var reuseRegexpMap = map[string]*regexp.Regexp{}
+var reuseRegexpMutex = &sync.Mutex{}
 
 // 判断slice中是否包含某个字符串
 func Contains(slice []string, item string) bool {
@@ -25,6 +27,9 @@ func Contains(slice []string, item string) bool {
 
 // 生成可重用的正则
 func RegexpCompile(pattern string) (*regexp.Regexp, error) {
+	reuseRegexpMutex.Lock()
+	defer reuseRegexpMutex.Unlock()
+
 	reg, ok := reuseRegexpMap[pattern]
 	if ok {
 		return reg, nil
