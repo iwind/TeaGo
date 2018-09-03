@@ -71,6 +71,38 @@ func (this *Assertion) IsNotNil(value interface{}, msg ... interface{}) *Asserti
 	return this
 }
 
+// 判断是否为非空
+func (this *Assertion) IsNotEmpty(value interface{}, msg ... interface{}) *Assertion {
+	if value == nil {
+		this.Fail(msg ...)
+		return this
+	}
+
+	s, ok := value.(string)
+	if ok {
+		if len(s) > 0 {
+			this.Pass(msg ...)
+		} else {
+			this.Fail(msg ...)
+		}
+		return this
+	}
+
+	v := reflect.ValueOf(value)
+	if v.Kind() == reflect.Slice || v.Kind() == reflect.Map {
+		if v.Len() > 0 {
+			this.Pass(msg ...)
+		} else {
+			this.Fail(msg ...)
+		}
+		return this
+	}
+
+	this.Pass(msg ...)
+
+	return this
+}
+
 // 检查是否为数字
 func (this *Assertion) IsNumber(value interface{}, msg ... interface{}) *Assertion {
 	if types.IsNumber(value) {

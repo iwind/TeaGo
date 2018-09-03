@@ -1,5 +1,6 @@
 package cmd
 
+// 命令帮助
 type HelpCommand struct {
 	*Command
 }

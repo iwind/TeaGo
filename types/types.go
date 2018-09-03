@@ -682,3 +682,58 @@ func IsFloat(value interface{}) bool {
 	}
 	return false
 }
+
+// 转换Slice类型
+func Slice(fromSlice interface{}, toSliceType reflect.Type) (interface{}, error) {
+	if fromSlice == nil {
+		return nil, errors.New("'fromSlice' should not be nil")
+	}
+
+	fromValue := reflect.ValueOf(fromSlice)
+	if fromValue.Kind() != reflect.Slice {
+		return nil, errors.New("'fromSlice' should be slice")
+	}
+
+	if toSliceType.Kind() != reflect.Slice {
+		return nil, errors.New("'toSliceType' should be slice")
+	}
+
+	v := reflect.Indirect(reflect.New(toSliceType))
+	count := fromValue.Len()
+	toElemKind := toSliceType.Elem().Kind()
+	for i := 0; i < count; i ++ {
+		elem := fromValue.Index(i)
+		elemVar := elem.Interface()
+		switch toElemKind {
+		case reflect.Int:
+			v = reflect.Append(v, reflect.ValueOf(Int(elemVar)))
+		case reflect.Int8:
+			v = reflect.Append(v, reflect.ValueOf(Int8(elemVar)))
+		case reflect.Int16:
+			v = reflect.Append(v, reflect.ValueOf(Int16(elemVar)))
+		case reflect.Int32:
+			v = reflect.Append(v, reflect.ValueOf(Int32(elemVar)))
+		case reflect.Int64:
+			v = reflect.Append(v, reflect.ValueOf(Int64(elemVar)))
+		case reflect.Uint:
+			v = reflect.Append(v, reflect.ValueOf(Uint(elemVar)))
+		case reflect.Uint8:
+			v = reflect.Append(v, reflect.ValueOf(Uint8(elemVar)))
+		case reflect.Uint16:
+			v = reflect.Append(v, reflect.ValueOf(Uint16(elemVar)))
+		case reflect.Uint32:
+			v = reflect.Append(v, reflect.ValueOf(Uint32(elemVar)))
+		case reflect.Uint64:
+			v = reflect.Append(v, reflect.ValueOf(Uint64(elemVar)))
+		case reflect.Bool:
+			v = reflect.Append(v, reflect.ValueOf(Bool(elemVar)))
+		case reflect.Float32:
+			v = reflect.Append(v, reflect.ValueOf(Float32(elemVar)))
+		case reflect.Float64:
+			v = reflect.Append(v, reflect.ValueOf(Float64(elemVar)))
+		case reflect.String:
+			v = reflect.Append(v, reflect.ValueOf(String(elemVar)))
+		}
+	}
+	return v.Interface(), nil
+}

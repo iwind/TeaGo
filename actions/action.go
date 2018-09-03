@@ -24,6 +24,8 @@ type ActionWriter interface {
 }
 
 type ActionObject struct {
+	Spec *ActionSpec
+
 	Request        *http.Request
 	ResponseWriter http.ResponseWriter
 	ParamsMap      Params
@@ -404,6 +406,8 @@ func runActionCopy(spec *ActionSpec, request *http.Request,
 	var actionObject = actionPtrValue.Interface().(ActionWrapper).Object()
 	var afterFuncs = []func(){}
 
+	actionObject.Spec = spec
+
 	// 执行helper.AfterAction()
 	defer func() {
 		if len(afterFuncs) > 0 {
@@ -542,8 +546,8 @@ func runActionCopy(spec *ActionSpec, request *http.Request,
 		}
 
 		// 初始化特殊类型的参数
-		switch fieldValue.Type().String() {
-		case "*actions.File": // 支持文件指针
+		switch fieldValue.Interface().(type) {
+		case *File: // 支持文件指针
 			bindName, ok := field.Tag.Lookup("field")
 			if ok {
 				fieldValue.Set(reflect.ValueOf(actionObject.File(bindName)))
@@ -556,7 +560,7 @@ func runActionCopy(spec *ActionSpec, request *http.Request,
 				fieldValue.Set(reflect.ValueOf(filePtr))
 			}
 			continue
-		case "actions.File": // 支持文件
+		case File: // 支持文件
 			bindName, ok := field.Tag.Lookup("field")
 			if ok {
 				filePtr := actionObject.File(bindName)
@@ -618,7 +622,7 @@ func runActionCopy(spec *ActionSpec, request *http.Request,
 		}
 
 		// cookie:"Cookie参数名"
-		var fieldParamValue string
+		var fieldParamValue []string
 		var hasValue = false
 
 		cookieName, ok := field.Tag.Lookup("cookie")
@@ -629,7 +633,7 @@ func runActionCopy(spec *ActionSpec, request *http.Request,
 			if err != nil {
 				hasValue = false
 			} else {
-				fieldParamValue = strings.TrimSpace(cookieValue.Value)
+				fieldParamValue = []string{strings.TrimSpace(cookieValue.Value)}
 				hasValue = len(fieldParamValue) > 0
 			}
 		}
@@ -642,7 +646,7 @@ func runActionCopy(spec *ActionSpec, request *http.Request,
 			session := actionPtrValue.Interface().(ActionWrapper).Object().Session()
 			if session != nil {
 				sessionValue := session.StringValue(sessionName)
-				fieldParamValue = strings.TrimSpace(sessionValue)
+				fieldParamValue = []string{strings.TrimSpace(sessionValue)}
 				hasValue = len(fieldParamValue) > 0
 			}
 		}
@@ -654,51 +658,58 @@ func runActionCopy(spec *ActionSpec, request *http.Request,
 
 		// default:"默认值"
 		// 注意：DefaultValue不对字符串进行Trim()处理
-		if !hasValue || len(fieldParamValue) == 0 {
+		if !hasValue || len(fieldParamValue[0]) == 0 {
 			defaultValue, ok := field.Tag.Lookup("default")
 			if ok {
 				hasValue = true
-				fieldParamValue = defaultValue
+				fieldParamValue = []string{defaultValue}
 			}
 		}
 
 		if hasValue {
+			firstParamValue := fieldParamValue[0]
 			switch field.Type.Kind() {
 			case reflect.Int:
-				fieldValue.Set(reflect.ValueOf(types.Int(fieldParamValue)))
+				fieldValue.Set(reflect.ValueOf(types.Int(firstParamValue)))
 			case reflect.Int8:
-				fieldValue.Set(reflect.ValueOf(types.Int8(fieldParamValue)))
+				fieldValue.Set(reflect.ValueOf(types.Int8(firstParamValue)))
 			case reflect.Int16:
-				fieldValue.Set(reflect.ValueOf(types.Int16(fieldParamValue)))
+				fieldValue.Set(reflect.ValueOf(types.Int16(firstParamValue)))
 			case reflect.Int32:
-				fieldValue.Set(reflect.ValueOf(types.Int32(fieldParamValue)))
+				fieldValue.Set(reflect.ValueOf(types.Int32(firstParamValue)))
 			case reflect.Int64:
-				fieldValue.Set(reflect.ValueOf(types.Int64(fieldParamValue)))
+				fieldValue.Set(reflect.ValueOf(types.Int64(firstParamValue)))
 			case reflect.Uint:
-				fieldValue.Set(reflect.ValueOf(types.Uint(fieldParamValue)))
+				fieldValue.Set(reflect.ValueOf(types.Uint(firstParamValue)))
 			case reflect.Uint8:
-				fieldValue.Set(reflect.ValueOf(types.Uint8(fieldParamValue)))
+				fieldValue.Set(reflect.ValueOf(types.Uint8(firstParamValue)))
 			case reflect.Uint16:
-				fieldValue.Set(reflect.ValueOf(types.Uint16(fieldParamValue)))
+				fieldValue.Set(reflect.ValueOf(types.Uint16(firstParamValue)))
 			case reflect.Uint32:
-				fieldValue.Set(reflect.ValueOf(types.Uint32(fieldParamValue)))
+				fieldValue.Set(reflect.ValueOf(types.Uint32(firstParamValue)))
 			case reflect.Uint64:
-				fieldValue.Set(reflect.ValueOf(types.Uint64(fieldParamValue)))
+				fieldValue.Set(reflect.ValueOf(types.Uint64(firstParamValue)))
 			case reflect.Bool:
-				if lists.Contains([]string{"on", "true", "yes", "enabled"}, fieldParamValue) {
+				if lists.Contains([]string{"on", "true", "yes", "enabled"}, firstParamValue) {
 					fieldValue.SetBool(true)
 				} else {
-					fieldValue.SetBool(types.Bool(fieldParamValue))
+					fieldValue.SetBool(types.Bool(firstParamValue))
 				}
 			case reflect.String:
-				fieldValue.Set(reflect.ValueOf(fieldParamValue))
+				fieldValue.Set(reflect.ValueOf(firstParamValue))
 			case reflect.Float32:
-				fieldValue.Set(reflect.ValueOf(types.Float32(fieldParamValue)))
+				fieldValue.Set(reflect.ValueOf(types.Float32(firstParamValue)))
 			case reflect.Float64:
-				fieldValue.Set(reflect.ValueOf(types.Float64(fieldParamValue)))
+				fieldValue.Set(reflect.ValueOf(types.Float64(firstParamValue)))
 			case reflect.Slice:
-				if field.Type.Elem().Kind() == reflect.Uint8 {
-					fieldValue.SetBytes([]byte(fieldParamValue))
+				elemKind := field.Type.Elem().Kind()
+				if elemKind == reflect.Uint8 { // 字节
+					fieldValue.SetBytes([]byte(firstParamValue))
+				} else { // slice
+					sliceValue, err := types.Slice(fieldParamValue, field.Type)
+					if err == nil {
+						fieldValue.Set(reflect.ValueOf(sliceValue))
+					}
 				}
 			}
 		}
@@ -918,18 +929,18 @@ func runHelperMethodAfter(method reflect.Value, actionPtr reflect.Value, field r
 	return true
 }
 
-func getActionParam(params *Params, name string) (value string, has bool) {
+func getActionParam(params *Params, name string) (value []string, has bool) {
 	values, ok := (*params)[name]
 	if !ok {
-		return "", false
+		return nil, false
 	}
 	if len(values) == 0 {
-		return "", false
+		return nil, false
 	}
-	return values[0], true
+	return values, true
 }
 
-func getActionParamFuzzy(params *Params, name string) (value string, has bool) {
+func getActionParamFuzzy(params *Params, name string) (value []string, has bool) {
 	value, hasValue := getActionParam(params, name)
 	if hasValue {
 		return value, true
@@ -964,6 +975,7 @@ func parseRequestFiles(action *ActionObject) {
 	}
 }
 
+// copy from golang source
 func parseTagsFromString(tag string) map[string]string {
 	tags := map[string]string{}
 

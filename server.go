@@ -355,8 +355,10 @@ func (this *Server) buildHandle(actionPtr interface{}) func(writer http.Response
 			}
 		}
 
-		actionWrapper.Object().SetMaxSize(this.config.MaxSize())
-		actionWrapper.Object().SetSessionManager(this.sessionManager)
+		actionObject := actionWrapper.Object()
+		actionObject.SetMaxSize(this.config.MaxSize())
+		actionObject.SetSessionManager(this.sessionManager)
+
 		actions.RunAction(actionPtr, spec, request, writer, params)
 	}
 }

@@ -13,11 +13,11 @@ import (
 	"github.com/iwind/TeaGo/Tea"
 	"github.com/iwind/TeaGo/logs"
 	"runtime"
-	"golang.org/x/net/html"
-	"golang.org/x/net/html/atom"
 	"regexp"
 	"github.com/iwind/TeaGo/files"
 	"net/url"
+	"github.com/iwind/TeaGo/gohtml"
+	"github.com/iwind/TeaGo/gohtml/atom"
 )
 
 type TemplateCache struct {
@@ -393,14 +393,14 @@ window.TEA = {
 
 func formatHTML(htmlString string) string {
 	reader := strings.NewReader(htmlString)
-	tokenizer := html.NewTokenizer(reader)
+	tokenizer := gohtml.NewTokenizer(reader)
 	result := ""
 	for {
 		if tokenizer.Err() != nil {
 			break
 		}
 		tokenType := tokenizer.Next()
-		if tokenType != html.StartTagToken && tokenType != html.SelfClosingTagToken {
+		if tokenType != gohtml.StartTagToken && tokenType != gohtml.SelfClosingTagToken {
 			result += string(tokenizer.Raw())
 			continue
 		}
