@@ -7,7 +7,7 @@ import (
 
 func TestNewFactory(t *testing.T) {
 	factory := NewFactory()
-	factory.Set("hello", "world").Expire(time.Now().Add(10 * time.Second))
+	factory.Set("hello", "world").ExpireAt(time.Now().Add(10 * time.Second))
 
 	value, found := factory.Get("hello")
 	if !found {
@@ -23,31 +23,20 @@ func TestNewFactory(t *testing.T) {
 
 func TestNewFactory_Clean(t *testing.T) {
 	factory := NewFactory()
-	factory.Set("hello", "world").Expire(time.Now().Add(-10 * time.Second))
+	factory.Set("hello", "world").ExpireAt(time.Now().Add(-10 * time.Second))
 	t.Log(len(factory.items))
 	factory.clean()
 	t.Log(len(factory.items))
 }
 
-
 func TestNewFactory_CleanLoop(t *testing.T) {
 	factory := newFactoryInterval(1 * time.Second)
-	factory.Set("hello", "world").Expire(time.Now().Add(2 * time.Second))
+	factory.Set("hello", "world").ExpireAt(time.Now().Add(2 * time.Second))
 
 	t.Log(factory.items["hello"].expireTime)
 
 	time.Sleep(3 * time.Second)
-	
+
 	t.Log(time.Now())
 	t.Log(len(factory.items))
-}
-
-func TestFactory_Integrate(t *testing.T) {
-	type OtherObject struct {
-		CacheFactory
-	}
-
-	var o = new(OtherObject)
-	t.Log(o.Cache().Set("hello", "world"))
-	t.Log(o.Cache().Get("hello"))
 }

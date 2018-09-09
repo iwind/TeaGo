@@ -14,12 +14,14 @@ type List struct {
 	Slice       interface{}
 }
 
+// 新建List对象
 func NewList(slice interface{}) *List {
 	return &List{
 		Slice: slice,
 	}
 }
 
+// 反转List
 func (this *List) Reverse() {
 	this.compareFunc = func(i, j int) bool {
 		return i > j
@@ -33,8 +35,13 @@ func (this *List) Sort(compareFunc func(i, j int) bool) {
 	sort.Sort(this)
 }
 
-// 遍历List
+// 遍历List，同Range()
 func (this *List) Each(iterator func(k int, v interface{})) {
+	this.Range(iterator)
+}
+
+// 遍历List，同Each()
+func (this *List) Range(iterator func(k int, v interface{})) {
 	value := reflect.ValueOf(this.Slice)
 	count := value.Len()
 	for i := 0; i < count; i ++ {
@@ -96,6 +103,7 @@ func (this *List) Any(iterator func(k int, v interface{}) bool) bool {
 	return false
 }
 
+// 查找元素
 func (this *List) Find(iterator func(k int, v interface{}) bool) interface{} {
 	value := reflect.ValueOf(this.Slice)
 	count := value.Len()
@@ -109,6 +117,38 @@ func (this *List) Find(iterator func(k int, v interface{}) bool) interface{} {
 		}
 	}
 	return nil
+}
+
+// 查找元素，返回键值对
+func (this *List) FindPair(iterator func(k int, v interface{}) bool) (index int, v interface{}) {
+	value := reflect.ValueOf(this.Slice)
+	count := value.Len()
+	if count == 0 {
+		return -1, nil
+	}
+	for i := 0; i < count; i ++ {
+		v := value.Index(i).Interface()
+		if iterator(i, v) {
+			return i, v
+		}
+	}
+	return -1, nil
+}
+
+// 查找元素位置，如果小于0，则表示未找到
+func (this *List) FindIndex(iterator func(k int, v interface{}) bool) int {
+	value := reflect.ValueOf(this.Slice)
+	count := value.Len()
+	if count == 0 {
+		return -1
+	}
+	for i := 0; i < count; i ++ {
+		v := value.Index(i).Interface()
+		if iterator(i, v) {
+			return i
+		}
+	}
+	return -1
 }
 
 // 对容器中元素应用迭代器,将所有返回真的元素放入一个List中
@@ -141,8 +181,13 @@ func (this *List) Rand(size int) *List {
 	return newList
 }
 
-// 在尾部加入一个或多个元素
+// 在尾部加入一个或多个元素，同Append
 func (this *List) Push(items ... interface{}) {
+	this.Append(items ...)
+}
+
+// 在尾部加入一个或多个元素，同Push
+func (this *List) Append(items ... interface{}) {
 	value := reflect.ValueOf(this.Slice)
 
 	for _, item := range items {
@@ -172,6 +217,7 @@ func (this *List) Insert(index int, v interface{}) {
 	this.Slice = newValue.Interface()
 }
 
+// 弹出尾部的元素
 func (this *List) Pop() interface{} {
 	value := reflect.ValueOf(this.Slice)
 	size := value.Len()
@@ -184,6 +230,31 @@ func (this *List) Pop() interface{} {
 	return lastValue.Index(0).Interface()
 }
 
+// 弹出头部的元素
+func (this *List) Shift() interface{} {
+	value := reflect.ValueOf(this.Slice)
+	size := value.Len()
+	if size == 0 {
+		return nil
+	}
+	lastValue := value.Slice(0, 1)
+	newValue := value.Slice(1, size)
+	this.Slice = newValue.Interface()
+	return lastValue.Index(0).Interface()
+}
+
+// 在头部加入一个或多个新元素
+func (this *List) Unshift(items ... interface{}) {
+	newValue := reflect.Indirect(reflect.New(reflect.TypeOf(this.Slice)))
+	for i := len(items) - 1; i >= 0; i -- {
+		newValue = reflect.Append(newValue, reflect.ValueOf(items[i]))
+	}
+	newValue = reflect.AppendSlice(newValue, reflect.ValueOf(this.Slice))
+
+	this.Slice = newValue.Interface()
+}
+
+// 取得第一个元素
 func (this *List) First() interface{} {
 	value := reflect.ValueOf(this.Slice)
 	size := value.Len()
@@ -193,6 +264,7 @@ func (this *List) First() interface{} {
 	return value.Slice(0, 1).Index(0).Interface()
 }
 
+// 取得最后一个元素
 func (this *List) Last() interface{} {
 	value := reflect.ValueOf(this.Slice)
 	size := value.Len()
@@ -202,6 +274,7 @@ func (this *List) Last() interface{} {
 	return value.Slice(size-1, size).Index(0).Interface()
 }
 
+// 取得某个索引位置上的元素
 func (this *List) Get(index int) interface{} {
 	value := reflect.ValueOf(this.Slice)
 	size := value.Len()
@@ -211,12 +284,9 @@ func (this *List) Get(index int) interface{} {
 	return value.Slice(index, index+1).Index(0).Interface()
 }
 
-func (this *List) isEmpty() bool {
-	return this.Size() == 0
-}
-
-func (this *List) Size() int {
-	return this.Len()
+// 判断元素是否为空
+func (this *List) IsEmpty() bool {
+	return this.Len() == 0
 }
 
 // 删除某个位置上的值
@@ -252,6 +322,7 @@ func (this *List) RemoveIf(iterator func(k int, v interface{}) bool) {
 	this.Slice = newValue.Interface()
 }
 
+// 只保留符合条件的元素
 func (this *List) KeepIf(iterator func(k int, v interface{}) bool) {
 	value := reflect.ValueOf(this.Slice)
 	size := value.Len()
@@ -268,6 +339,7 @@ func (this *List) KeepIf(iterator func(k int, v interface{}) bool) {
 	this.Slice = newValue.Interface()
 }
 
+// 清除元素
 func (this *List) Clear() {
 	value := reflect.ValueOf(this.Slice)
 	this.Slice = reflect.MakeSlice(value.Type(), 0, 0)
@@ -279,6 +351,7 @@ func (this *List) Set(index int, v interface{}) {
 	value.Index(index).Set(reflect.ValueOf(v))
 }
 
+// 打乱元素位置
 func (this *List) Shuffle() {
 	this.Sort(func(i, j int) bool {
 		var source = rand.NewSource(time.Now().UnixNano())
@@ -286,6 +359,7 @@ func (this *List) Shuffle() {
 	})
 }
 
+// 拷贝元素
 func (this *List) Copy() *List {
 	newValue := reflect.New(reflect.TypeOf(this.Slice)).Elem()
 	newList := &List{
@@ -298,21 +372,25 @@ func (this *List) Copy() *List {
 	return newList
 }
 
-func (this *List) asJSON() (string, error) {
+// 格式化为JSON
+func (this *List) AsJSON() (string, error) {
 	jsonBytes, err := ffjson.Marshal(this.Slice)
 	return string(jsonBytes), err
 }
 
-func (this *List) asPrettyJSON() (string, error) {
+// 格式为漂亮格式的JSON
+func (this *List) AsPrettyJSON() (string, error) {
 	jsonBytes, err := json.MarshalIndent(this.Slice, "", "   ")
 	return string(jsonBytes), err
 }
 
+// 计算元素长度
 func (this *List) Len() int {
 	value := reflect.ValueOf(this.Slice)
 	return value.Len()
 }
 
+// 交换元素位置
 func (this *List) Swap(i, j int) {
 	value := reflect.ValueOf(this.Slice)
 	item1 := value.Index(i).Interface()
@@ -322,6 +400,7 @@ func (this *List) Swap(i, j int) {
 	value.Index(j).Set(reflect.ValueOf(item1))
 }
 
+// 比较两个元素
 func (this *List) Less(i, j int) bool {
 	return this.compareFunc(i, j)
 }

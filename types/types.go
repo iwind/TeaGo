@@ -683,6 +683,15 @@ func IsFloat(value interface{}) bool {
 	return false
 }
 
+// 判断是否为nil
+func IsNil(value interface{}) bool {
+	if value == nil {
+		return true
+	}
+
+	return reflect.ValueOf(value).IsNil()
+}
+
 // 转换Slice类型
 func Slice(fromSlice interface{}, toSliceType reflect.Type) (interface{}, error) {
 	if fromSlice == nil {

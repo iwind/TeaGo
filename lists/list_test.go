@@ -86,7 +86,7 @@ func TestListSize(t *testing.T) {
 		},
 	})
 
-	t.Log(list.Size())
+	t.Log(list.Len())
 }
 
 func TestList_Push(t *testing.T) {
@@ -105,14 +105,41 @@ func TestList_Pop(t *testing.T) {
 	var list = NewList([]string{"a", "b", "c"})
 	result := list.Pop()
 	t.Log(result.(string))
-	t.Log(list)
+	t.Log(list.Slice)
+}
+
+func TestList_Pop2(t *testing.T) {
+	var list = NewList([]string{"a"})
+	result := list.Pop()
+	t.Log(result.(string))
+	t.Log(list.Slice)
+}
+
+func TestList_Shift(t *testing.T) {
+	var list = NewList([]string{"a", "b", "c"})
+	result := list.Shift()
+	t.Log(result.(string))
+	t.Log(list.Slice)
+}
+
+func TestList_Shift2(t *testing.T) {
+	var list = NewList([]string{"a"})
+	result := list.Shift()
+	t.Log(result.(string))
+	t.Log(list.Slice)
+}
+
+func TestList_Unshift(t *testing.T) {
+	var list = NewList([]string{"a"})
+	list.Unshift("b", "c", "d")
+	t.Log(list.Slice)
 }
 
 func TestList_First(t *testing.T) {
 	var list = NewList([]string{"a", "b", "c", "d", "e"})
 	t.Log(list.First(), list.Last())
 	t.Log(list.Get(1), list.Get(3), list.Get(-1))
-	t.Log(list.asJSON())
+	t.Log(list.AsJSON())
 
 	t.Log("====clear====")
 	list.Clear()
@@ -138,9 +165,22 @@ func TestList_Set(t *testing.T) {
 
 func TestList_Find(t *testing.T) {
 	var list = NewList([]string{"a", "b", "c"})
-	t.Log(list.Find(func(k int, v interface{}) bool {
+
+	v := list.Find(func(k int, v interface{}) bool {
 		return k == 2
+	})
+	t.Log("v1:", v)
+
+	t.Log("v2:", list.FindIndex(func(k int, v interface{}) bool {
+		return v == "b"
 	}))
+
+	t.Log("====")
+	t.Log(list.FindPair(func(k int, v interface{}) bool {
+		return v == "b"
+	}))
+
+	t.Log(list.Slice)
 }
 
 func TestList_FindAll(t *testing.T) {

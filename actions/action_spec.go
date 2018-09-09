@@ -3,6 +3,7 @@ package actions
 import (
 	"reflect"
 	"strings"
+	"github.com/iwind/TeaGo/caches"
 )
 
 // Action相关定义
@@ -17,6 +18,8 @@ type ActionSpec struct {
 	Module    string
 	PkgPath   string
 	ClassName string
+
+	caches.CacheFactory
 }
 
 // 创建新定义

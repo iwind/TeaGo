@@ -1,7 +1,15 @@
 # TeaGo - Go语言快速开发框架
+~~~
+|------------|       |---------|       |----------|
+|  request   |   ->  | router  |   ->  | actions  |
+|------------|       |---------|       |----------|
+                                            json
+                                         templates
+                                         databases
+~~~
 
 ## 定义不带参数的Action
-*actions/hello/index.go*
+*actions/default/hello/index.go*
 ~~~go
 package hello
 
@@ -15,6 +23,7 @@ func (this *IndexAction) Run()  {
 ~~~
 
 ## 定义带参数的Action
+*actions/default/hello/index.go*
 ~~~go
 package hello
 
@@ -33,13 +42,13 @@ func (this *IndexAction) Run(params struct {
 
 ~~~
 
-## 使用Action
+## 注册Action
 ~~~go
 package MyProject
 
 import (
 	"github.com/iwind/TeaGo"
-	"github.com/iwind/MyProject/actions/hello/index"
+	"github.com/iwind/MyProject/actions/default/hello/index"
 )
 
 func Start() {

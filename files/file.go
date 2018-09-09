@@ -12,20 +12,24 @@ import (
 	"fmt"
 )
 
+// 文件对象定义
 type File struct {
 	path string
 }
 
+// 包装新文件对象
 func NewFile(path string) *File {
 	return &File{
 		path: path,
 	}
 }
 
+// 取得文件名
 func (this *File) Name() string {
 	return filepath.Base(this.path)
 }
 
+// 取得文件统计信息
 func (this *File) Stat() (*Stat, error) {
 	stat, err := os.Stat(this.path)
 	if err != nil {
@@ -222,6 +226,21 @@ func (this *File) List() []*File {
 
 	for _, name := range names {
 		result = append(result, NewFile(path+Tea.DS+name))
+	}
+
+	return result
+}
+
+// 使用模式匹配查找当前目录下的文件
+func (this *File) Glob(pattern string) []*File {
+	result := []*File{}
+	matches, err := filepath.Glob(this.path + Tea.DS + pattern)
+	if err != nil {
+		return result
+	}
+
+	for _, path := range matches {
+		result = append(result, NewFile(path))
 	}
 
 	return result

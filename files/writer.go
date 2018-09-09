@@ -4,6 +4,9 @@ import (
 	"os"
 	"sync"
 	"io"
+	"gopkg.in/yaml.v2"
+	"github.com/pquerna/ffjson/ffjson"
+	"encoding/json"
 )
 
 type Writer struct {
@@ -29,6 +32,42 @@ func (this *Writer) Write(b []byte) (n int64, err error) {
 
 func (this *Writer) WriteIOReader(reader io.Reader) (n int64, err error) {
 	return io.Copy(this.file, reader)
+}
+
+func (this *Writer) WriteJSON(value interface{}, pretty ... bool) (n int64, err error) {
+	if len(pretty) == 0 || !pretty[0] {
+		data, err := ffjson.Marshal(value)
+		if err != nil {
+			return 0, err
+		}
+		err = this.Truncate()
+		if err != nil {
+			return 0, err
+		}
+		return this.Write(data)
+	}
+
+	data, err := json.MarshalIndent(value, "", "   ")
+	if err != nil {
+		return 0, err
+	}
+	err = this.Truncate()
+	if err != nil {
+		return 0, err
+	}
+	return this.Write(data)
+}
+
+func (this *Writer) WriteYAML(value interface{}) (n int64, err error) {
+	data, err := yaml.Marshal(value)
+	if err != nil {
+		return 0, err
+	}
+	err = this.Truncate()
+	if err != nil {
+		return 0, err
+	}
+	return this.Write(data)
 }
 
 func (this *Writer) Truncate(size ... int64) error {
