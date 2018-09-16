@@ -31,11 +31,16 @@ func newFactoryInterval(duration time.Duration) *Factory {
 	return factory
 }
 
-func (this *Factory) Set(key string, value interface{}) *Item {
+func (this *Factory) Set(key string, value interface{}, duration ... time.Duration) *Item {
 	item := new(Item)
 	item.key = key
 	item.value = value
-	item.expireTime = time.Now().Add(3600 * time.Second)
+
+	if len(duration) > 0 {
+		item.expireTime = time.Now().Add(duration[0])
+	} else {
+		item.expireTime = time.Now().Add(3600 * time.Second)
+	}
 
 	this.locker.Lock()
 	this.items[key] = item

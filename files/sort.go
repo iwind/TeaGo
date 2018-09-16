@@ -2,6 +2,7 @@ package files
 
 import (
 	"github.com/iwind/TeaGo/lists"
+	"strings"
 )
 
 const (
@@ -9,6 +10,10 @@ const (
 	SortTypeModifiedTimeReverse = SortType(2) // 按最后修改时间倒排序
 	SortTypeName                = SortType(3) // 按名称
 	SortTypeNameReverse         = SortType(4) // 按名称倒排序
+	SortTypeSize                = SortType(5) // 按文件尺寸
+	SortTypeSizeReverse         = SortType(6) // 按文件尺寸倒排序
+	SortTypeKind                = SortType(7) // 按文件类型
+	SortTypeKindReverse         = SortType(8) // 按文件类型倒排序
 )
 
 type SortType int
@@ -25,11 +30,11 @@ func Sort(files []*File, sortType ... SortType) {
 		file2 := files[j]
 
 		if realSortType == SortTypeName {
-			return file1.Name() < file2.Name()
+			return strings.ToLower(file1.Name()) < strings.ToLower(file2.Name())
 		}
 
 		if realSortType == SortTypeNameReverse {
-			return file1.Name() > file2.Name()
+			return strings.ToLower(file1.Name()) > strings.ToLower(file2.Name())
 		}
 
 		if realSortType == SortTypeModifiedTime || realSortType == SortTypeModifiedTimeReverse {
@@ -47,6 +52,39 @@ func Sort(files []*File, sortType ... SortType) {
 				return time1.UnixNano() < time2.UnixNano()
 			}
 			return time1.UnixNano() > time2.UnixNano()
+		}
+
+		if realSortType == SortTypeSize || realSortType == SortTypeSizeReverse {
+			size1, err := file1.Size()
+			if err != nil {
+				return true
+			}
+
+			size2, err := file2.Size()
+			if err != nil {
+				return true
+			}
+
+			if realSortType == SortTypeSize {
+				return size1 < size2
+			}
+			return size1 > size2
+		}
+
+		if realSortType == SortTypeKind || realSortType == SortTypeKindReverse {
+			if file1.IsDir() {
+				if file2.IsDir() {
+					return strings.ToLower(file1.Name()) < strings.ToLower(file2.Name())
+				}
+
+				return realSortType == SortTypeKind
+			}
+
+			if file2.IsDir() {
+				return realSortType == SortTypeKindReverse
+			}
+
+			return strings.ToLower(file1.Name()) < strings.ToLower(file2.Name())
 		}
 
 		return true

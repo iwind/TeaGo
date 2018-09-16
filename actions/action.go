@@ -292,7 +292,7 @@ func runActionCopy(spec *ActionSpec, request *http.Request,
 
 			session := actionPtrValue.Interface().(ActionWrapper).Object().Session()
 			if session != nil {
-				sessionValue := session.StringValue(sessionName)
+				sessionValue := session.GetString(sessionName)
 				fieldParamValue = []string{strings.TrimSpace(sessionValue)}
 				hasValue = len(fieldParamValue) > 0
 			}
