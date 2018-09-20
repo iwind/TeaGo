@@ -21,19 +21,29 @@ import (
 	"github.com/iwind/TeaGo/types"
 	"log"
 	"github.com/iwind/TeaGo/processes"
+	"errors"
+	"github.com/iwind/TeaGo/lists"
 )
 
+// Web服务
 type Server struct {
 	directRoutes   map[string]func(writer http.ResponseWriter, request *http.Request)
 	patternRoutes  []ServerRoutePattern
 	staticDirs     []ServerStaticDir
 	sessionManager interface{}
-	lastModule     string
-	config         *serverConfig
-	logWriter      LogWriter
-	accessLog      bool // 是否记录访问日志
+
+	lastModule  string        //当前的模块
+	lastPrefix  string        //当前的URL前缀
+	lastHelpers []interface{} // 当前的Helper列表
+
+	config    *serverConfig
+	logWriter LogWriter
+	accessLog bool // 是否记录访问日志
+
+	locker sync.Mutex
 }
 
+// 路由配置
 type ServerRoutePattern struct {
 	module  string
 	reg     regexp.Regexp
@@ -42,11 +52,13 @@ type ServerRoutePattern struct {
 	runFunc func(writer http.ResponseWriter, request *http.Request)
 }
 
+// 静态资源目录
 type ServerStaticDir struct {
 	prefix string
 	dir    string
 }
 
+// 文本mime-type列表
 var textMimeMap = map[string]bool{
 	"application/atom+xml":                true,
 	"application/javascript":              true,
@@ -66,16 +78,26 @@ var textMimeMap = map[string]bool{
 	"text/sgml":                           true,
 }
 
+// 服务启动之前的要执行的函数
+var beforeFunctions = []func(server *Server){}
+
+// 构建一个新的Server
 func NewServer() *Server {
 	var server = &Server{
 		accessLog: true,
 	}
-	server.Init()
+	server.init()
 
 	return server
 }
 
-func (this *Server) Init() {
+// 在服务启动之前执行一个函数
+func BeforeStart(fn func(server *Server)) {
+	beforeFunctions = append(beforeFunctions, fn)
+}
+
+// 初始化
+func (this *Server) init() {
 	this.directRoutes = make(map[string]func(writer http.ResponseWriter, request *http.Request))
 	this.patternRoutes = []ServerRoutePattern{}
 	this.staticDirs = []ServerStaticDir{}
@@ -110,6 +132,16 @@ func (this *Server) Start() {
 // 在某个地址上启动服务
 func (this *Server) StartOn(address string) {
 	var serverMux = http.NewServeMux()
+
+	// Functions
+	locker := sync.Mutex{}
+	if len(beforeFunctions) > 0 {
+		for _, fn := range beforeFunctions {
+			locker.Lock()
+			fn(this)
+			locker.Unlock()
+		}
+	}
 
 	// 静态资源目录
 	for _, staticDir := range this.staticDirs {
@@ -271,13 +303,19 @@ func (this *Server) StartOn(address string) {
 }
 
 func (this *Server) router(pattern string, method string, actionPtr interface{}) {
+	this.locker.Lock()
+	defer this.locker.Unlock()
+
+	pattern = this.lastPrefix + pattern
+
 	if reflect.TypeOf(actionPtr).Kind().String() != "ptr" {
 		actionPtr = reflect.New(reflect.TypeOf(actionPtr)).Interface()
 	}
+
 	actionPtr.(actions.ActionWrapper).Object().Module = this.lastModule
 	method = strings.ToUpper(method)
 
-	// 是否包含匹配参数
+	// 是否包含匹配参数 :paramName(pattern)
 	reg, err := regexp.Compile(":(?:(\\w+)(\\s*(\\([^)]+\\))?))")
 	if err != nil {
 		logs.Errorf("%s", err.Error())
@@ -330,6 +368,8 @@ func (this *Server) buildHandle(actionPtr interface{}) func(writer http.Response
 	spec := actions.NewActionSpec(actionPtr.(actions.ActionWrapper))
 	spec.Module = this.lastModule
 
+	var helpers = append([]interface{}{}, this.lastHelpers ...)
+
 	return func(writer http.ResponseWriter, request *http.Request) {
 		// URI Query
 		var params = actions.Params{}
@@ -359,7 +399,7 @@ func (this *Server) buildHandle(actionPtr interface{}) func(writer http.Response
 		actionObject.SetMaxSize(this.config.MaxSize())
 		actionObject.SetSessionManager(this.sessionManager)
 
-		actions.RunAction(actionPtr, spec, request, writer, params)
+		actions.RunAction(actionPtr, spec, request, writer, params, helpers)
 	}
 }
 
@@ -370,8 +410,61 @@ func (this *Server) Module(module string) *Server {
 }
 
 // 设置模块定义结束
-func (this *Server) End() *Server {
+func (this *Server) EndModule() *Server {
 	this.lastModule = ""
+	return this
+}
+
+// 设置URL前缀
+func (this *Server) Prefix(prefix string) *Server {
+	this.lastPrefix = prefix
+	return this
+}
+
+// 结束前缀定义
+func (this *Server) EndPrefix() *Server {
+	this.lastPrefix = ""
+	return this
+}
+
+// 定义助手
+func (this *Server) Helper(helper interface{}) *Server {
+	if helper == nil {
+		logs.Error(errors.New("you try to add a nil helper"))
+		return this
+	}
+
+	t := reflect.TypeOf(helper).String()
+
+	// 同种类型的Helper只加入一次
+	typeStrings := []string{}
+	for _, h := range this.lastHelpers {
+		if h == nil {
+			continue
+		}
+		t1 := reflect.TypeOf(h).String()
+		typeStrings = append(typeStrings, t1)
+	}
+
+	if lists.Contains(typeStrings, t) {
+		return this
+	}
+
+	this.lastHelpers = append(this.lastHelpers, helper)
+	return this
+}
+
+// 结束助手定义
+func (this *Server) EndHelpers() *Server {
+	this.lastHelpers = []interface{}{}
+	return this
+}
+
+// 结束所有定义
+func (this *Server) EndAll() *Server {
+	this.EndPrefix()
+	this.EndModule()
+	this.EndHelpers()
 	return this
 }
 

@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"strings"
 	"path/filepath"
+	"encoding/json"
 )
 
 type Writer interface {
@@ -191,7 +192,7 @@ func Fatalf(format string, args ... interface{}) {
 }
 
 func Fatal(err error) {
-	Println("[FATAL]<error>" + err.Error() + "</error>")
+	Println("[FATAL]" + err.Error())
 	os.Exit(0)
 }
 
@@ -241,4 +242,14 @@ func Dump(variable interface{}) {
 	}
 
 	Printf("<code>%s</code>", buffer.String())
+}
+
+func PrintAsJSON(value interface{}) {
+	data, err := json.MarshalIndent(value, "", "   ")
+	if err != nil {
+		Error(err)
+		return
+	}
+
+	Println(string(data))
 }

@@ -278,6 +278,7 @@ func (this *File) MkdirAll(perm ... os.FileMode) error {
 }
 
 // 创建文件
+// 如果是目录，则使用 Mkdir() 和 MkdirAll()
 func (this *File) Create() error {
 	fp, err := os.Create(this.path)
 	if err != nil {

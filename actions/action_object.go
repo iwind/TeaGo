@@ -56,7 +56,7 @@ func (this *ActionObject) Object() *ActionObject {
 }
 
 // 初始化动作
-func (this *ActionObject) Init() {
+func (this *ActionObject) init() {
 	this.Data = map[string]interface{}{}
 }
 
@@ -229,11 +229,19 @@ func (this *ActionObject) Success(message ... string) {
 // 失败返回
 func (this *ActionObject) Fail(message ... string) {
 	if len(message) > 0 {
-		this.Message = message[0]
+		this.Message = strings.Join(message, "")
 	}
 
 	this.failWithoutPanic()
 	panic(this)
+}
+
+// 字段错误提示
+func (this *ActionObject) FailField(field string, message ... string) {
+	panic([]ActionParamError{{
+		Param:    field,
+		Messages: message,
+	}})
 }
 
 // 不使用panic的返回，仅供内部使用

@@ -5,12 +5,14 @@ import (
 	"sync"
 )
 
+// 缓存管理器
 type Factory struct {
 	items   map[string]*Item
 	maxSize int64 // @TODO 实现maxSize
 	locker  *sync.Mutex
 }
 
+// 创建一个新的缓存管理器
 func NewFactory() *Factory {
 	return newFactoryInterval(30 * time.Second)
 }
@@ -31,6 +33,7 @@ func newFactoryInterval(duration time.Duration) *Factory {
 	return factory
 }
 
+// 设置缓存
 func (this *Factory) Set(key string, value interface{}, duration ... time.Duration) *Item {
 	item := new(Item)
 	item.key = key
@@ -49,6 +52,7 @@ func (this *Factory) Set(key string, value interface{}, duration ... time.Durati
 	return item
 }
 
+// 获取缓存
 func (this *Factory) Get(key string) (value interface{}, found bool) {
 	this.locker.Lock()
 	defer this.locker.Unlock()
@@ -65,11 +69,13 @@ func (this *Factory) Get(key string) (value interface{}, found bool) {
 	return item.value, true
 }
 
+// 判断是否有缓存
 func (this *Factory) Has(key string) bool {
 	_, found := this.Get(key)
 	return found
 }
 
+// 清理过期的缓存
 func (this *Factory) clean() {
 	this.locker.Lock()
 	defer this.locker.Unlock()

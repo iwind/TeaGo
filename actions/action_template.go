@@ -18,10 +18,11 @@ import (
 	"net/url"
 	"github.com/iwind/TeaGo/gohtml"
 	"github.com/iwind/TeaGo/gohtml/atom"
+	"github.com/iwind/TeaGo/maps"
 )
 
 type TemplateCache struct {
-	template      *template.Template
+	template      *Template
 	watchingFiles map[string]int64 // file => modifiedAt
 }
 
@@ -48,7 +49,7 @@ func (this *ActionObject) render(dir string) error {
 	if ok {
 		// 生产环境直接使用缓存
 		if Tea.Env == Tea.EnvProd {
-			teaFuncMap := createTeaFuncMap(viewFuncMap, module, dir, filename, data)
+			teaFuncMap := createTeaFuncMap(cache.(*TemplateCache).template, viewFuncMap, module, dir, filename, data)
 			t := cache.(*TemplateCache).template.Funcs(teaFuncMap)
 			if this.writer != nil {
 				return t.Execute(this.writer, data)
@@ -70,7 +71,7 @@ func (this *ActionObject) render(dir string) error {
 		}
 
 		if !isChanged {
-			teaFuncMap := createTeaFuncMap(viewFuncMap, module, dir, filename, data)
+			teaFuncMap := createTeaFuncMap(cache.(*TemplateCache).template, viewFuncMap, module, dir, filename, data)
 
 			t := cache.(*TemplateCache).template.Funcs(teaFuncMap)
 			if this.writer != nil {
@@ -97,7 +98,7 @@ func (this *ActionObject) render(dir string) error {
 
 	// 布局模板
 	{
-		reg, err := stringutil.RegexpCompile("\\{\\$layout\\s*\\}")
+		reg, err := stringutil.RegexpCompile("\\{\\s*\\$(layout|TEA\\.LAYOUT)\\s*\\}")
 		if err != nil {
 			return err
 		}
@@ -118,7 +119,7 @@ func (this *ActionObject) render(dir string) error {
 					layoutBody := string(layoutBytes)
 
 					// 支持{$TEA.VIEW}
-					reg, err = stringutil.RegexpCompile("\\{\\$TEA\\s*\\.\\s*VIEW\\s*\\}")
+					reg, err = stringutil.RegexpCompile("\\{\\s*\\$TEA\\s*\\.\\s*VIEW\\s*\\}")
 					if err == nil {
 						body = reg.ReplaceAllStringFunc(layoutBody, func(s string) string {
 							return body
@@ -129,32 +130,44 @@ func (this *ActionObject) render(dir string) error {
 		}
 	}
 
+	// 支持{$var "varName"}var value{$end}
+	reg, _ := stringutil.RegexpCompile("(?U)\\{\\s*\\$var\\s+\"(\\w+)\"\\s*\\}((.|\n)+){\\s*\\$end\\s*}\n")
+	var varMap = maps.Map{}
+	body = reg.ReplaceAllStringFunc(body, func(s string) string {
+		matches := reg.FindStringSubmatch(s)
+		varMap[matches[1]] = matches[2]
+		return ""
+	})
+
 	// 支持 {$TEA.VUE}
-	reg, _ := stringutil.RegexpCompile("\\{\\$TEA\\s*\\.\\s*VUE\\s*\\}")
+	reg, _ = stringutil.RegexpCompile("\\{\\s*\\$TEA\\s*\\.\\s*VUE\\s*\\}")
 	body = reg.ReplaceAllString(body, "{$$TEA_VUE}")
 
 	// 支持 {$TEA.DATA}
-	reg, _ = stringutil.RegexpCompile("\\{\\$TEA\\s*\\.\\s*DATA\\s*\\}")
+	reg, _ = stringutil.RegexpCompile("\\{\\s*\\$TEA\\s*\\.\\s*DATA\\s*\\}")
 	body = reg.ReplaceAllString(body, "{$$TEA_DATA}")
 
 	// 支持 {$TEA.SEMANTIC}
-	reg, _ = stringutil.RegexpCompile("\\{\\$TEA\\s*\\.\\s*SEMANTIC\\s*\\}")
+	reg, _ = stringutil.RegexpCompile("\\{\\s*\\$TEA\\s*\\.\\s*SEMANTIC\\s*\\}")
 	body = reg.ReplaceAllString(body, "{$$TEA_SEMANTIC}")
 
 	// 去掉 {$TEA.VIEW}
-	reg, _ = stringutil.RegexpCompile("\\{\\$TEA\\s*\\.\\s*VIEW\\s*\\}")
+	reg, _ = stringutil.RegexpCompile("\\{\\s*\\$TEA\\s*\\.\\s*VIEW\\s*\\}")
 	body = reg.ReplaceAllString(body, "{$$TEA_VIEW}")
 
 	// 分析模板
 	body = formatHTML(body)
 
 	// 内部自定义函数
-	teaFuncMap := createTeaFuncMap(viewFuncMap, module, dir, filename, data)
-	newTemplate, err := template.New(filename).Delims("{$", "}").Funcs(teaFuncMap).Parse(body)
+	tpl := NewTemplate(filename)
+	teaFuncMap := createTeaFuncMap(tpl, viewFuncMap, module, dir, filename, data)
+	newTemplate, err := tpl.Delims("{$", "}").Funcs(teaFuncMap).Parse(body)
 	if err != nil {
 		logs.Errorf("Template parse error:%s", err.Error())
 		return err
 	}
+
+	newTemplate.SetVars(varMap)
 
 	addFileToWatchingFiles(&watchingFiles, filename+".html")
 
@@ -186,7 +199,7 @@ func (this *ActionObject) render(dir string) error {
 	}
 }
 
-func loadChildTemplate(watchingFiles *map[string]int64, tpl *template.Template, dir string, filename string, childTemplateName string) error {
+func loadChildTemplate(watchingFiles *map[string]int64, tpl *Template, dir string, filename string, childTemplateName string) error {
 	viewPath := pathRelative(dir, filename, childTemplateName)
 	childBytes, err := ioutil.ReadFile(viewPath)
 	if err != nil {
@@ -205,7 +218,7 @@ func loadChildTemplate(watchingFiles *map[string]int64, tpl *template.Template, 
 		}
 	}
 
-	_, err = tpl.New(childTemplateName).Delims("{$", "}").Parse(body)
+	_, err = tpl.NewChild(childTemplateName).Delims("{$", "}").Parse(body)
 	if err != nil {
 		logs.Errorf("Template parse error:%s", err.Error())
 		return err
@@ -237,7 +250,7 @@ func pathRelative(dir string, filename string, path string) string {
 	return path + ".html"
 }
 
-func createTeaFuncMap(funcMap template.FuncMap, module string, dir string, filename string, data map[string]interface{}) template.FuncMap {
+func createTeaFuncMap(tpl *Template, funcMap template.FuncMap, module string, dir string, filename string, data map[string]interface{}) template.FuncMap {
 	parent := filepath.Dir(strings.TrimPrefix(filename, dir))
 	if runtime.GOOS == "windows" {
 		parent = strings.Replace(parent, "\\", "/", -1)
@@ -386,6 +399,14 @@ window.TEA = {
 		}
 
 		return "<!-- warning: css/semantic.min.css not appeared in public/ -->"
+	}
+
+	funcMap["echo"] = func(s string) string {
+		return tpl.VarValue(s)
+	}
+
+	funcMap["hasVar"] = func(s string) bool {
+		return tpl.HasVar(s)
 	}
 
 	return funcMap

@@ -100,7 +100,7 @@ func (this *DAOObject) Delete(pk interface{}) (rowsAffected int64, err error) {
 }
 
 // 保存
-func (this *DAOObject) Save(operatorPtr interface{}) (newModelPtr interface{}, err error) {
+func (this *DAOObject) Save(operatorPtr interface{}) (newOperatorPtr interface{}, err error) {
 	var modelValue = reflect.Indirect(reflect.ValueOf(operatorPtr))
 	var hasPk = false
 	var pkTypeValue reflect.Value

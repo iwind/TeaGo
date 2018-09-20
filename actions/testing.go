@@ -94,7 +94,7 @@ func (this *Testing) Run(t *testing.T) (*TestingResponseWriter) {
 	beforeTime := time.Now()
 
 	resp := &TestingResponseWriter{}
-	RunAction(this.actionPtr, spec, request, resp, this.params)
+	RunAction(this.actionPtr, spec, request, resp, this.params, []interface{}{})
 
 	if this.cost {
 		t.Logf("cost:%.6f %s", time.Since(beforeTime).Seconds()*1000, "ms")

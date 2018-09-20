@@ -38,17 +38,25 @@ func RunAction(actionPtr interface{},
 	spec *ActionSpec,
 	request *http.Request,
 	responseWriter http.ResponseWriter,
-	params Params) interface{} {
+	params Params,
+	helpers []interface{},
+) interface{} {
 	// 运行
 	action := actionPtr.(ActionWrapper).Object()
-	runActionCopy(spec, request, responseWriter, params, action.SessionManager, action.maxSize)
+	runActionCopy(spec, request, responseWriter, params, action.SessionManager, action.maxSize, helpers)
 
 	return actionPtr
 }
 
 // 执行Action副本（为了防止同一个Action多次调用会相互影响）
-func runActionCopy(spec *ActionSpec, request *http.Request,
-	responseWriter http.ResponseWriter, params Params, sessionManager interface{}, maxSize float64) {
+func runActionCopy(spec *ActionSpec,
+	request *http.Request,
+	responseWriter http.ResponseWriter,
+	params Params,
+	sessionManager interface{},
+	maxSize float64,
+	helpers []interface{},
+) {
 	var actionPtrValue = spec.NewPtrValue()
 	var actionObject = actionPtrValue.Interface().(ActionWrapper).Object()
 	var afterFuncs = []func(){}
@@ -138,9 +146,46 @@ func runActionCopy(spec *ActionSpec, request *http.Request,
 	}
 
 	// 初始化
-	actionObject.Init()
+	actionObject.init()
 
-	// 执行
+	// 执行Helpers
+	for _, helper := range helpers {
+		helperValue := reflect.ValueOf(helper)
+		if helperValue.IsNil() || !helperValue.IsValid() {
+			continue
+		}
+
+		field := reflect.StructField{}
+
+		var helperMethod = helperValue.MethodByName("BeforeAction")
+		if helperMethod.IsValid() {
+			// 执行 BeforeAction() 方法
+			goNext := runHelperMethodBefore(helperMethod, actionPtrValue, field, helperValue)
+			if !goNext {
+				// 自动调用结束 AfterAction() 方法
+				afterMethod := helperValue.MethodByName("AfterAction")
+				if afterMethod.IsValid() {
+					afterFuncs = append(afterFuncs, func() {
+						runHelperMethodAfter(afterMethod, actionPtrValue, field)
+					})
+				}
+
+				return
+			}
+
+			// 自动调用结束 AfterAction() 方法
+			afterMethod := helperValue.MethodByName("AfterAction")
+			if afterMethod.IsValid() {
+				if afterMethod.IsValid() {
+					afterFuncs = append(afterFuncs, func() {
+						runHelperMethodAfter(afterMethod, actionPtrValue, field)
+					})
+				}
+			}
+		}
+	}
+
+	// 执行Action
 	var requestRun = "Run" + strings.ToUpper(string(request.Method[0])) + strings.ToLower(string(request.Method[1:]))
 	runFuncValue, found := spec.Funcs[requestRun]
 	if !found {
