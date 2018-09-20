@@ -18,7 +18,7 @@ import "github.com/iwind/TeaGo/actions"
 type IndexAction actions.Action
 
 func (this *IndexAction) Run()  {
-	this.Write("Hello")
+	this.WriteString("Hello")
 }
 ~~~
 
