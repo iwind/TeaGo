@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"github.com/iwind/TeaGo/logs"
+	"github.com/iwind/TeaGo/lists"
 )
 
 type Must struct {
@@ -88,6 +89,21 @@ func (this *Must) Require(message string) *Must {
 	if len(this.valueString) == 0 {
 		this.addError(message)
 	}
+	return this
+}
+
+// 判断是否在一个值列表中
+func (this *Must) In(values interface{}, message string) *Must {
+	if this.HasErrors() {
+		return this
+	}
+
+	if reflect.TypeOf(values).Kind() == reflect.Slice {
+		if !lists.Contains(values, this.value) {
+			this.addError(message)
+		}
+	}
+
 	return this
 }
 

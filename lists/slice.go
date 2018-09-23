@@ -33,6 +33,8 @@ func Contains(slice interface{}, item interface{}) bool {
 	return false
 }
 
+// 删除slice中的某个元素值
+// 不限制删除的元素个数
 func Delete(slice interface{}, item interface{}) interface{} {
 	value := reflect.ValueOf(slice)
 	size := value.Len()
@@ -49,4 +51,19 @@ func Delete(slice interface{}, item interface{}) interface{} {
 	}
 
 	return newSlice.Interface()
+}
+
+// 从slice中移除某个位置上的元素
+func Remove(slice interface{}, index int) interface{} {
+	value := reflect.ValueOf(slice)
+	size := value.Len()
+	if index < 0 {
+		index = size + index + 1
+	}
+	if index >= size {
+		return slice
+	}
+
+	newValue := reflect.AppendSlice(value.Slice(0, index), value.Slice(index+1, size))
+	return newValue.Interface()
 }

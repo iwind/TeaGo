@@ -416,6 +416,7 @@ func formatHTML(htmlString string) string {
 	reader := strings.NewReader(htmlString)
 	tokenizer := gohtml.NewTokenizer(reader)
 	result := ""
+	hasDocType := false
 	for {
 		if tokenizer.Err() != nil {
 			break
@@ -423,11 +424,21 @@ func formatHTML(htmlString string) string {
 		tokenType := tokenizer.Next()
 		if tokenType != gohtml.StartTagToken && tokenType != gohtml.SelfClosingTagToken {
 			result += string(tokenizer.Raw())
+
+			if tokenType == gohtml.DoctypeToken {
+				hasDocType = true
+			}
 			continue
 		}
 
 		token := tokenizer.Token()
 		tagType := token.DataAtom
+
+		// 自动增加 doctype
+		if tagType == atom.Html && !hasDocType {
+			result += "<!DOCTYPE html>\n"
+		}
+
 		tagHTML := string(tokenizer.Raw())
 		if tagType == atom.Img {
 			for _, attr := range token.Attr {

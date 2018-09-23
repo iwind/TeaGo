@@ -15,16 +15,28 @@ import (
 	"reflect"
 )
 
+// 断言定义
 type Assertion struct {
 	t         *testing.T
 	beginTime time.Time
+	quiet     bool // 是否为静默模式，此模式下的测试通过的项不会提示
 }
 
+// 取得一个新的断言
 func NewAssertion(t *testing.T) *Assertion {
 	return &Assertion{
 		t:         t,
 		beginTime: time.Now(),
 	}
+}
+
+func (this *Assertion) Quiet(isQuiet ... bool) *Assertion {
+	if len(isQuiet) == 0 {
+		this.quiet = true
+	} else {
+		this.quiet = isQuiet[0]
+	}
+	return this
 }
 
 // 检查是否为true
@@ -66,6 +78,22 @@ func (this *Assertion) IsNotNil(value interface{}, msg ... interface{}) *Asserti
 		this.Pass(msg ...)
 	} else {
 		this.Fail(msg ...)
+	}
+
+	return this
+}
+
+func (this *Assertion) IsNotError(value interface{}, msg ... interface{}) *Assertion {
+	if value == nil {
+		this.Pass(msg ...)
+		return this
+	}
+
+	_, ok := value.(error)
+	if ok {
+		this.Fail(msg ...)
+	} else {
+		this.Pass(msg ...)
 	}
 
 	return this
@@ -597,13 +625,17 @@ func (this *Assertion) output(tag string, msg ... interface{}) *Assertion {
 	}
 
 	if len(msg) > 0 {
-		output := tag + types.String(msg[0]) + "\n"
+		msgStrings := []string{}
+		for _, msgItem := range msg {
+			msgStrings = append(msgStrings, types.String(msgItem))
+		}
+
+		output := tag + strings.Join(msgStrings, " ") + "\n"
 		if len(source) > 0 {
 			output += "| " + source + "\n"
 		}
 		output += "| " + filename + ":" + fmt.Sprintf("%d", lineNo)
-		msg[0] = output
-
+		msg = []interface{}{output}
 	} else {
 		output := tag + "\n"
 		if len(source) > 0 {
@@ -614,9 +646,11 @@ func (this *Assertion) output(tag string, msg ... interface{}) *Assertion {
 	}
 
 	if tag == "[PASS]" {
-		this.t.Log(msg...)
+		if !this.quiet {
+			this.t.Log(msg ...)
+		}
 	} else if tag == "[FAIL]" {
-		this.t.Log(msg...)
+		this.t.Log(msg ...)
 		this.t.Fail()
 	} else if tag == "[FATAL]" {
 		this.t.Fatal(msg ...)

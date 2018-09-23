@@ -355,10 +355,12 @@ func (this *ActionObject) File(field string) *File {
 }
 
 // 设置下一个动作
-func (this *ActionObject) Next(nextAction string, params map[string]interface{}, hash string) *ActionObject {
+func (this *ActionObject) Next(nextAction string, params map[string]interface{}, hash ... string) *ActionObject {
 	this.next.Action = nextAction
 	this.next.Params = params
-	this.next.Hash = hash
+	if len(hash) > 0 {
+		this.next.Hash = strings.Join(hash, "&")
+	}
 	return this
 }
 
