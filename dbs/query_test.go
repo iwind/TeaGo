@@ -30,7 +30,7 @@ type TestDb struct {
 type TestDbDAO DAO
 
 func (user *TestUser) CreatedDate() string {
-	return timeutil.Format(time.Unix(user.CreatedAt, 0), "Y-m-d H:i:s")
+	return timeutil.Format("Y-m-d H:i:s", time.Unix(user.CreatedAt, 0))
 }
 
 func TestQueryString(t *testing.T) {

@@ -107,8 +107,8 @@ func (this *ListModelsCommand) Run() {
 			}
 
 			if time.Since(modifiedTime).Seconds() < 3600 {
-				modelName = logs.Sprintf("<code>" + modelName + "</code>   [modified at " +
-					timeutil.Format(modifiedTime, "H:i:s") + "]")
+				modelName = logs.Sprintf("<code>"+modelName+"</code>   [modified at "+
+					timeutil.Format("H:i:s")+"]", modifiedTime)
 			}
 
 			models = append(models, modelName)

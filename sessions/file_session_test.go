@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"encoding/base64"
 	"time"
+	"sync"
+	"github.com/iwind/TeaGo/Tea"
+	"github.com/iwind/TeaGo/logs"
 )
 
 func TestFileSessionManager_Init(t *testing.T) {
@@ -76,4 +79,39 @@ func TestFileSessionManager_Read(t *testing.T) {
 func TestFileSessionManager_Delete(t *testing.T) {
 	var manager = NewFileSessionManager(1200, "123456")
 	t.Log(manager.Delete("123"))
+}
+
+func TestFileSessionManagerWriteConcurrent(t *testing.T) {
+	var manager = NewFileSessionManager(1200, "123456")
+	manager.SetDir(Tea.TmpDir())
+	wg := sync.WaitGroup{}
+	wg.Add(1000)
+	for i := 0; i < 1000; i ++ {
+		go func() {
+			b := manager.WriteItem("123", "a", "b")
+			if !b {
+				logs.Println("fail")
+			}
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+	t.Log("ok")
+}
+
+func TestFileSessionManagerReadConcurrent(t *testing.T) {
+	var manager = NewFileSessionManager(1200, "123456")
+	manager.SetDir(Tea.TmpDir())
+	time.Sleep(1 * time.Second)
+	wg := sync.WaitGroup{}
+	wg.Add(1000)
+	for i := 0; i < 1000; i ++ {
+		go func() {
+			b := manager.Read("123")
+			logs.Println(b)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+	t.Log("ok")
 }

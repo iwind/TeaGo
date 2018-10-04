@@ -29,7 +29,7 @@ func TestDownloaderItem_Start(t *testing.T) {
 		t.Log("error:", item.error)
 	}
 	item.onProgressFn = func() {
-		t.Logf("progress:%f, size:%d, at:%s.%d", item.progress, item.size, timeutil.Format(time.Now(), "H:i:s"), time.Now().Nanosecond()/1000000)
+		t.Logf("progress:%f, size:%d, at:%s.%d", item.progress, item.size, timeutil.Format("H:i:s"), time.Now().Nanosecond()/1000000)
 	}
 	item.Start()
 

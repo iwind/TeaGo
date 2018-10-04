@@ -53,7 +53,7 @@ func (this *List) Range(iterator func(k int, v interface{})) {
 func (this *List) Map(mapFunc func(k int, v interface{}) interface{}) *List {
 	value := reflect.ValueOf(this.Slice)
 
-	newValue := reflect.New(value.Type()).Elem()
+	newValue := reflect.ValueOf([]interface{}{})
 	result := &List{
 		Slice: newValue.Interface(),
 	}

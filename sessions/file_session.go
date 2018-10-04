@@ -113,7 +113,10 @@ func (this *FileSessionManager) Read(sid string) map[string]string {
 
 func (this *FileSessionManager) WriteItem(sid string, key string, value string) bool {
 	var values = this.Read(sid)
+
+	this.mutex.Lock()
 	values[key] = value
+	this.mutex.Unlock()
 
 	timestamp := uint(time.Now().Unix())
 	session := &FileSessionData{
@@ -128,17 +131,17 @@ func (this *FileSessionManager) WriteItem(sid string, key string, value string) 
 	return this.writeSession(session)
 }
 
-func (manager *FileSessionManager) writeSession(session *FileSessionData) bool {
-	data, err := manager.encryptData(session)
+func (this *FileSessionManager) writeSession(session *FileSessionData) bool {
+	data, err := this.encryptData(session)
 	if err != nil {
 		logs.Errorf("%s", err.Error())
 		return false
 	}
 
-	file := manager.realDir() + Tea.DS + "session_" + session.Sid + ".data"
+	file := this.realDir() + Tea.DS + "session_" + session.Sid + ".data"
 
-	manager.mutex.Lock()
-	defer manager.mutex.Unlock()
+	this.mutex.Lock()
+	defer this.mutex.Unlock()
 
 	err = ioutil.WriteFile(file, data, 0666)
 	if err != nil {
@@ -168,7 +171,10 @@ func (this *FileSessionManager) Delete(sid string) bool {
 }
 
 func (this *FileSessionManager) encryptData(data *FileSessionData) ([]byte, error) {
+	// 由于ffjson.Marshal()或json.Marshal()函数并不是并发安全的，所以需要lock
+	this.mutex.Lock()
 	jsonData, err := ffjson.Marshal(data)
+	this.mutex.Unlock()
 	if err != nil {
 		return nil, err
 	}
