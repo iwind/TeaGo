@@ -1,29 +1,38 @@
 package TeaGo
 
 import (
+	"github.com/go-yaml/yaml"
+	"github.com/iwind/TeaGo/Tea"
+	"github.com/iwind/TeaGo/logs"
+	"github.com/iwind/TeaGo/utils/string"
+	"io"
 	"io/ioutil"
 	"net/http"
-	"strconv"
-	"io"
-	"github.com/iwind/TeaGo/logs"
-	"github.com/go-yaml/yaml"
 	"os"
-	"github.com/iwind/TeaGo/utils/string"
-	"github.com/iwind/TeaGo/Tea"
+	"strconv"
 )
 
-type serverConfig struct {
-	Listen  string `yaml:"listen"`                // 监听地址，带端口
-	Env     string `yaml:"env"`                   // 环境，dev、test或prod
-	Charset string `yaml:"charset"`               // 字符集
+type ServerConfig struct {
+	Http struct {
+		On     bool     `yaml:"on" json:"on"`
+		Listen []string `yaml:"listen" json:"listen"` // 监听地址，带端口
+	} `yaml:"http" json:"http"`
+	Https struct {
+		On     bool     `yaml:"on" json:"on"`
+		Listen []string `yaml:"listen" json:"listen"`
+		Cert   string   `yaml:"cert" json:"cert"`
+		Key    string   `yaml:"key" json:"key"`
+	} `yaml:"https" json:"https"`
+	Env     string `yaml:"env" json:"env"`         // 环境，dev、test或prod
+	Charset string `yaml:"charset" json:"charset"` // 字符集
 	Upload  struct {
-		MaxSize      string `yaml:"maxSize"` // 允许上传的最大尺寸
+		MaxSize      string `yaml:"maxSize" json:"maxSize"` // 允许上传的最大尺寸
 		maxSizeFloat float64
-	} `yaml:"upload"`                             // 上传配置
-	Errors map[string]interface{} `yaml:"errors"` // 错误配置
+	} `yaml:"upload" json:"upload"` // 上传配置
+	Errors map[string]interface{} `yaml:"errors" json:"errors"` // 错误配置
 }
 
-func (this *serverConfig) Load() {
+func (this *ServerConfig) Load() {
 	configFile := Tea.ConfigFile("server.conf")
 	_, err := os.Stat(configFile)
 	if err != nil {
@@ -64,11 +73,11 @@ func (this *serverConfig) Load() {
 	}
 }
 
-func (this *serverConfig) MaxSize() float64 {
+func (this *ServerConfig) MaxSize() float64 {
 	return this.Upload.maxSizeFloat
 }
 
-func (this *serverConfig) processError(request *http.Request, response io.Writer, code int, message string) {
+func (this *ServerConfig) processError(request *http.Request, response io.Writer, code int, message string) {
 	if this.Errors == nil {
 		http.Error(response.(http.ResponseWriter), message, code)
 		return

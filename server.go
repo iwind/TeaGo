@@ -1,28 +1,28 @@
 package TeaGo
 
 import (
-	"net/http"
-	"strings"
-	"regexp"
-	"net/url"
-	"github.com/iwind/TeaGo/actions"
-	"github.com/iwind/TeaGo/utils/string"
-	"github.com/iwind/TeaGo/tasks"
-	"sync"
-	"os"
-	"runtime"
-	"time"
-	"github.com/iwind/TeaGo/logs"
-	"reflect"
-	"github.com/iwind/TeaGo/Tea"
-	"path/filepath"
-	"mime"
-	"github.com/iwind/TeaGo/files"
-	"github.com/iwind/TeaGo/types"
-	"log"
-	"github.com/iwind/TeaGo/processes"
 	"errors"
+	"github.com/iwind/TeaGo/Tea"
+	"github.com/iwind/TeaGo/actions"
+	"github.com/iwind/TeaGo/files"
 	"github.com/iwind/TeaGo/lists"
+	"github.com/iwind/TeaGo/logs"
+	"github.com/iwind/TeaGo/processes"
+	"github.com/iwind/TeaGo/tasks"
+	"github.com/iwind/TeaGo/types"
+	"github.com/iwind/TeaGo/utils/string"
+	"log"
+	"mime"
+	"net/http"
+	"net/url"
+	"os"
+	"path/filepath"
+	"reflect"
+	"regexp"
+	"runtime"
+	"strings"
+	"sync"
+	"time"
 )
 
 // Web服务
@@ -36,7 +36,7 @@ type Server struct {
 	lastPrefix  string        //当前的URL前缀
 	lastHelpers []interface{} // 当前的Helper列表
 
-	config    *serverConfig
+	config    *ServerConfig
 	logWriter LogWriter
 	accessLog bool // 是否记录访问日志
 
@@ -103,7 +103,7 @@ func (this *Server) init() {
 	this.staticDirs = []ServerStaticDir{}
 
 	// 配置
-	this.config = &serverConfig{}
+	this.config = &ServerConfig{}
 	this.config.Load()
 
 	// 日志
@@ -121,11 +121,10 @@ func (this *Server) init() {
 
 // 启动服务
 func (this *Server) Start() {
-	var address = this.config.Listen
-	if len(address) > 0 {
-		this.StartOn(address)
-	} else {
+	if !this.config.Http.On && !this.config.Https.On && len(this.config.Http.Listen) == 0 && len(this.config.Https.Listen) == 0 {
 		this.StartOn("0.0.0.0:8888")
+	} else {
+		this.StartOn("")
 	}
 }
 
@@ -280,26 +279,59 @@ func (this *Server) StartOn(address string) {
 
 	})
 
-	var wg = &sync.WaitGroup{}
-	wg.Add(1)
-
 	// http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = runtime.NumCPU() * 100
 	// http.DefaultTransport.(*http.Transport).MaxIdleConns = runtime.NumCPU() * 2048
-	go func() {
+	if this.config.Http.On {
+		for _, addr := range this.config.Http.Listen {
+			logs.Println("start server on", addr)
+
+			server := &http.Server{
+				Addr:    addr,
+				Handler: serverMux,
+			}
+
+			go func() {
+				err := server.ListenAndServe()
+				if err != nil {
+					logs.Error(err)
+				}
+			}()
+		}
+	}
+
+	if this.config.Https.On {
+		for _, addr := range this.config.Https.Listen {
+			logs.Println("start ssl server on", addr)
+
+			server := &http.Server{
+				Addr:    addr,
+				Handler: serverMux,
+			}
+			go func() {
+				err := server.ListenAndServeTLS(this.config.Https.Cert, this.config.Https.Key)
+				if err != nil {
+					logs.Error(err)
+				}
+			}()
+		}
+	}
+
+	if len(address) > 0 {
 		logs.Println("start server on", address)
 		err := http.ListenAndServe(address, serverMux)
 		if err != nil {
 			logs.Errorf(err.Error())
 			time.Sleep(100 * time.Millisecond)
-			wg.Add(-1)
 		}
-	}()
+	}
 
 	// 启动任务管理器
 	tasks.Start(runtime.NumCPU() * 4)
 
 	// 等待
-	wg.Wait()
+	for {
+		time.Sleep(365 * 24 * time.Hour)
+	}
 }
 
 func (this *Server) router(pattern string, method string, actionPtr interface{}) {
@@ -368,7 +400,7 @@ func (this *Server) buildHandle(actionPtr interface{}) func(writer http.Response
 	spec := actions.NewActionSpec(actionPtr.(actions.ActionWrapper))
 	spec.Module = this.lastModule
 
-	var helpers = append([]interface{}{}, this.lastHelpers ...)
+	var helpers = append([]interface{}{}, this.lastHelpers...)
 
 	return func(writer http.ResponseWriter, request *http.Request) {
 		// URI Query
