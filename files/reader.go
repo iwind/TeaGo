@@ -1,11 +1,12 @@
 package files
 
 import (
-	"os"
-	"io"
-	"github.com/iwind/TeaGo/logs"
-	"github.com/pquerna/ffjson/ffjson"
 	"github.com/go-yaml/yaml"
+	"github.com/iwind/TeaGo/logs"
+	"github.com/iwind/TeaGo/maps"
+	"github.com/pquerna/ffjson/ffjson"
+	"io"
+	"os"
 )
 
 type Reader struct {
@@ -62,17 +63,33 @@ func (this *Reader) ReadAll() []byte {
 	return this.Read(stat.Size())
 }
 
+// 从JSON文件中读取数据
 func (this *Reader) ReadJSON(ptr interface{}) error {
 	data := this.ReadAll()
 	return ffjson.Unmarshal(data, ptr)
 }
 
+// 从JSON文件中读取Map数据
+func (this *Reader) ReadJSONMap() (maps.Map, error) {
+	m := maps.Map{}
+	err := this.ReadJSON(&m)
+	return m, err
+}
+
+// 从YAML文件中读取数据
 func (this *Reader) ReadYAML(ptr interface{}) error {
 	data := this.ReadAll()
 	return yaml.Unmarshal(data, ptr)
 }
 
-func (this *Reader) Seek(offset int64, whence ... int) (ret int64, err error) {
+// 从YAML文件中读取Map数据
+func (this *Reader) ReadYAMLMap() (maps.Map, error) {
+	m := maps.Map{}
+	err := this.ReadYAML(&m)
+	return m, err
+}
+
+func (this *Reader) Seek(offset int64, whence ...int) (ret int64, err error) {
 	if len(whence) > 0 {
 		return this.file.Seek(offset, whence[0])
 	}
