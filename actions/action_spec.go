@@ -1,9 +1,9 @@
 package actions
 
 import (
+	"github.com/iwind/TeaGo/caches"
 	"reflect"
 	"strings"
-	"github.com/iwind/TeaGo/caches"
 )
 
 // Action相关定义
@@ -46,7 +46,7 @@ func NewActionSpec(actionPtr ActionWrapper) *ActionSpec {
 	}
 
 	countMethods := ptrType.NumMethod()
-	for i := 0; i < countMethods; i ++ {
+	for i := 0; i < countMethods; i++ {
 		method := ptrType.Method(i)
 		if !method.Func.IsValid() {
 			continue
@@ -63,4 +63,14 @@ func NewActionSpec(actionPtr ActionWrapper) *ActionSpec {
 // 新建一个Action指针
 func (this *ActionSpec) NewPtrValue() reflect.Value {
 	return reflect.New(this.Type)
+}
+
+// class名是否包含任一前缀
+func (this *ActionSpec) HasClassPrefix(prefix ...string) bool {
+	for _, prefix1 := range prefix {
+		if strings.HasPrefix(this.ClassName, prefix1) {
+			return true
+		}
+	}
+	return false
 }

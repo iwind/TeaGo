@@ -1,10 +1,10 @@
 package types
 
 import (
+	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
-	"fmt"
-	"errors"
 )
 
 func Byte(value interface{}) byte {
@@ -615,6 +615,10 @@ func String(value interface{}) string {
 	if ok {
 		return valueString
 	}
+	switch value.(type) {
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		return fmt.Sprintf("%d", value)
+	}
 	return fmt.Sprintf("%#v", value)
 }
 
@@ -710,7 +714,7 @@ func Slice(fromSlice interface{}, toSliceType reflect.Type) (interface{}, error)
 	v := reflect.Indirect(reflect.New(toSliceType))
 	count := fromValue.Len()
 	toElemKind := toSliceType.Elem().Kind()
-	for i := 0; i < count; i ++ {
+	for i := 0; i < count; i++ {
 		elem := fromValue.Index(i)
 		elemVar := elem.Interface()
 		switch toElemKind {
