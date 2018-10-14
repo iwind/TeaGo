@@ -1,17 +1,17 @@
 package dbs
 
 import (
+	"errors"
 	"fmt"
+	"github.com/iwind/TeaGo/lists"
+	"github.com/iwind/TeaGo/logs"
+	"github.com/iwind/TeaGo/maps"
+	"github.com/iwind/TeaGo/types"
+	"github.com/iwind/TeaGo/utils/string"
 	"reflect"
 	"strconv"
-	"errors"
 	"strings"
-	"github.com/iwind/TeaGo/utils/string"
-	"github.com/iwind/TeaGo/types"
-	"github.com/iwind/TeaGo/maps"
-	"github.com/iwind/TeaGo/logs"
 	"sync"
-	"github.com/iwind/TeaGo/lists"
 )
 
 const (
@@ -173,7 +173,7 @@ func (this *Query) Init(model interface{}) *Query {
 	this.namedParamIndex = 0
 
 	queryParamLocker.Lock()
-	queryParamPrefixIndex ++
+	queryParamPrefixIndex++
 	this.namedParamPrefix = fmt.Sprintf("%020d_", queryParamPrefixIndex)
 	queryParamLocker.Unlock()
 
@@ -249,7 +249,7 @@ func (this *Query) Limit(size int) *Query {
 
 // 设置查询要返回的字段
 // 字段名中支持星号(*)通配符
-func (this *Query) Result(fields ... interface{}) *Query {
+func (this *Query) Result(fields ...interface{}) *Query {
 	for _, field := range fields {
 		if _, ok := field.(string); ok {
 			this.results = append(this.results, field.(string))
@@ -289,7 +289,7 @@ func (this *Query) Order(field interface{}, orderType int) *Query {
 }
 
 // 添加正序排序
-func (this *Query) Asc(fields ... string) *Query {
+func (this *Query) Asc(fields ...string) *Query {
 	for _, field := range fields {
 		this.Order(field, QueryOrderAsc)
 	}
@@ -303,7 +303,7 @@ func (this *Query) AscPk() *Query {
 }
 
 // 添加倒序排序
-func (this *Query) Desc(fields ... string) *Query {
+func (this *Query) Desc(fields ...string) *Query {
 	for _, field := range fields {
 		this.Order(field, QueryOrderDesc)
 	}
@@ -339,14 +339,14 @@ func (this *Query) Having(cond string) *Query {
 
 // 设置where条件
 // @TODO 支持Query、SQL
-func (this *Query) Where(wheres ... string) *Query {
-	this.wheres = append(this.wheres, wheres ...)
+func (this *Query) Where(wheres ...string) *Query {
+	this.wheres = append(this.wheres, wheres...)
 
 	return this
 }
 
 // 设置Group查询条件
-func (this *Query) Group(field string, order ... int) *Query {
+func (this *Query) Group(field string, order ...int) *Query {
 	realOrder := QueryOrderDefault
 	if len(order) > 0 {
 		realOrder = order[0]
@@ -382,7 +382,7 @@ func (this *Query) Lock(lock string) *Query {
 }
 
 // 使用索引
-func (this *Query) UseIndex(index ... string) *Query {
+func (this *Query) UseIndex(index ...string) *Query {
 	userIndex := &QueryUseIndex{
 		Keyword: "USE",
 		For:     "",
@@ -393,7 +393,7 @@ func (this *Query) UseIndex(index ... string) *Query {
 }
 
 // 屏蔽索引
-func (this *Query) IgnoreIndex(index ... string) *Query {
+func (this *Query) IgnoreIndex(index ...string) *Query {
 	userIndex := &QueryUseIndex{
 		Keyword: "IGNORE",
 		For:     "",
@@ -404,7 +404,7 @@ func (this *Query) IgnoreIndex(index ... string) *Query {
 }
 
 // 强制使用索引
-func (this *Query) ForceIndex(index ... string) *Query {
+func (this *Query) ForceIndex(index ...string) *Query {
 	userIndex := &QueryUseIndex{
 		Keyword: "FORCE",
 		For:     "",
@@ -427,8 +427,8 @@ func (this *Query) For(clause string) *Query {
 }
 
 // 指定分区
-func (this *Query) Partitions(partitions ... string) *Query {
-	this.partitions = append(this.partitions, partitions ...)
+func (this *Query) Partitions(partitions ...string) *Query {
+	this.partitions = append(this.partitions, partitions...)
 	return this
 }
 
@@ -441,7 +441,7 @@ func (this *Query) partitionsSQL() string {
 }
 
 // 设置要查询的主键值
-func (this *Query) Pk(pks ... interface{}) *Query {
+func (this *Query) Pk(pks ...interface{}) *Query {
 	var realPks = []interface{}{}
 	for _, pk := range pks {
 		var value = reflect.ValueOf(pk)
@@ -477,13 +477,13 @@ func (this *Query) Attrs(attrs maps.Map) *Query {
 
 // 增加某个字段的数值
 func (this *Query) Increase(field string, count int) *Query {
-	this.savingFields.Put(field, this.wrapKeyword(field)+"="+this.wrapKeyword(field)+"+"+this.wrapValue(count))
+	this.savingFields.Put(field, this.wrapKeyword(field)+"+"+this.wrapValue(count))
 	return this
 }
 
 // 减少某个字段的数值
 func (this *Query) Decrease(field string, count int) *Query {
-	this.savingFields.Put(field, this.wrapKeyword(field)+"="+this.wrapKeyword(field)+"-"+this.wrapValue(count))
+	this.savingFields.Put(field, this.wrapKeyword(field)+"-"+this.wrapValue(count))
 	return this
 }
 
@@ -680,7 +680,7 @@ func (this *Query) AsSQL() (string, error) {
 
 	// where
 	if len(this.wheres) > 0 {
-		wheres = append(wheres, this.wheres ...)
+		wheres = append(wheres, this.wheres...)
 	}
 	if this.action != QueryActionInsert && this.action != QueryActionReplace && this.action != QueryActionInsertOrUpdate && len(wheres) > 0 {
 		sql += "\n WHERE " + strings.Join(wheres, " AND ")
@@ -804,7 +804,7 @@ func (this *Query) FindOnes() (results []maps.Map, columnNames []string, err err
 	if err != nil {
 		return nil, nil, err
 	}
-	ones, columnNames, err := stmt.FindOnes(this.params ...)
+	ones, columnNames, err := stmt.FindOnes(this.params...)
 
 	// 执行 filterFn 和 mapFn
 	results = []maps.Map{}
@@ -1013,7 +1013,7 @@ func (this *Query) Exec() (*Result, error) {
 		return nil, err
 	}
 
-	result, err := stmt.Exec(this.params ...)
+	result, err := stmt.Exec(this.params...)
 	if err != nil {
 		return nil, err
 	}
@@ -1043,7 +1043,7 @@ func (this *Query) Replace() (rowsAffected int64, lastInsertId int64, err error)
 		return 0, 0, err
 	}
 
-	result, err := stmt.Exec(this.params ...)
+	result, err := stmt.Exec(this.params...)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -1082,7 +1082,7 @@ func (this *Query) Insert() (lastInsertId int64, err error) {
 		return 0, err
 	}
 
-	result, err := stmt.Exec(this.params ...)
+	result, err := stmt.Exec(this.params...)
 	if err != nil {
 		return 0, err
 	}
@@ -1113,7 +1113,7 @@ func (this *Query) Update() (rowsAffected int64, err error) {
 		return 0, err
 	}
 
-	result, err := stmt.Exec(this.params ...)
+	result, err := stmt.Exec(this.params...)
 	if err != nil {
 		return 0, err
 	}
@@ -1158,7 +1158,7 @@ func (this *Query) InsertOrUpdate(insertingValues maps.Map, updatingValues maps.
 		return 0, 0, err
 	}
 
-	result, err := stmt.Exec(this.params ...)
+	result, err := stmt.Exec(this.params...)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -1191,7 +1191,7 @@ func (this *Query) Delete() (rowsAffected int64, err error) {
 	if err != nil {
 		return 0, err
 	}
-	result, err := stmt.Exec(this.params ...)
+	result, err := stmt.Exec(this.params...)
 	if err != nil {
 		return 0, err
 	}
@@ -1239,7 +1239,7 @@ func (this *Query) wrapAttr(value interface{}) (placeholder string, isArray bool
 
 		for paramName, paramValue := range value.namedParams {
 			this.namedParams[paramName] = paramValue
-			this.namedParamIndex ++
+			this.namedParamIndex++
 		}
 
 		return "IN (" + sql + ")", true
@@ -1252,7 +1252,7 @@ func (this *Query) wrapAttr(value interface{}) (placeholder string, isArray bool
 		var params = []string{}
 		var reflectValue = reflect.ValueOf(value)
 		var countElements = reflectValue.Len()
-		for i := 0; i < countElements; i ++ {
+		for i := 0; i < countElements; i++ {
 			var v, _ = this.wrapAttr(reflectValue.Index(i).Interface())
 			params = append(params, v)
 		}
@@ -1267,7 +1267,7 @@ func (this *Query) wrapAttr(value interface{}) (placeholder string, isArray bool
 
 	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
 	this.namedParams[param] = value
-	this.namedParamIndex ++
+	this.namedParamIndex++
 	return ":" + param, false
 }
 
@@ -1286,7 +1286,7 @@ func (this *Query) wrapValue(value interface{}) (placeholder string) {
 
 	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
 	this.namedParams[param] = value
-	this.namedParamIndex ++
+	this.namedParamIndex++
 	return ":" + param
 }
 

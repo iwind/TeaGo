@@ -1,15 +1,15 @@
 package logs
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/iwind/TeaGo/utils/string"
 	"log"
-	"runtime"
 	"os"
-	"bytes"
-	"strings"
 	"path/filepath"
-	"encoding/json"
+	"runtime"
+	"strings"
 )
 
 type Writer interface {
@@ -56,7 +56,11 @@ func SetWriter(newWriter Writer) {
 	writer = newWriter
 }
 
-func Println(args ... interface{}) {
+func HasWriter() bool {
+	return writer != nil
+}
+
+func Println(args ...interface{}) {
 	if !isOn {
 		return
 	}
@@ -72,25 +76,25 @@ func Println(args ... interface{}) {
 				newArgs = append(newArgs, arg)
 			}
 		}
-		writer.Write(fmt.Sprint(newArgs ...))
+		writer.Write(fmt.Sprint(newArgs...))
 	} else {
-		log.Println(args ...)
+		log.Println(args...)
 	}
 }
 
-func Printf(format string, args ... interface{}) {
+func Printf(format string, args ...interface{}) {
 	if !isOn {
 		return
 	}
 
 	if writer != nil {
-		writer.Write(Sprintf(format, args ...))
+		writer.Write(Sprintf(format, args...))
 	} else {
-		log.Println(Sprintf(format, args ...))
+		log.Println(Sprintf(format, args...))
 	}
 }
 
-func Sprintf(format string, args ... interface{}) string {
+func Sprintf(format string, args ...interface{}) string {
 	{
 		reg, _ := stringutil.RegexpCompile("<(\\w+)>")
 		format = reg.ReplaceAllStringFunc(format, func(value string) string {
@@ -120,36 +124,36 @@ func Sprintf(format string, args ... interface{}) string {
 		})
 	}
 
-	return fmt.Sprintf(format, args ...)
+	return fmt.Sprintf(format, args...)
 }
 
-func Infof(format string, args ... interface{}) {
-	Printf("[INFO]"+format, args ...)
+func Infof(format string, args ...interface{}) {
+	Printf("[INFO]"+format, args...)
 }
 
 func Codef(format string, args ...interface{}) {
-	Printf("[CODE]<code>"+format+"</code>", args ...)
+	Printf("[CODE]<code>"+format+"</code>", args...)
 }
 
 func Debugf(format string, args ...interface{}) {
-	Printf("[DEBUG]<code>"+format+"</code>", args ...)
+	Printf("[DEBUG]<code>"+format+"</code>", args...)
 }
 
 func Successf(format string, args ...interface{}) {
-	Printf("[SUCCESS]<success>"+format+"</success>", args ...)
+	Printf("[SUCCESS]<success>"+format+"</success>", args...)
 }
 
 func Warnf(format string, args ...interface{}) {
-	Printf("[WARN]<warn>"+format+"</warn>", args ...)
+	Printf("[WARN]<warn>"+format+"</warn>", args...)
 }
 
-func Errorf(format string, args ... interface{}) {
-	errorString := fmt.Sprintf(format, args ...)
+func Errorf(format string, args ...interface{}) {
+	errorString := fmt.Sprintf(format, args...)
 
 	// 调用stack
 	_, currentFilename, _, currentOk := runtime.Caller(0)
 	if currentOk {
-		for i := 1; i < 32; i ++ {
+		for i := 1; i < 32; i++ {
 			_, filename, lineNo, ok := runtime.Caller(i)
 			if !ok {
 				break
@@ -186,8 +190,8 @@ func Error(err error) {
 	Errorf("%s", errorString)
 }
 
-func Fatalf(format string, args ... interface{}) {
-	Printf("[FATAL]<error>"+format+"</error>", args ...)
+func Fatalf(format string, args ...interface{}) {
+	Printf("[FATAL]<error>"+format+"</error>", args...)
 	os.Exit(0)
 }
 
@@ -218,7 +222,7 @@ func Dump(variable interface{}) {
 		}
 
 		if c != '}' && last == '{' {
-			indent ++
+			indent++
 			buffer.WriteRune('\n')
 			buffer.WriteRune(' ')
 			buffer.WriteString(strings.Repeat("  ", indent))
@@ -228,7 +232,7 @@ func Dump(variable interface{}) {
 				break
 			}
 			buffer.WriteString(strings.Repeat("  ", indent))
-			indent --
+			indent--
 		}
 
 		buffer.WriteRune(c)

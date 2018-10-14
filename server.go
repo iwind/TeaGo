@@ -106,9 +106,6 @@ func (this *Server) init() {
 	this.config = &ServerConfig{}
 	this.config.Load()
 
-	// 日志
-	this.LogWriter(&DefaultLogWriter{})
-
 	// 执行参数
 	this.execArgs()
 
@@ -281,6 +278,8 @@ func (this *Server) StartOn(address string) {
 
 	// http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = runtime.NumCPU() * 100
 	// http.DefaultTransport.(*http.Transport).MaxIdleConns = runtime.NumCPU() * 2048
+
+	// http
 	if this.config.Http.On {
 		for _, addr := range this.config.Http.Listen {
 			logs.Println("start server on", addr)
@@ -299,6 +298,7 @@ func (this *Server) StartOn(address string) {
 		}
 	}
 
+	// https
 	if this.config.Https.On {
 		for _, addr := range this.config.Https.Listen {
 			logs.Println("start ssl server on", addr)
@@ -316,13 +316,21 @@ func (this *Server) StartOn(address string) {
 		}
 	}
 
+	// 默认地址
 	if len(address) > 0 {
 		logs.Println("start server on", address)
-		err := http.ListenAndServe(address, serverMux)
-		if err != nil {
-			logs.Errorf(err.Error())
-			time.Sleep(100 * time.Millisecond)
-		}
+		go func() {
+			err := http.ListenAndServe(address, serverMux)
+			if err != nil {
+				logs.Errorf(err.Error())
+				time.Sleep(100 * time.Millisecond)
+			}
+		}()
+	}
+
+	// 日志
+	if !logs.HasWriter() {
+		this.LogWriter(&DefaultLogWriter{})
 	}
 
 	// 启动任务管理器
