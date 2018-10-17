@@ -1,8 +1,8 @@
 package nets
 
 import (
-	"time"
 	"sync"
+	"time"
 )
 
 type downloader struct {
@@ -13,8 +13,10 @@ type downloader struct {
 	onAfterWriteFn  func(item *DownloaderItem)
 	onProgressFn    func(item *DownloaderItem)
 
-	onCompleteFn    func(item *DownloaderItem)
-	onErrorFn       func(item *DownloaderItem)
+	onCompleteFn func(item *DownloaderItem)
+	onErrorFn    func(item *DownloaderItem)
+
+	isDownloading   bool
 	onAllCompleteFn func()
 }
 
@@ -89,6 +91,8 @@ func (this *downloader) Wait() {
 }
 
 func (this *downloader) waitTasks(loop bool) {
+	this.isDownloading = true
+
 	go func() {
 		// 放在循环中，以便支持动态添加的新的下载任务
 		for {
@@ -172,9 +176,14 @@ func (this *downloader) waitTasks(loop bool) {
 
 			if len(leftItems) == 0 && this.onAllCompleteFn != nil {
 				this.onAllCompleteFn()
+				this.isDownloading = false
 			}
 		}
 	}()
+}
+
+func (downloader *downloader) IsDownloading() bool {
+	return downloader.isDownloading
 }
 
 /**func (downloader *downloader) Pause() {

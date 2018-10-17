@@ -3,12 +3,13 @@
 package processes
 
 import (
-	"os"
-	"github.com/iwind/TeaGo/Tea"
 	"errors"
+	"github.com/iwind/TeaGo/Tea"
+	"os"
 )
 
 type Process struct {
+	dir     string
 	command string
 	args    []string
 	native  *os.Process
@@ -16,11 +17,15 @@ type Process struct {
 	pid     int
 }
 
-func NewProcess(command string, args ... string) *Process {
+func NewProcess(command string, args ...string) *Process {
 	return &Process{
 		command: command,
 		args:    args,
 	}
+}
+
+func (this *Process) Pwd(dir string) {
+	this.dir = dir
 }
 
 func (this *Process) Out(out *os.File) {
@@ -32,13 +37,17 @@ func (this *Process) Start() error {
 		this.out = os.Stdout
 	}
 
+	pwd := Tea.Root
+	if len(this.dir) > 0 {
+		pwd = this.dir
+	}
 	attrs := os.ProcAttr{
-		Dir:   Tea.Root,
+		Dir:   pwd,
 		Env:   os.Environ(),
 		Files: []*os.File{os.Stdin, this.out, os.Stderr},
 	}
 
-	p, err := os.StartProcess(this.command, append([]string{this.command}, this.args ...), &attrs)
+	p, err := os.StartProcess(this.command, append([]string{this.command}, this.args...), &attrs)
 	if err != nil {
 		return err
 	}
@@ -53,13 +62,18 @@ func (this *Process) StartBackground() error {
 		this.out = os.Stdout
 	}
 
+	pwd := Tea.Root
+	if len(this.dir) > 0 {
+		pwd = this.dir
+	}
+
 	attrs := os.ProcAttr{
-		Dir:   Tea.Root,
+		Dir:   pwd,
 		Env:   os.Environ(),
 		Files: []*os.File{os.Stdin, this.out, os.Stderr},
 	}
 
-	p, err := os.StartProcess(this.command, append([]string{this.command}, this.args ...), &attrs)
+	p, err := os.StartProcess(this.command, append([]string{this.command}, this.args...), &attrs)
 	if err != nil {
 		return err
 	}
