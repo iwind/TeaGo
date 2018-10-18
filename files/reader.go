@@ -23,14 +23,12 @@ func (this *Reader) Read(size int64) []byte {
 	if err != nil {
 		if err != io.EOF {
 			logs.Error(err)
-		} else {
-			return []byte{}
 		}
 	}
-	if int64(n) < size {
-		data = data[:n]
+	if n > 0 {
+		return data[:n]
 	}
-	return data
+	return []byte{}
 }
 
 func (this *Reader) ReadByte() []byte {
@@ -89,7 +87,8 @@ func (this *Reader) ReadYAMLMap() (maps.Map, error) {
 	return m, err
 }
 
-func (this *Reader) Seek(offset int64, whence ...int) (ret int64, err error) {
+// 移动文件指针到某个位置
+func (this *Reader) Seek(offset int64, whence ...Whence) (ret int64, err error) {
 	if len(whence) > 0 {
 		return this.file.Seek(offset, whence[0])
 	}

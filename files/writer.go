@@ -1,12 +1,12 @@
 package files
 
 import (
+	"encoding/json"
+	"github.com/pquerna/ffjson/ffjson"
+	"gopkg.in/yaml.v2"
+	"io"
 	"os"
 	"sync"
-	"io"
-	"gopkg.in/yaml.v2"
-	"github.com/pquerna/ffjson/ffjson"
-	"encoding/json"
 )
 
 type Writer struct {
@@ -34,7 +34,7 @@ func (this *Writer) WriteIOReader(reader io.Reader) (n int64, err error) {
 	return io.Copy(this.file, reader)
 }
 
-func (this *Writer) WriteJSON(value interface{}, pretty ... bool) (n int64, err error) {
+func (this *Writer) WriteJSON(value interface{}, pretty ...bool) (n int64, err error) {
 	if len(pretty) == 0 || !pretty[0] {
 		data, err := ffjson.Marshal(value)
 		if err != nil {
@@ -70,14 +70,14 @@ func (this *Writer) WriteYAML(value interface{}) (n int64, err error) {
 	return this.Write(data)
 }
 
-func (this *Writer) Truncate(size ... int64) error {
+func (this *Writer) Truncate(size ...int64) error {
 	if len(size) > 0 {
 		return this.file.Truncate(size[0])
 	}
 	return this.file.Truncate(0)
 }
 
-func (this *Writer) Seek(offset int64, whence ... int) (ret int64, err error) {
+func (this *Writer) Seek(offset int64, whence ...Whence) (ret int64, err error) {
 	if len(whence) > 0 {
 		return this.file.Seek(offset, whence[0])
 	}
