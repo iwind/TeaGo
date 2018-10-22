@@ -1,10 +1,11 @@
 package Tea
 
 import (
-	"os"
-	"path/filepath"
+	"flag"
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/utils/string"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -28,7 +29,8 @@ func init() {
 	Root = findRoot()
 }
 
-func Is(env ... string) bool {
+// 判断是否在某个特定环境下
+func Is(env ...string) bool {
 	if len(env) == 0 {
 		return false
 	}
@@ -40,10 +42,17 @@ func Is(env ... string) bool {
 	return false
 }
 
+// 判断是否在测试模式下
+func IsTesting() bool {
+	return flag.Lookup("test.v") != nil
+}
+
+// 取得临时目录
 func TmpDir() string {
 	return Root + DS + "tmp"
 }
 
+// 取得临时文件
 func TmpFile(file string) string {
 	return TmpDir() + DS + file
 }
