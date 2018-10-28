@@ -30,6 +30,7 @@ func NewAssertion(t *testing.T) *Assertion {
 	}
 }
 
+// 是否开启静默模式，在此模式下成功的测试不会有提示
 func (this *Assertion) Quiet(isQuiet ...bool) *Assertion {
 	if len(isQuiet) == 0 {
 		this.quiet = true
@@ -72,7 +73,7 @@ func (this *Assertion) IsNil(value interface{}, msg ...interface{}) *Assertion {
 	return this
 }
 
-// 检视是否为非nil
+// 检查是否为非nil
 func (this *Assertion) IsNotNil(value interface{}, msg ...interface{}) *Assertion {
 	if value != nil || !reflect.ValueOf(value).IsNil() {
 		this.Pass(msg...)
@@ -83,6 +84,7 @@ func (this *Assertion) IsNotNil(value interface{}, msg ...interface{}) *Assertio
 	return this
 }
 
+// 检查是否为非error
 func (this *Assertion) IsNotError(value interface{}, msg ...interface{}) *Assertion {
 	if value == nil {
 		this.Pass(msg...)
@@ -99,7 +101,7 @@ func (this *Assertion) IsNotError(value interface{}, msg ...interface{}) *Assert
 	return this
 }
 
-// 判断是否为非空
+// 检查是否为非空
 func (this *Assertion) IsNotEmpty(value interface{}, msg ...interface{}) *Assertion {
 	if value == nil {
 		this.Fail(msg...)
