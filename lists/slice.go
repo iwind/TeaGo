@@ -127,7 +127,7 @@ func Map(slice interface{}, mapFunc func(k int, v interface{}) interface{}) []in
 
 	for i := 0; i < size; i++ {
 		v := value.Index(i)
-		result = append(result, mapFunc(i, v))
+		result = append(result, mapFunc(i, v.Interface()))
 	}
 
 	return result
