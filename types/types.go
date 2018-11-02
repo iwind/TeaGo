@@ -7,14 +7,62 @@ import (
 	"strconv"
 )
 
+// 将值转换成byte
 func Byte(value interface{}) byte {
 	return Uint8(value)
 }
 
+// 将值转换成int
 func Int(value interface{}) int {
-	return int(Int32(value))
+	if value == nil {
+		return 0
+	}
+
+	switch value := value.(type) {
+	case bool:
+		if value {
+			return 1
+		}
+		return 0
+	case int:
+		return int(value)
+	case int8:
+		return int(value)
+	case int16:
+		return int(value)
+	case int32:
+		return int(value)
+	case int64:
+		return int(value)
+	case uint:
+		return int(value)
+	case uint8:
+		return int(value)
+	case uint16:
+		return int(value)
+	case uint32:
+		return int(value)
+	case uint64:
+		return int(value)
+	case float32:
+		return int(value)
+	case float64:
+		return int(value)
+	case string:
+		var result, err = strconv.ParseInt(value, 10, 32)
+		if err == nil {
+			return int(result)
+		} else {
+			floatResult, err := strconv.ParseFloat(value, 32)
+			if err == nil {
+				return int(floatResult)
+			}
+		}
+	}
+	return 0
 }
 
+// 将值转换成int8
 func Int8(value interface{}) int8 {
 	if value == nil {
 		return 0
@@ -64,6 +112,7 @@ func Int8(value interface{}) int8 {
 	return 0
 }
 
+// 将值转换成int16
 func Int16(value interface{}) int16 {
 	if value == nil {
 		return 0
@@ -113,104 +162,7 @@ func Int16(value interface{}) int16 {
 	return 0
 }
 
-func Int64(value interface{}) int64 {
-	if value == nil {
-		return 0
-	}
-
-	switch value := value.(type) {
-	case bool:
-		if value {
-			return 1
-		}
-		return 0
-	case int:
-		return int64(value)
-	case int8:
-		return int64(value)
-	case int16:
-		return int64(value)
-	case int32:
-		return int64(value)
-	case int64:
-		return int64(value)
-	case uint:
-		return int64(value)
-	case uint8:
-		return int64(value)
-	case uint16:
-		return int64(value)
-	case uint32:
-		return int64(value)
-	case uint64:
-		return int64(value)
-	case float32:
-		return int64(value)
-	case float64:
-		return int64(value)
-	case string:
-		var result, err = strconv.ParseInt(value, 10, 64)
-		if err == nil {
-			return result
-		} else {
-			floatResult, err := strconv.ParseFloat(value, 64)
-			if err == nil {
-				return int64(floatResult)
-			}
-		}
-	}
-	return 0
-}
-
-func Uint64(value interface{}) uint64 {
-	if value == nil {
-		return 0
-	}
-
-	switch value := value.(type) {
-	case bool:
-		if value {
-			return 1
-		}
-		return 0
-	case int:
-		return uint64(value)
-	case int8:
-		return uint64(value)
-	case int16:
-		return uint64(value)
-	case int32:
-		return uint64(value)
-	case int64:
-		return uint64(value)
-	case uint:
-		return uint64(value)
-	case uint8:
-		return uint64(value)
-	case uint16:
-		return uint64(value)
-	case uint32:
-		return uint64(value)
-	case uint64:
-		return uint64(value)
-	case float32:
-		return uint64(value)
-	case float64:
-		return uint64(value)
-	case string:
-		var result, err = strconv.ParseInt(value, 10, 64)
-		if err == nil {
-			return uint64(result)
-		} else {
-			floatResult, err := strconv.ParseFloat(value, 64)
-			if err == nil {
-				return uint64(floatResult)
-			}
-		}
-	}
-	return 0
-}
-
+// 将值转换成int32
 func Int32(value interface{}) int32 {
 	if value == nil {
 		return 0
@@ -260,6 +212,57 @@ func Int32(value interface{}) int32 {
 	return 0
 }
 
+// 将值转换成int64
+func Int64(value interface{}) int64 {
+	if value == nil {
+		return 0
+	}
+
+	switch value := value.(type) {
+	case bool:
+		if value {
+			return 1
+		}
+		return 0
+	case int:
+		return int64(value)
+	case int8:
+		return int64(value)
+	case int16:
+		return int64(value)
+	case int32:
+		return int64(value)
+	case int64:
+		return int64(value)
+	case uint:
+		return int64(value)
+	case uint8:
+		return int64(value)
+	case uint16:
+		return int64(value)
+	case uint32:
+		return int64(value)
+	case uint64:
+		return int64(value)
+	case float32:
+		return int64(value)
+	case float64:
+		return int64(value)
+	case string:
+		var result, err = strconv.ParseInt(value, 10, 64)
+		if err == nil {
+			return result
+		} else {
+			floatResult, err := strconv.ParseFloat(value, 64)
+			if err == nil {
+				return int64(floatResult)
+			}
+		}
+	}
+	return 0
+}
+
+// 将值转换成uint
 func Uint(value interface{}) uint {
 	if value == nil {
 		return 0
@@ -309,6 +312,7 @@ func Uint(value interface{}) uint {
 	return 0
 }
 
+// 将值转换成uint8
 func Uint8(value interface{}) uint8 {
 	if value == nil {
 		return 0
@@ -358,6 +362,7 @@ func Uint8(value interface{}) uint8 {
 	return 0
 }
 
+// 将值转换成uint16
 func Uint16(value interface{}) uint16 {
 	if value == nil {
 		return 0
@@ -407,6 +412,7 @@ func Uint16(value interface{}) uint16 {
 	return 0
 }
 
+// 将值转换成uint32
 func Uint32(value interface{}) uint32 {
 	if value == nil {
 		return 0
@@ -456,6 +462,57 @@ func Uint32(value interface{}) uint32 {
 	return 0
 }
 
+// 将值转换成uint64
+func Uint64(value interface{}) uint64 {
+	if value == nil {
+		return 0
+	}
+
+	switch value := value.(type) {
+	case bool:
+		if value {
+			return 1
+		}
+		return 0
+	case int:
+		return uint64(value)
+	case int8:
+		return uint64(value)
+	case int16:
+		return uint64(value)
+	case int32:
+		return uint64(value)
+	case int64:
+		return uint64(value)
+	case uint:
+		return uint64(value)
+	case uint8:
+		return uint64(value)
+	case uint16:
+		return uint64(value)
+	case uint32:
+		return uint64(value)
+	case uint64:
+		return uint64(value)
+	case float32:
+		return uint64(value)
+	case float64:
+		return uint64(value)
+	case string:
+		var result, err = strconv.ParseInt(value, 10, 64)
+		if err == nil {
+			return uint64(result)
+		} else {
+			floatResult, err := strconv.ParseFloat(value, 64)
+			if err == nil {
+				return uint64(floatResult)
+			}
+		}
+	}
+	return 0
+}
+
+// 将值转换成int32，也会返回转换过程中的错误
 func Int32Value(value interface{}) (int32, error) {
 	if value == nil {
 		return 0, errors.New("value should not be nil")
@@ -506,6 +563,7 @@ func Int32Value(value interface{}) (int32, error) {
 	return 0, nil
 }
 
+// 将值转换成float64
 func Float64(value interface{}) float64 {
 	if value == nil {
 		return 0
@@ -550,6 +608,7 @@ func Float64(value interface{}) float64 {
 	return 0
 }
 
+// 将值转换成float32
 func Float32(value interface{}) float32 {
 	if value == nil {
 		return 0
@@ -594,6 +653,7 @@ func Float32(value interface{}) float32 {
 	return 0
 }
 
+// 将值转换成bool类型
 func Bool(value interface{}) bool {
 	if value == nil {
 		return false
@@ -607,6 +667,7 @@ func Bool(value interface{}) bool {
 	return Int64(value) > 0
 }
 
+// 将值转换成字符串
 func String(value interface{}) string {
 	if value == nil {
 		return ""
@@ -622,6 +683,7 @@ func String(value interface{}) string {
 	return fmt.Sprintf("%#v", value)
 }
 
+// 比较两个值大小
 func Compare(value1 interface{}, value2 interface{}) bool {
 	if value1 == nil {
 		return false
