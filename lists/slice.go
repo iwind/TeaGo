@@ -132,3 +132,51 @@ func Map(slice interface{}, mapFunc func(k int, v interface{}) interface{}) []in
 
 	return result
 }
+
+// 过滤slice中的元素
+// 只有filterFunc返回true的才会放到结果中
+func Filter(slice interface{}, filterFunc func(k int, v interface{}) bool) []interface{} {
+	value := reflect.ValueOf(slice)
+	size := value.Len()
+	result := []interface{}{}
+
+	for i := 0; i < size; i++ {
+		v := value.Index(i).Interface()
+		b := filterFunc(i, v)
+		if b {
+			result = append(result, v)
+		}
+	}
+
+	return result
+}
+
+// 获取item所在位置
+func Index(slice interface{}, item interface{}) int {
+	value := reflect.ValueOf(slice)
+	size := value.Len()
+
+	for i := 0; i < size; i++ {
+		v := value.Index(i).Interface()
+		if v == item {
+			return i
+		}
+	}
+
+	return -1
+}
+
+// 获取item所在位置，但从末尾开始查找
+func LastIndex(slice interface{}, item interface{}) int {
+	value := reflect.ValueOf(slice)
+	size := value.Len()
+
+	for i := size - 1; i >= 0; i-- {
+		v := value.Index(i).Interface()
+		if v == item {
+			return i
+		}
+	}
+
+	return -1
+}

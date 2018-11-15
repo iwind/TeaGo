@@ -7,20 +7,22 @@ import (
 )
 
 type MemorySessionManager struct {
-	sessionMap *sync.Map // sid => { expiredAt, items }
+	sessionMap map[string]map[string]interface{} // sid => { expiredAt, items }
 	life       uint
 
 	isInitialized bool
+
+	locker sync.Mutex
 }
 
 func NewMemorySessionManager() *MemorySessionManager {
 	return &MemorySessionManager{
-		sessionMap: &sync.Map{},
+		sessionMap: map[string]map[string]interface{}{},
 		life:       1200,
 	}
 }
 
-func (this *MemorySessionManager) Init(config *actions.SessionConfig) () {
+func (this *MemorySessionManager) Init(config *actions.SessionConfig) {
 	if this.isInitialized {
 		return
 	}
@@ -28,7 +30,7 @@ func (this *MemorySessionManager) Init(config *actions.SessionConfig) () {
 	this.isInitialized = true
 
 	this.life = config.Life
-	this.sessionMap = &sync.Map{}
+	this.sessionMap = map[string]map[string]interface{}{}
 
 	// 定期清除过期的SESSION
 	tick := time.NewTicker(1800 * time.Second)
@@ -36,44 +38,54 @@ func (this *MemorySessionManager) Init(config *actions.SessionConfig) () {
 		for {
 			<-tick.C
 
-			this.sessionMap.Range(func(sid, user interface{}) bool {
-				userMap := user.(map[string]interface{})
-				expiredAt := userMap["expiredAt"].(int64)
+			this.locker.Lock()
+			for sid, user := range this.sessionMap {
+				expiredAt := user["expiredAt"].(int64)
 				if expiredAt < time.Now().Unix() {
-					this.sessionMap.Delete(sid)
+					delete(this.sessionMap, sid)
 				}
-				return true
-			})
+			}
+			this.locker.Unlock()
 		}
 	}()
 }
 
 func (this *MemorySessionManager) Read(sid string) map[string]string {
-	user, found := this.sessionMap.Load(sid)
+	this.locker.Lock()
+	defer this.locker.Unlock()
+
+	user, found := this.sessionMap[sid]
 	if !found {
 		return map[string]string{}
 	}
 
-	userMap := user.(map[string]interface{})
-	expiredAt := userMap["expiredAt"].(int64)
+	expiredAt := user["expiredAt"].(int64)
 	if expiredAt < time.Now().Unix() {
 		return map[string]string{}
 	}
 
-	return userMap["items"].(map[string]string)
+	return user["items"].(map[string]string)
 }
 
 func (this *MemorySessionManager) WriteItem(sid string, key string, value string) bool {
+	// 这个要放在lock之前，否则会造成死锁
 	items := this.Read(sid)
+
+	this.locker.Lock()
+	defer this.locker.Unlock()
+
 	items[key] = value
-	this.sessionMap.Store(sid, map[string]interface{}{
+	this.sessionMap[sid] = map[string]interface{}{
 		"expiredAt": time.Now().Unix() + int64(this.life),
 		"items":     items,
-	})
+	}
 	return true
 }
 
 func (this *MemorySessionManager) Delete(sid string) bool {
-	this.sessionMap.Delete(sid)
+	this.locker.Lock()
+	defer this.locker.Unlock()
+
+	delete(this.sessionMap, sid)
 	return true
 }
