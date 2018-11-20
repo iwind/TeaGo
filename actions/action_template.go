@@ -1,24 +1,24 @@
 package actions
 
 import (
-	"text/template"
-	"os"
-	"sync"
-	"io/ioutil"
-	"github.com/iwind/TeaGo/utils/string"
-	"path/filepath"
-	"strings"
-	"github.com/pquerna/ffjson/ffjson"
-	"time"
 	"github.com/iwind/TeaGo/Tea"
-	"github.com/iwind/TeaGo/logs"
-	"runtime"
-	"regexp"
 	"github.com/iwind/TeaGo/files"
-	"net/url"
 	"github.com/iwind/TeaGo/gohtml"
 	"github.com/iwind/TeaGo/gohtml/atom"
+	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/maps"
+	"github.com/iwind/TeaGo/utils/string"
+	"github.com/pquerna/ffjson/ffjson"
+	"io/ioutil"
+	"net/url"
+	"os"
+	"path/filepath"
+	"regexp"
+	"runtime"
+	"strings"
+	"sync"
+	"text/template"
+	"time"
 )
 
 type TemplateCache struct {
@@ -132,10 +132,12 @@ func (this *ActionObject) render(dir string) error {
 
 	// 支持{$var "varName"}var value{$end}
 	reg, _ := stringutil.RegexpCompile("(?U)\\{\\s*\\$var\\s+\"(\\w+)\"\\s*\\}((.|\n)+){\\s*\\$end\\s*}\n")
-	var varMap = maps.Map{}
+	varMaps := []maps.Map{}
 	body = reg.ReplaceAllStringFunc(body, func(s string) string {
 		matches := reg.FindStringSubmatch(s)
-		varMap[matches[1]] = matches[2]
+		varMaps = append(varMaps, maps.Map{
+			matches[1]: matches[2],
+		})
 		return ""
 	})
 
@@ -167,7 +169,9 @@ func (this *ActionObject) render(dir string) error {
 		return err
 	}
 
-	newTemplate.SetVars(varMap)
+	for _, varMap := range varMaps {
+		newTemplate.SetVars(varMap)
+	}
 
 	addFileToWatchingFiles(&watchingFiles, filename+".html")
 
@@ -208,8 +212,18 @@ func loadChildTemplate(watchingFiles *map[string]int64, tpl *Template, dir strin
 	body := string(childBytes)
 	body = formatHTML(body)
 
+	// 支持{$var "varName"}var value{$end}
+	reg, _ := stringutil.RegexpCompile("(?U)\\{\\s*\\$var\\s+\"(\\w+)\"\\s*\\}((.|\n)+){\\s*\\$end\\s*}\n")
+	body = reg.ReplaceAllStringFunc(body, func(s string) string {
+		matches := reg.FindStringSubmatch(s)
+		tpl.SetVars(maps.Map{
+			matches[1]: matches[2],
+		})
+		return ""
+	})
+
 	// 子模板
-	reg, err := stringutil.RegexpCompile("\\{\\$template\\s+\"(.+)\"\\}")
+	reg, err = stringutil.RegexpCompile("\\{\\$template\\s+\"(.+)\"\\}")
 	matches := reg.FindAllStringSubmatch(body, -1)
 	for _, match := range matches {
 		err = loadChildTemplate(watchingFiles, tpl, dir, filename, match[1])

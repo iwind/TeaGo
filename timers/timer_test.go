@@ -1,9 +1,9 @@
 package timers
 
 import (
+	"github.com/iwind/TeaGo/logs"
 	"testing"
 	"time"
-	"github.com/iwind/TeaGo/logs"
 )
 
 func TestDelay(t *testing.T) {
@@ -20,6 +20,7 @@ func TestAt(t *testing.T) {
 	At(time.Now().Add(5*time.Second), func(timer *time.Timer) {
 		t.Log(time.Now(), "run task")
 	})
+	//timer.Stop()
 
 	At(time.Now().Add(-5*time.Second), func(timer *time.Timer) {
 		t.Log(time.Now(), "run task2")
@@ -34,7 +35,7 @@ func TestEvery(t *testing.T) {
 	var ticker *time.Ticker
 	ticker = Every(3*time.Second, func(timer *time.Ticker) {
 		t.Log(time.Now(), "run task")
-		i ++
+		i++
 
 		if i == 2 {
 			ticker.Stop()

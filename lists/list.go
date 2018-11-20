@@ -1,11 +1,11 @@
 package lists
 
 import (
+	"encoding/json"
+	"github.com/pquerna/ffjson/ffjson"
+	"math/rand"
 	"reflect"
 	"sort"
-	"github.com/pquerna/ffjson/ffjson"
-	"encoding/json"
-	"math/rand"
 	"time"
 )
 
@@ -23,10 +23,15 @@ func NewList(slice interface{}) *List {
 
 // 反转List
 func (this *List) Reverse() {
-	this.compareFunc = func(i, j int) bool {
-		return i > j
+	v := reflect.ValueOf(this.Slice)
+	count := v.Len()
+	newValue := reflect.New(v.Type()).Elem()
+	for i := count - 1; i >= 0; i-- {
+		newValue = reflect.Append(newValue, v.Index(i))
 	}
-	sort.Sort(this)
+	for i := 0; i < count; i++ {
+		v.Index(i).Set(newValue.Index(i))
+	}
 }
 
 // 对该List进行排序
@@ -44,7 +49,7 @@ func (this *List) Each(iterator func(k int, v interface{})) {
 func (this *List) Range(iterator func(k int, v interface{})) {
 	value := reflect.ValueOf(this.Slice)
 	count := value.Len()
-	for i := 0; i < count; i ++ {
+	for i := 0; i < count; i++ {
 		iterator(i, value.Index(i).Interface())
 	}
 }
@@ -58,7 +63,7 @@ func (this *List) Map(mapFunc func(k int, v interface{}) interface{}) *List {
 		Slice: newValue.Interface(),
 	}
 	count := value.Len()
-	for i := 0; i < count; i ++ {
+	for i := 0; i < count; i++ {
 		v := mapFunc(i, value.Index(i).Interface())
 		newValue = reflect.Append(newValue, reflect.ValueOf(v))
 	}
@@ -78,7 +83,7 @@ func (this *List) All(iterator func(k int, v interface{}) bool) bool {
 	if count == 0 {
 		return true
 	}
-	for i := 0; i < count; i ++ {
+	for i := 0; i < count; i++ {
 		v := value.Index(i).Interface()
 		if !iterator(i, v) {
 			return false
@@ -94,7 +99,7 @@ func (this *List) Any(iterator func(k int, v interface{}) bool) bool {
 	if count == 0 {
 		return true
 	}
-	for i := 0; i < count; i ++ {
+	for i := 0; i < count; i++ {
 		v := value.Index(i).Interface()
 		if iterator(i, v) {
 			return true
@@ -110,7 +115,7 @@ func (this *List) Find(iterator func(k int, v interface{}) bool) interface{} {
 	if count == 0 {
 		return nil
 	}
-	for i := 0; i < count; i ++ {
+	for i := 0; i < count; i++ {
 		v := value.Index(i).Interface()
 		if iterator(i, v) {
 			return v
@@ -126,7 +131,7 @@ func (this *List) FindPair(iterator func(k int, v interface{}) bool) (index int,
 	if count == 0 {
 		return -1, nil
 	}
-	for i := 0; i < count; i ++ {
+	for i := 0; i < count; i++ {
 		v := value.Index(i).Interface()
 		if iterator(i, v) {
 			return i, v
@@ -142,7 +147,7 @@ func (this *List) FindIndex(iterator func(k int, v interface{}) bool) int {
 	if count == 0 {
 		return -1
 	}
-	for i := 0; i < count; i ++ {
+	for i := 0; i < count; i++ {
 		v := value.Index(i).Interface()
 		if iterator(i, v) {
 			return i
@@ -163,7 +168,7 @@ func (this *List) FindAll(iterator func(k int, v interface{}) bool) *List {
 	if count == 0 {
 		return result
 	}
-	for i := 0; i < count; i ++ {
+	for i := 0; i < count; i++ {
 		v := value.Index(i).Interface()
 		if iterator(i, v) {
 			newValue = reflect.Append(newValue, reflect.ValueOf(v))
@@ -182,12 +187,12 @@ func (this *List) Rand(size int) *List {
 }
 
 // 在尾部加入一个或多个元素，同Append
-func (this *List) Push(items ... interface{}) {
-	this.Append(items ...)
+func (this *List) Push(items ...interface{}) {
+	this.Append(items...)
 }
 
 // 在尾部加入一个或多个元素，同Push
-func (this *List) Append(items ... interface{}) {
+func (this *List) Append(items ...interface{}) {
 	value := reflect.ValueOf(this.Slice)
 
 	for _, item := range items {
@@ -244,9 +249,9 @@ func (this *List) Shift() interface{} {
 }
 
 // 在头部加入一个或多个新元素
-func (this *List) Unshift(items ... interface{}) {
+func (this *List) Unshift(items ...interface{}) {
 	newValue := reflect.Indirect(reflect.New(reflect.TypeOf(this.Slice)))
-	for i := len(items) - 1; i >= 0; i -- {
+	for i := len(items) - 1; i >= 0; i-- {
 		newValue = reflect.Append(newValue, reflect.ValueOf(items[i]))
 	}
 	newValue = reflect.AppendSlice(newValue, reflect.ValueOf(this.Slice))
@@ -313,7 +318,7 @@ func (this *List) RemoveIf(iterator func(k int, v interface{}) bool) {
 		return
 	}
 	newValue := reflect.MakeSlice(value.Type(), 0, size)
-	for i := 0; i < size; i ++ {
+	for i := 0; i < size; i++ {
 		itemValue := value.Index(i)
 		if !iterator(i, itemValue.Interface()) {
 			newValue = reflect.Append(newValue, itemValue)
@@ -330,7 +335,7 @@ func (this *List) KeepIf(iterator func(k int, v interface{}) bool) {
 		return
 	}
 	newValue := reflect.MakeSlice(value.Type(), 0, size)
-	for i := 0; i < size; i ++ {
+	for i := 0; i < size; i++ {
 		itemValue := value.Index(i)
 		if iterator(i, itemValue.Interface()) {
 			newValue = reflect.Append(newValue, itemValue)

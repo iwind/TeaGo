@@ -52,3 +52,11 @@ func TestSliceDelete(t *testing.T) {
 	n2 := Delete(slice2, 3)
 	t.Log(n2)
 }
+
+func TestSliceReverse(t *testing.T) {
+	a := []string{"a", "b", "c", "d", "e", "f", "g", "h"}
+	t.Log(a)
+
+	Reverse(a)
+	t.Log(a)
+}

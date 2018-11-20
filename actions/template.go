@@ -1,9 +1,9 @@
 package actions
 
 import (
-	"text/template"
 	"github.com/iwind/TeaGo/maps"
 	"io"
+	"text/template"
 )
 
 // 模板定义
@@ -59,7 +59,26 @@ func (this *Template) NewChild(name string) *Template {
 
 // 设置变量
 func (this *Template) SetVars(vars maps.Map) *Template {
-	this.vars = vars
+	for name, value := range vars {
+		oldValue, found := this.vars[name]
+		if !found {
+			this.vars[name] = value
+			continue
+		}
+		oldValueString, ok := oldValue.(string)
+		if !ok {
+			this.vars[name] = value
+			continue
+		}
+
+		valueString, ok := value.(string)
+		if !ok {
+			this.vars[name] = value
+			continue
+		}
+
+		this.vars[name] = oldValueString + valueString
+	}
 	return this
 }
 
