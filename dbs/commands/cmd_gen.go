@@ -1,19 +1,19 @@
 package commands
 
 import (
-	"github.com/iwind/TeaGo/cmd"
-	"github.com/iwind/TeaGo/utils/string"
-	"strings"
+	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/iwind/TeaGo/files"
 	"github.com/iwind/TeaGo/Tea"
+	"github.com/iwind/TeaGo/cmd"
+	"github.com/iwind/TeaGo/dbs"
+	"github.com/iwind/TeaGo/files"
+	"github.com/iwind/TeaGo/utils/string"
+	"go/format"
 	"os"
 	"path/filepath"
 	"regexp"
-	"go/format"
-	"github.com/iwind/TeaGo/dbs"
-	"errors"
+	"strings"
 )
 
 type GenModelCommand struct {
@@ -188,6 +188,7 @@ func New` + model + `Operator() *` + model + `Operator {
 	daoString := `package ` + subPackage + `
 
 import (
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/iwind/TeaGo/dbs"
 	"github.com/iwind/TeaGo/Tea"
 )

@@ -1,10 +1,10 @@
 package dbs
 
 import (
-	"sync"
+	"github.com/iwind/TeaGo/types"
 	"reflect"
 	"strings"
-	"github.com/iwind/TeaGo/types"
+	"sync"
 )
 
 var modelMapping = sync.Map{}
@@ -33,7 +33,7 @@ func NewModel(modelPointer interface{}) *Model {
 		KindsMap: map[string]reflect.Kind{},
 	}
 	var countFields = valueType.NumField()
-	for i := 0; i < countFields; i ++ {
+	for i := 0; i < countFields; i++ {
 		var field = valueType.Field(i)
 		var kind = field.Type.Kind()
 		if kind != reflect.Bool &&
@@ -59,7 +59,7 @@ func NewModel(modelPointer interface{}) *Model {
 			continue
 		}
 
-		model.CountFields ++
+		model.CountFields++
 		model.Attrs = append(model.Attrs, field.Name)
 		model.Fields = append(model.Fields, originField)
 		model.Kinds = append(model.Kinds, kind)

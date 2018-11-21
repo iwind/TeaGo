@@ -1,11 +1,11 @@
 package dbs
 
 import (
+	"github.com/iwind/TeaGo/logs"
 	"log"
 	"reflect"
 	"sync"
 	"time"
-	"github.com/iwind/TeaGo/logs"
 )
 
 type DAOObject struct {
@@ -147,7 +147,7 @@ func (this *DAOObject) Save(operatorPtr interface{}) (newOperatorPtr interface{}
 	var query = this.Query()
 	var countFields = modelValue.NumField()
 	var modelType = modelValue.Type()
-	for i := 0; i < countFields; i ++ {
+	for i := 0; i < countFields; i++ {
 		var fieldValue = modelValue.Field(i)
 		if !fieldValue.IsValid() {
 			continue

@@ -1,19 +1,19 @@
 package dbs
 
 import (
-	"sync"
-	"io/ioutil"
 	"database/sql"
 	"errors"
-	"reflect"
-	"time"
-	"strings"
-	"github.com/iwind/TeaGo/logs"
 	"github.com/go-yaml/yaml"
 	"github.com/iwind/TeaGo/Tea"
-	"path/filepath"
-	"github.com/iwind/TeaGo/types"
+	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/maps"
+	"github.com/iwind/TeaGo/types"
+	"io/ioutil"
+	"path/filepath"
+	"reflect"
+	"strings"
+	"sync"
+	"time"
 )
 
 type DB struct {
@@ -240,11 +240,11 @@ func (this *DB) Close() error {
 	return err
 }
 
-func (db *DB) Exec(query string, params ... interface{}) (sql.Result, error) {
+func (db *DB) Exec(query string, params ...interface{}) (sql.Result, error) {
 	if db.tx == nil {
-		return db.sqlDB.Exec(query, params ...)
+		return db.sqlDB.Exec(query, params...)
 	} else {
-		return db.tx.Exec(query, params ...)
+		return db.tx.Exec(query, params...)
 	}
 }
 
@@ -299,7 +299,7 @@ func (this *DB) PrepareOnce(query string) (*Stmt, error) {
 	}
 }
 
-func (this *DB) FindOnes(query string, args ... interface{}) (results []maps.Map, columnNames []string, err error) {
+func (this *DB) FindOnes(query string, args ...interface{}) (results []maps.Map, columnNames []string, err error) {
 	stmt, err := this.Prepare(query)
 	if err != nil {
 		logs.Errorf("DB.FindOnes():%s", err.Error())
@@ -308,11 +308,11 @@ func (this *DB) FindOnes(query string, args ... interface{}) (results []maps.Map
 
 	defer stmt.Close()
 
-	return stmt.FindOnes(args ...)
+	return stmt.FindOnes(args...)
 }
 
-func (this *DB) FindOne(query string, args ... interface{}) (maps.Map, error) {
-	results, _, err := this.FindOnes(query, args ...)
+func (this *DB) FindOne(query string, args ...interface{}) (maps.Map, error) {
+	results, _, err := this.FindOnes(query, args...)
 	if err != nil {
 		logs.Errorf("DB.FindOne():%s", err.Error())
 		return nil, err
@@ -324,7 +324,7 @@ func (this *DB) FindOne(query string, args ... interface{}) (maps.Map, error) {
 	return nil, nil
 }
 
-func (this *DB) FindCol(colIndex int, query string, args ... interface{}) (interface{}, error) {
+func (this *DB) FindCol(colIndex int, query string, args ...interface{}) (interface{}, error) {
 	stmt, err := this.Prepare(query)
 	if err != nil {
 		logs.Errorf("DB.FindCol():%s", err.Error())
@@ -333,7 +333,7 @@ func (this *DB) FindCol(colIndex int, query string, args ... interface{}) (inter
 
 	defer stmt.Close()
 
-	rows, err := stmt.Query(args ...)
+	rows, err := stmt.Query(args...)
 	if err != nil {
 		logs.Errorf("DB.FindCol():%s", err.Error())
 		return nil, err
@@ -352,13 +352,13 @@ func (this *DB) FindCol(colIndex int, query string, args ... interface{}) (inter
 	}
 
 	var valuePointers = []interface{}{}
-	for i := 0; i < countColumns; i ++ {
+	for i := 0; i < countColumns; i++ {
 		var v interface{}
 		valuePointers = append(valuePointers, &v)
 	}
 
 	if rows.Next() {
-		err := rows.Scan(valuePointers ...)
+		err := rows.Scan(valuePointers...)
 		if err != nil {
 			logs.Errorf("DB.FindCol():%s", err.Error())
 			return nil, err

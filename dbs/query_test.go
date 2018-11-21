@@ -1,13 +1,13 @@
 package dbs
 
 import (
-	"testing"
-	"reflect"
-	_ "github.com/go-sql-driver/mysql"
 	"encoding/json"
-	"time"
-	"github.com/iwind/TeaGo/utils/time"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/iwind/TeaGo/logs"
+	"github.com/iwind/TeaGo/utils/time"
+	"reflect"
+	"testing"
+	"time"
 )
 
 type TestUser struct {

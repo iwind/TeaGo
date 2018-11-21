@@ -2,10 +2,10 @@ package dbs
 
 import (
 	"database/sql"
-	"reflect"
 	"errors"
-	"sync"
 	"github.com/iwind/TeaGo/maps"
+	"reflect"
+	"sync"
 )
 
 type Stmt struct {
@@ -22,16 +22,16 @@ func BuildStmt(stmt *sql.Stmt, err error) (*Stmt, error) {
 	return newStmt, err
 }
 
-func (this *Stmt) Query(args ... interface{}) (*sql.Rows, error) {
-	return this.sqlStmt.Query(args ...)
+func (this *Stmt) Query(args ...interface{}) (*sql.Rows, error) {
+	return this.sqlStmt.Query(args...)
 }
 
-func (this *Stmt) FindOnes(args ... interface{}) (results []maps.Map, columnNames []string, err error) {
+func (this *Stmt) FindOnes(args ...interface{}) (results []maps.Map, columnNames []string, err error) {
 	if this.sqlStmt == nil {
 		return nil, nil, errors.New("stmt not be prepared")
 	}
 
-	rows, err := this.sqlStmt.Query(args ...)
+	rows, err := this.sqlStmt.Query(args...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -47,19 +47,19 @@ func (this *Stmt) FindOnes(args ... interface{}) (results []maps.Map, columnName
 
 	var countColumns = len(columnNames)
 	var valuePointers = []interface{}{}
-	for i := 0; i < countColumns; i ++ {
+	for i := 0; i < countColumns; i++ {
 		var v interface{}
 		valuePointers = append(valuePointers, &v)
 	}
 
 	for rows.Next() {
-		err := rows.Scan(valuePointers ...)
+		err := rows.Scan(valuePointers...)
 		if err != nil {
 			return nil, nil, err
 		}
 
 		var rowMap = maps.Map{}
-		for i := 0; i < countColumns; i ++ {
+		for i := 0; i < countColumns; i++ {
 			var pointer = valuePointers[i]
 			var value = *pointer.(*interface{})
 
@@ -79,8 +79,8 @@ func (this *Stmt) FindOnes(args ... interface{}) (results []maps.Map, columnName
 	return results, columnNames, nil
 }
 
-func (this *Stmt) FindOne(args ... interface{}) (result maps.Map, err error) {
-	ones, _, err := this.FindOnes(args ...)
+func (this *Stmt) FindOne(args ...interface{}) (result maps.Map, err error) {
+	ones, _, err := this.FindOnes(args...)
 	if err != nil {
 		return nil, err
 	}
@@ -92,8 +92,8 @@ func (this *Stmt) FindOne(args ... interface{}) (result maps.Map, err error) {
 	return ones[0], nil
 }
 
-func (this *Stmt) FindCol(colIndex int, args ... interface{}) (interface{}, error) {
-	rows, err := this.Query(args ...)
+func (this *Stmt) FindCol(colIndex int, args ...interface{}) (interface{}, error) {
+	rows, err := this.Query(args...)
 	if err != nil {
 		return nil, err
 	}
@@ -110,13 +110,13 @@ func (this *Stmt) FindCol(colIndex int, args ... interface{}) (interface{}, erro
 	}
 
 	var valuePointers = []interface{}{}
-	for i := 0; i < countColumns; i ++ {
+	for i := 0; i < countColumns; i++ {
 		var v interface{}
 		valuePointers = append(valuePointers, &v)
 	}
 
 	if rows.Next() {
-		err := rows.Scan(valuePointers ...)
+		err := rows.Scan(valuePointers...)
 		if err != nil {
 			return nil, err
 		}
@@ -136,8 +136,8 @@ func (this *Stmt) FindCol(colIndex int, args ... interface{}) (interface{}, erro
 	return nil, nil
 }
 
-func (this *Stmt) Exec(args ... interface{}) (sql.Result, error) {
-	return this.sqlStmt.Exec(args ...)
+func (this *Stmt) Exec(args ...interface{}) (sql.Result, error) {
+	return this.sqlStmt.Exec(args...)
 }
 
 func (this *Stmt) Close() error {

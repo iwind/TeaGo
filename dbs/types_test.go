@@ -1,8 +1,8 @@
 package dbs
 
 import (
-	"testing"
 	"github.com/iwind/TeaGo/types"
+	"testing"
 )
 
 func TestIntValue(t *testing.T) {

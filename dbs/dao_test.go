@@ -1,10 +1,10 @@
 package dbs
 
 import (
-	"testing"
 	"fmt"
 	"github.com/pquerna/ffjson/ffjson"
 	"log"
+	"testing"
 	"time"
 )
 
@@ -114,7 +114,7 @@ func TestDaoSave(t *testing.T) {
 
 	now := time.Now()
 
-	for i := 0; i < 10; i ++ {
+	for i := 0; i < 10; i++ {
 		var user = new(UserOperator)
 		//user.Id = 19
 		user.Name = "李白6"

@@ -1,9 +1,9 @@
 package dbs
 
 import (
+	"github.com/iwind/TeaGo/types"
 	"reflect"
 	"strings"
-	"github.com/iwind/TeaGo/types"
 )
 
 type Field struct {
@@ -31,7 +31,7 @@ const (
 	ValueTypeBool
 	ValueTypeNumber
 	ValueTypeString
-	ValueTypeTime  // @TODO 暂未实现
+	ValueTypeTime // @TODO 暂未实现
 )
 
 func (this *Field) parseDataKind() {

@@ -1,14 +1,14 @@
 package main
 
 import (
-	"time"
-	"fmt"
 	"bufio"
-	"os"
 	"bytes"
+	"fmt"
+	"github.com/iwind/TeaGo/cmd"
 	_ "github.com/iwind/TeaGo/dbs/commands"
 	"github.com/iwind/TeaGo/lists"
-	"github.com/iwind/TeaGo/cmd"
+	"os"
+	"time"
 )
 
 // TeaTool工具

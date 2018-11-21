@@ -1,9 +1,9 @@
 package dbs
 
 import (
-	"testing"
-	"log"
 	"encoding/json"
+	"log"
+	"testing"
 )
 
 func TestDBName(t *testing.T) {
@@ -59,7 +59,7 @@ func TestDB_FindFunctions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	data, _ :=  json.MarshalIndent(functions, "", "   ")
+	data, _ := json.MarshalIndent(functions, "", "   ")
 	t.Log(string(data))
 }
 
