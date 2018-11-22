@@ -1,16 +1,16 @@
 package actions
 
 import (
-	"reflect"
-	"net/http"
-	"strings"
-	"strconv"
-	"github.com/iwind/TeaGo/logs"
-	"text/template"
-	"runtime/debug"
-	"path/filepath"
-	"github.com/iwind/TeaGo/types"
 	"github.com/iwind/TeaGo/lists"
+	"github.com/iwind/TeaGo/logs"
+	"github.com/iwind/TeaGo/types"
+	"net/http"
+	"path/filepath"
+	"reflect"
+	"runtime/debug"
+	"strconv"
+	"strings"
+	"text/template"
 )
 
 type Params map[string][]string
@@ -66,7 +66,7 @@ func runActionCopy(spec *ActionSpec,
 	// 执行helper.AfterAction()
 	defer func() {
 		if len(afterFuncs) > 0 {
-			for i := len(afterFuncs) - 1; i >= 0; i -- {
+			for i := len(afterFuncs) - 1; i >= 0; i-- {
 				afterFuncs[i]()
 			}
 		}
@@ -224,7 +224,7 @@ func runActionCopy(spec *ActionSpec,
 	}
 	var argValue = reflect.Indirect(reflect.New(argType))
 	var countFields = argValue.NumField()
-	for i := 0; i < countFields; i ++ {
+	for i := 0; i < countFields; i++ {
 		var field = argType.Field(i)
 		var fieldName = field.Name
 		if len(fieldName) == 0 {
