@@ -27,6 +27,8 @@ import (
 
 // Web服务
 type Server struct {
+	singleInstance bool
+
 	directRoutes   map[string]func(writer http.ResponseWriter, request *http.Request)
 	patternRoutes  []ServerRoutePattern
 	staticDirs     []ServerStaticDir
@@ -82,10 +84,17 @@ var textMimeMap = map[string]bool{
 var beforeFunctions = []func(server *Server){}
 
 // 构建一个新的Server
-func NewServer() *Server {
+func NewServer(singleInstance ...bool) *Server {
 	var server = &Server{
 		accessLog: true,
 	}
+
+	if len(singleInstance) == 0 {
+		server.singleInstance = true
+	} else {
+		server.singleInstance = singleInstance[0]
+	}
+
 	server.init()
 
 	return server
@@ -106,14 +115,16 @@ func (this *Server) init() {
 	this.config = &ServerConfig{}
 	this.config.Load()
 
-	// 执行参数
-	this.execArgs()
+	if this.singleInstance {
+		// 执行参数
+		this.execArgs()
 
-	// 检查PID
-	this.checkPid()
+		// 检查PID
+		this.checkPid()
 
-	// 记录PID
-	this.writePid()
+		// 记录PID
+		this.writePid()
+	}
 }
 
 // 启动服务
@@ -342,17 +353,23 @@ func (this *Server) StartOn(address string) {
 	}
 }
 
+// 配置路由
 func (this *Server) router(pattern string, method string, actionPtr interface{}) {
 	this.locker.Lock()
 	defer this.locker.Unlock()
 
 	pattern = this.lastPrefix + pattern
 
-	if reflect.TypeOf(actionPtr).Kind().String() != "ptr" {
-		actionPtr = reflect.New(reflect.TypeOf(actionPtr)).Interface()
+	if reflect.TypeOf(actionPtr).Kind() == reflect.Func { // 函数
+		// do nothing
+	} else { // struct对象或指针
+		if reflect.TypeOf(actionPtr).Kind().String() != "ptr" {
+			actionPtr = reflect.New(reflect.TypeOf(actionPtr)).Interface()
+		}
+
+		actionPtr.(actions.ActionWrapper).Object().Module = this.lastModule
 	}
 
-	actionPtr.(actions.ActionWrapper).Object().Module = this.lastModule
 	method = strings.ToUpper(method)
 
 	// 是否包含匹配参数 :paramName(pattern)
@@ -397,6 +414,58 @@ func (this *Server) router(pattern string, method string, actionPtr interface{})
 }
 
 func (this *Server) buildHandle(actionPtr interface{}) func(writer http.ResponseWriter, request *http.Request) {
+	// 是否为函数
+	if reflect.TypeOf(actionPtr).Kind() == reflect.Func {
+		{
+			f, ok := actionPtr.(func(request *http.Request, writer http.ResponseWriter))
+			if ok {
+				return func(writer http.ResponseWriter, request *http.Request) {
+					f(request, writer)
+				}
+			}
+		}
+
+		{
+			f, ok := actionPtr.(func(writer http.ResponseWriter, request *http.Request))
+			if ok {
+				return func(writer http.ResponseWriter, request *http.Request) {
+					f(writer, request)
+				}
+			}
+		}
+
+		{
+			f, ok := actionPtr.(func(request *http.Request))
+			if ok {
+				return func(writer http.ResponseWriter, request *http.Request) {
+					f(request)
+				}
+			}
+		}
+
+		{
+			f, ok := actionPtr.(func(request http.ResponseWriter))
+			if ok {
+				return func(writer http.ResponseWriter, request *http.Request) {
+					f(writer)
+				}
+			}
+		}
+
+		{
+			f, ok := actionPtr.(func())
+			if ok {
+				return func(writer http.ResponseWriter, request *http.Request) {
+					f()
+				}
+			}
+		}
+
+		panic("invalid handle function")
+
+		return nil
+	}
+
 	actionWrapper, ok := actionPtr.(actions.ActionWrapper)
 	if !ok {
 		logs.Errorf("actionPtr should be pointer")
