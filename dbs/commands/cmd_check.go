@@ -1,13 +1,13 @@
 package commands
 
 import (
-	"github.com/iwind/TeaGo/cmd"
-	"os"
 	"github.com/iwind/TeaGo/Tea"
-	"github.com/iwind/TeaGo/files"
-	"strings"
-	"regexp"
+	"github.com/iwind/TeaGo/cmd"
 	"github.com/iwind/TeaGo/dbs"
+	"github.com/iwind/TeaGo/files"
+	"os"
+	"regexp"
+	"strings"
 )
 
 type CheckModelCommand struct {
@@ -91,7 +91,7 @@ func (this *CheckModelCommand) Run() {
 				this.Output("<code>-[" + modelName + "] remove model</code>\n")
 				this.outputFile(path)
 
-				countIssues ++
+				countIssues++
 				return
 			}
 
@@ -139,14 +139,15 @@ func (this *CheckModelCommand) Run() {
 				oldField, found := oldFields[field.Name]
 				if !found {
 					this.Output("<code>+[" + modelName + "] field: " + this.convertFieldNameStyle(field.Name) + " " + field.ValueTypeName() + " `field:\"" + field.Name + "\"` // " + field.Comment + "</code>\n")
+					this.Output("<code>+[" + modelName + "Operator] field: " + this.convertFieldNameStyle(field.Name) + " interface{} // " + field.Comment + "</code>\n")
 					this.outputFile(modelFiles[modelName])
-					countIssues ++
+					countIssues++
 				} else {
 					// 对比
 					if field.ValueTypeName() != oldField.MappingKindName {
 						this.Output("<code>*[" + modelName + "] field: " + oldField.MappingName + " " + field.ValueTypeName() + " `field:\"" + field.Name + "\"` // " + field.Comment + "</code>\n")
 						this.outputFile(modelFiles[modelName])
-						countIssues ++
+						countIssues++
 					}
 				}
 			}
@@ -157,7 +158,7 @@ func (this *CheckModelCommand) Run() {
 				if field == nil {
 					this.Output("<code>-[" + modelName + "] field: " + oldField.MappingName + "</code>\n")
 					this.outputFile(modelFiles[modelName])
-					countIssues ++
+					countIssues++
 				}
 			}
 		}

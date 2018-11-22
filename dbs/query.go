@@ -65,6 +65,9 @@ const (
 var queryParamPrefixIndex = int64(0) // 参数前缀，为了组合多个Query的时候不会冲突
 var queryParamLocker = &sync.Mutex{}
 
+// 错误信息
+var ErrNotFound = errors.New("record not found")
+
 type Query struct {
 	db *DB
 

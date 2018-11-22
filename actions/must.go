@@ -1,14 +1,14 @@
 package actions
 
 import (
-	"github.com/iwind/TeaGo/utils/string"
-	"github.com/iwind/TeaGo/types"
 	"fmt"
+	"github.com/iwind/TeaGo/lists"
+	"github.com/iwind/TeaGo/logs"
+	"github.com/iwind/TeaGo/types"
+	"github.com/iwind/TeaGo/utils/string"
 	"reflect"
 	"regexp"
 	"strings"
-	"github.com/iwind/TeaGo/logs"
-	"github.com/iwind/TeaGo/lists"
 )
 
 type Must struct {
@@ -124,6 +124,7 @@ func (this *Must) Mobile(message string) *Must {
 	return this
 }
 
+// 最小长度
 func (this *Must) MinLength(length int, message string) *Must {
 	if this.HasErrors() {
 		return this
@@ -134,6 +135,29 @@ func (this *Must) MinLength(length int, message string) *Must {
 	return this
 }
 
+//  最大字符长度
+func (this *Must) MaxCharacters(charactersLength int, message string) *Must {
+	if this.HasErrors() {
+		return this
+	}
+	if len([]rune(this.valueString)) > charactersLength {
+		this.addError(message)
+	}
+	return this
+}
+
+// 最小字符长度
+func (this *Must) MinCharacters(charactersLength int, message string) *Must {
+	if this.HasErrors() {
+		return this
+	}
+	if len([]rune(this.valueString)) < charactersLength {
+		this.addError(message)
+	}
+	return this
+}
+
+//  最大长度
 func (this *Must) MaxLength(length int, message string) *Must {
 	if this.HasErrors() {
 		return this
