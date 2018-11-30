@@ -104,6 +104,25 @@ func Delete(slice interface{}, item interface{}) interface{} {
 	return newSlice.Interface()
 }
 
+// 删除所有匹配的项
+func DeleteIf(slice interface{}, f func(item interface{}) bool) interface{} {
+	value := reflect.ValueOf(slice)
+	size := value.Len()
+
+	newSlice := reflect.Indirect(reflect.New(value.Type()))
+
+	for i := 0; i < size; i++ {
+		currentItem := value.Index(i)
+		if f(currentItem.Interface()) {
+			continue
+		}
+
+		newSlice = reflect.Append(newSlice, currentItem)
+	}
+
+	return newSlice.Interface()
+}
+
 // 从slice中移除某个位置上的元素
 func Remove(slice interface{}, index int) interface{} {
 	value := reflect.ValueOf(slice)
@@ -159,6 +178,21 @@ func Index(slice interface{}, item interface{}) int {
 	for i := 0; i < size; i++ {
 		v := value.Index(i).Interface()
 		if v == item {
+			return i
+		}
+	}
+
+	return -1
+}
+
+// 使用函数获取item所在位置
+func IndexIf(slice interface{}, f func(item interface{}) bool) int {
+	value := reflect.ValueOf(slice)
+	size := value.Len()
+
+	for i := 0; i < size; i++ {
+		v := value.Index(i).Interface()
+		if f(v) {
 			return i
 		}
 	}

@@ -256,6 +256,8 @@ func pathRelative(dir string, filename string, path string) string {
 
 	if childDir == "." {
 		return filepath.Dir(filename) + "/@" + childName + ".html"
+	} else if childDir == ".." {
+		return filepath.Dir(filepath.Dir(filename)) + "/@" + childName + ".html"
 	} else if strings.HasPrefix(childDir, "/") {
 		return dir + childDir + "/@" + childName + ".html"
 	} else {

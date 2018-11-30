@@ -25,6 +25,30 @@ import (
 	"time"
 )
 
+// 文本mime-type列表
+var textMimeMap = map[string]bool{
+	"application/atom+xml":                true,
+	"application/javascript":              true,
+	"application/x-javascript":            true,
+	"application/json":                    true,
+	"application/rss+xml":                 true,
+	"application/x-web-app-manifest+json": true,
+	"application/xhtml+xml":               true,
+	"application/xml":                     true,
+	"image/svg+xml":                       true,
+	"text/css":                            true,
+	"text/plain":                          true,
+	"text/javascript":                     true,
+	"text/xml":                            true,
+	"text/html":                           true,
+	"text/xhtml":                          true,
+	"text/sgml":                           true,
+}
+
+// 服务启动之前的要执行的函数
+var beforeFunctions = []func(server *Server){}
+var beforeOnce = sync.Once{}
+
 // Web服务
 type Server struct {
 	singleInstance bool
@@ -59,29 +83,6 @@ type ServerStaticDir struct {
 	prefix string
 	dir    string
 }
-
-// 文本mime-type列表
-var textMimeMap = map[string]bool{
-	"application/atom+xml":                true,
-	"application/javascript":              true,
-	"application/x-javascript":            true,
-	"application/json":                    true,
-	"application/rss+xml":                 true,
-	"application/x-web-app-manifest+json": true,
-	"application/xhtml+xml":               true,
-	"application/xml":                     true,
-	"image/svg+xml":                       true,
-	"text/css":                            true,
-	"text/plain":                          true,
-	"text/javascript":                     true,
-	"text/xml":                            true,
-	"text/html":                           true,
-	"text/xhtml":                          true,
-	"text/sgml":                           true,
-}
-
-// 服务启动之前的要执行的函数
-var beforeFunctions = []func(server *Server){}
 
 // 构建一个新的Server
 func NewServer(singleInstance ...bool) *Server {
@@ -141,14 +142,16 @@ func (this *Server) StartOn(address string) {
 	var serverMux = http.NewServeMux()
 
 	// Functions
-	locker := sync.Mutex{}
-	if len(beforeFunctions) > 0 {
-		for _, fn := range beforeFunctions {
-			locker.Lock()
-			fn(this)
-			locker.Unlock()
+	beforeOnce.Do(func() {
+		locker := sync.Mutex{}
+		if len(beforeFunctions) > 0 {
+			for _, fn := range beforeFunctions {
+				locker.Lock()
+				fn(this)
+				locker.Unlock()
+			}
 		}
-	}
+	})
 
 	// 静态资源目录
 	for _, staticDir := range this.staticDirs {
@@ -290,40 +293,43 @@ func (this *Server) StartOn(address string) {
 	// http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = runtime.NumCPU() * 100
 	// http.DefaultTransport.(*http.Transport).MaxIdleConns = runtime.NumCPU() * 2048
 
-	// http
-	if this.config.Http.On {
-		for _, addr := range this.config.Http.Listen {
-			logs.Println("start server on", addr)
+	// 如果没有指定地址，则从配置中加载
+	if len(address) == 0 {
+		// http
+		if this.config.Http.On {
+			for _, addr := range this.config.Http.Listen {
+				logs.Println("start http server on", addr)
 
-			server := &http.Server{
-				Addr:    addr,
-				Handler: serverMux,
-			}
-
-			go func() {
-				err := server.ListenAndServe()
-				if err != nil {
-					logs.Error(err)
+				server := &http.Server{
+					Addr:    addr,
+					Handler: serverMux,
 				}
-			}()
+
+				go func() {
+					err := server.ListenAndServe()
+					if err != nil {
+						logs.Error(err)
+					}
+				}()
+			}
 		}
-	}
 
-	// https
-	if this.config.Https.On {
-		for _, addr := range this.config.Https.Listen {
-			logs.Println("start ssl server on", addr)
+		// https
+		if this.config.Https.On {
+			for _, addr := range this.config.Https.Listen {
+				logs.Println("start ssl server on", addr)
 
-			server := &http.Server{
-				Addr:    addr,
-				Handler: serverMux,
-			}
-			go func() {
-				err := server.ListenAndServeTLS(this.config.Https.Cert, this.config.Https.Key)
-				if err != nil {
-					logs.Error(err)
+				server := &http.Server{
+					Addr:    addr,
+					Handler: serverMux,
 				}
-			}()
+				go func() {
+					err := server.ListenAndServeTLS(this.config.Https.Cert, this.config.Https.Key)
+					if err != nil {
+						logs.Error(err)
+					}
+				}()
+			}
 		}
 	}
 
@@ -444,7 +450,7 @@ func (this *Server) buildHandle(actionPtr interface{}) func(writer http.Response
 		}
 
 		{
-			f, ok := actionPtr.(func(request http.ResponseWriter))
+			f, ok := actionPtr.(func(writer http.ResponseWriter))
 			if ok {
 				return func(writer http.ResponseWriter, request *http.Request) {
 					f(writer)
