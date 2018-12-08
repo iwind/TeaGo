@@ -1,15 +1,16 @@
 package files
 
 import (
+	"fmt"
+	"github.com/iwind/TeaGo/Tea"
+	"github.com/iwind/TeaGo/logs"
+	"github.com/iwind/TeaGo/utils/string"
+	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
-	"time"
-	"io/ioutil"
-	"github.com/iwind/TeaGo/utils/string"
-	"github.com/iwind/TeaGo/logs"
-	"github.com/iwind/TeaGo/Tea"
 	"sync"
-	"fmt"
+	"time"
 )
 
 // 文件对象定义
@@ -164,8 +165,8 @@ func (this *File) WriteString(data string) error {
 }
 
 // 写入格式化的字符串数据
-func (this *File) WriteFormat(format string, args ... interface{}) error {
-	return this.WriteString(fmt.Sprintf(format, args ...))
+func (this *File) WriteFormat(format string, args ...interface{}) error {
+	return this.WriteString(fmt.Sprintf(format, args...))
 }
 
 // 在文件末尾写入数据
@@ -262,7 +263,7 @@ func (this *File) Range(iterator func(file *File)) {
 }
 
 // 创建目录，但如果父级目录不存在，则会失败
-func (this *File) Mkdir(perm ... os.FileMode) error {
+func (this *File) Mkdir(perm ...os.FileMode) error {
 	if len(perm) > 0 {
 		return os.Mkdir(this.path, perm[0])
 	}
@@ -270,7 +271,7 @@ func (this *File) Mkdir(perm ... os.FileMode) error {
 }
 
 // 创建多级目录
-func (this *File) MkdirAll(perm ... os.FileMode) error {
+func (this *File) MkdirAll(perm ...os.FileMode) error {
 	if len(perm) > 0 {
 		return os.MkdirAll(this.path, perm[0])
 	}
@@ -311,6 +312,29 @@ func (this *File) DeleteIfExists() error {
 		return os.Remove(this.path)
 	}
 	return os.Remove(this.path)
+}
+
+// 拷贝文件
+func (this *File) CopyTo(targetPath string) error {
+	stat, err := this.Stat()
+	if err != nil {
+		return err
+	}
+
+	reader, err := os.OpenFile(this.path, os.O_RDONLY, 0444)
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+
+	fp, err := os.OpenFile(targetPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, stat.Mode)
+	if err != nil {
+		return err
+	}
+	defer fp.Close()
+
+	_, err = io.Copy(fp, reader)
+	return err
 }
 
 // 删除文件或目录，即使目录不为空也会删除

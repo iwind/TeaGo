@@ -10,14 +10,13 @@ func TestOnce(t *testing.T) {
 		CacheFactory
 	}
 
-
 	o := new(OtherObject)
 
 	b := time.Now()
-	for i := 0; i < 10000; i ++ {
+	for i := 0; i < 10000; i++ {
 		go o.Cache()
 	}
-	t.Log(time.Since(b).Seconds() * 1000, "ms")
+	t.Log(time.Since(b).Seconds()*1000, "ms")
 }
 
 func TestFactory_Integrate(t *testing.T) {

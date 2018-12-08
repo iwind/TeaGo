@@ -1,15 +1,24 @@
 package caches
 
 import (
-	"time"
 	"sync"
+	"time"
+)
+
+// 操作类型
+type CacheOperation = string
+
+const (
+	CacheOperationSet    = "set"
+	CacheOperationDelete = "delete"
 )
 
 // 缓存管理器
 type Factory struct {
-	items   map[string]*Item
-	maxSize int64 // @TODO 实现maxSize
-	locker  *sync.Mutex
+	items       map[string]*Item
+	maxSize     int64                                      // @TODO 实现maxSize
+	onOperation func(op CacheOperation, value interface{}) // 操作回调
+	locker      *sync.Mutex
 }
 
 // 创建一个新的缓存管理器
@@ -34,7 +43,7 @@ func newFactoryInterval(duration time.Duration) *Factory {
 }
 
 // 设置缓存
-func (this *Factory) Set(key string, value interface{}, duration ... time.Duration) *Item {
+func (this *Factory) Set(key string, value interface{}, duration ...time.Duration) *Item {
 	item := new(Item)
 	item.key = key
 	item.value = value
@@ -48,6 +57,10 @@ func (this *Factory) Set(key string, value interface{}, duration ... time.Durati
 	this.locker.Lock()
 	this.items[key] = item
 	this.locker.Unlock()
+
+	if this.onOperation != nil {
+		this.onOperation(CacheOperationSet, value)
+	}
 
 	return item
 }
@@ -75,6 +88,25 @@ func (this *Factory) Has(key string) bool {
 	return found
 }
 
+// 删除缓存
+func (this *Factory) Delete(key string) {
+
+	this.locker.Lock()
+	item, ok := this.items[key]
+	if ok {
+		delete(this.items, key)
+		if this.onOperation != nil {
+			this.onOperation(CacheOperationDelete, item.value)
+		}
+	}
+	this.locker.Unlock()
+}
+
+// 设置操作回调
+func (this *Factory) OnOperation(f func(op CacheOperation, value interface{})) {
+	this.onOperation = f
+}
+
 // 清理过期的缓存
 func (this *Factory) clean() {
 	this.locker.Lock()
@@ -83,6 +115,10 @@ func (this *Factory) clean() {
 	for _, item := range this.items {
 		if item.IsExpired() {
 			delete(this.items, item.key)
+
+			if this.onOperation != nil {
+				this.onOperation(CacheOperationDelete, item.value)
+			}
 		}
 	}
 }
