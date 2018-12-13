@@ -27,6 +27,7 @@ func NewAssertion(t *testing.T) *Assertion {
 	return &Assertion{
 		t:         t,
 		beginTime: time.Now(),
+		quiet:     true,
 	}
 }
 
@@ -75,7 +76,7 @@ func (this *Assertion) IsNil(value interface{}, msg ...interface{}) *Assertion {
 
 // 检查是否为非nil
 func (this *Assertion) IsNotNil(value interface{}, msg ...interface{}) *Assertion {
-	if value != nil || !reflect.ValueOf(value).IsNil() {
+	if value != nil && !reflect.ValueOf(value).IsNil() {
 		this.Pass(msg...)
 	} else {
 		this.Fail(msg...)
@@ -629,6 +630,12 @@ func (this *Assertion) output(tag string, msg ...interface{}) *Assertion {
 	if len(msg) > 0 {
 		msgStrings := []string{}
 		for _, msgItem := range msg {
+			if tag == "[FAIL]" {
+				f, ok := msgItem.(func() string)
+				if ok {
+					msgItem = f()
+				}
+			}
 			msgStrings = append(msgStrings, types.String(msgItem))
 		}
 

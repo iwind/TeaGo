@@ -18,3 +18,18 @@ func TestVersionCompare(t *testing.T) {
 	t.Log(VersionCompare("1.10.2", "1.2.1"))
 	t.Log(VersionCompare("1.14.2", "1.1234567.1"))
 }
+
+func TestParseFileSize(t *testing.T) {
+	{
+		s, _ := ParseFileSize("1k")
+		t.Logf("%f", s)
+	}
+	{
+		s, _ := ParseFileSize("1m")
+		t.Logf("%f", s)
+	}
+	{
+		s, _ := ParseFileSize("1g")
+		t.Logf("%f", s)
+	}
+}

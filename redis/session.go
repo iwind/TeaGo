@@ -2,8 +2,8 @@ package redis
 
 import (
 	"github.com/iwind/TeaGo/actions"
-	"time"
 	"github.com/iwind/TeaGo/logs"
+	"time"
 )
 
 type SessionManager struct {

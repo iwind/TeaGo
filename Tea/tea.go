@@ -6,6 +6,7 @@ import (
 	"github.com/iwind/TeaGo/utils/string"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -54,6 +55,9 @@ func TmpDir() string {
 
 // 取得临时文件
 func TmpFile(file string) string {
+	if runtime.GOOS == "windows" {
+		file = strings.Replace(file, "/", DS, -1)
+	}
 	return TmpDir() + DS + file
 }
 
@@ -62,6 +66,9 @@ func LogDir() string {
 }
 
 func LogFile(file string) string {
+	if runtime.GOOS == "windows" {
+		file = strings.Replace(file, "/", DS, -1)
+	}
 	return LogDir() + DS + file
 }
 
@@ -79,6 +86,9 @@ func PublicDir() string {
 }
 
 func PublicFile(file string) string {
+	if runtime.GOOS == "windows" {
+		file = strings.Replace(file, "/", DS, -1)
+	}
 	return PublicDir() + DS + file
 }
 
@@ -101,6 +111,9 @@ func ConfigDir() string {
 }
 
 func ConfigFile(file string) string {
+	if runtime.GOOS == "windows" {
+		file = strings.Replace(file, "/", DS, -1)
+	}
 	return ConfigDir() + DS + file
 }
 

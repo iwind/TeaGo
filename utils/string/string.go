@@ -1,15 +1,16 @@
 package stringutil
 
 import (
-	"regexp"
 	"crypto/md5"
-	"fmt"
-	"time"
-	"math/rand"
-	"strings"
-	"strconv"
 	"errors"
+	"fmt"
+	"math"
+	"math/rand"
+	"regexp"
+	"strconv"
+	"strings"
 	"sync"
+	"time"
 )
 
 var reuseRegexpMap = map[string]*regexp.Regexp{}
@@ -120,7 +121,7 @@ func ParseFileSize(sizeString string) (float64, error) {
 		return 0, nil
 	}
 
-	reg, _ := RegexpCompile("^([\\d.]+)\\s*(b|byte|bytes|k|m|g|kb|mb|gb)$")
+	reg, _ := RegexpCompile("^([\\d.]+)\\s*(b|byte|bytes|k|m|g|t|p|e|z|y|kb|mb|gb|tb|pb|eb|zb|yb|)$")
 	matches := reg.FindStringSubmatch(strings.ToLower(sizeString))
 	if len(matches) == 3 {
 		size, err := strconv.ParseFloat(matches[1], 64)
@@ -129,11 +130,21 @@ func ParseFileSize(sizeString string) (float64, error) {
 		} else {
 			unit := matches[2]
 			if unit == "k" || unit == "kb" {
-				size = size * 1024
+				size = size * math.Pow(1024, 1)
 			} else if unit == "m" || unit == "mb" {
-				size = size * 1024 * 1024
+				size = size * math.Pow(1024, 2)
 			} else if unit == "g" || unit == "gb" {
-				size = size * 1024 * 1024 * 1024
+				size = size * math.Pow(1024, 3)
+			} else if unit == "t" || unit == "tb" {
+				size = size * math.Pow(1024, 4)
+			} else if unit == "p" || unit == "pb" {
+				size = size * math.Pow(1024, 5)
+			} else if unit == "e" || unit == "eb" {
+				size = size * math.Pow(1024, 6)
+			} else if unit == "z" || unit == "zb" {
+				size = size * math.Pow(1024, 7)
+			} else if unit == "y" || unit == "yb" {
+				size = size * math.Pow(1024, 8)
 			}
 
 			return size, nil
@@ -161,7 +172,7 @@ func VersionCompare(version1 string, version2 string) int8 {
 	count1 := len(pieces1)
 	count2 := len(pieces2)
 
-	for i := 0; i < count1; i ++ {
+	for i := 0; i < count1; i++ {
 		if i > count2-1 {
 			return 1
 		}

@@ -2,12 +2,12 @@ package redis
 
 import (
 	"github.com/go-redis/redis"
-	"sync"
-	"strconv"
-	"github.com/iwind/TeaGo/types"
 	"github.com/iwind/TeaGo/Tea"
 	"github.com/iwind/TeaGo/files"
 	"github.com/iwind/TeaGo/logs"
+	"github.com/iwind/TeaGo/types"
+	"strconv"
+	"sync"
 	"time"
 )
 
@@ -24,12 +24,14 @@ type RedisClient struct {
 var redisClient *RedisClient
 var mu sync.Mutex
 
+// 获取连接的客户端
 func Client() (*RedisClient, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
 	if redisClient != nil {
 		return redisClient, nil
 	}
-	mu.Lock()
-	defer mu.Unlock()
 
 	configFile := files.NewFile(Tea.ConfigFile("redis.conf"))
 	var config = &RedisConfig{}
@@ -54,7 +56,7 @@ func Client() (*RedisClient, error) {
 	return redisClient, nil
 }
 
-func (this *RedisClient) GetInt(key string, defaultValue int) (int) {
+func (this *RedisClient) GetInt(key string, defaultValue int) int {
 	result, err := this.client.Get(key).Result()
 	if err != nil {
 		return defaultValue
@@ -93,8 +95,8 @@ func (this *RedisClient) ExpireAt(key string, expireTime time.Time) (bool, error
 	return this.client.ExpireAt(key, expireTime).Result()
 }
 
-func (this *RedisClient) Del(key ... string) (int64, error) {
-	return this.client.Del(key ...).Result()
+func (this *RedisClient) Del(key ...string) (int64, error) {
+	return this.client.Del(key...).Result()
 }
 
 func (this *RedisClient) Set(key string, value interface{}, expiration time.Duration) (string, error) {
