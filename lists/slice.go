@@ -1,8 +1,10 @@
 package lists
 
 import (
+	"github.com/iwind/TeaGo/types"
 	"reflect"
 	"sort"
+	"strings"
 )
 
 // 对slice进行排序
@@ -152,6 +154,20 @@ func Map(slice interface{}, mapFunc func(k int, v interface{}) interface{}) []in
 	return result
 }
 
+// 将slice映射为一个新的[]string
+func MapString(slice interface{}, mapFunc func(k int, v interface{}) interface{}) []string {
+	value := reflect.ValueOf(slice)
+	size := value.Len()
+	result := []string{}
+
+	for i := 0; i < size; i++ {
+		v := value.Index(i)
+		result = append(result, types.String(mapFunc(i, v.Interface())))
+	}
+
+	return result
+}
+
 // 过滤slice中的元素
 // 只有filterFunc返回true的才会放到结果中
 func Filter(slice interface{}, filterFunc func(k int, v interface{}) bool) []interface{} {
@@ -213,4 +229,9 @@ func LastIndex(slice interface{}, item interface{}) int {
 	}
 
 	return -1
+}
+
+// 连接对象
+func Join(slice interface{}, sep string, mapFunc func(k int, v interface{}) interface{}) string {
+	return strings.Join(MapString(slice, mapFunc), sep)
 }

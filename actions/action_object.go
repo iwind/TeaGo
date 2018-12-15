@@ -1,16 +1,17 @@
 package actions
 
 import (
-	"net/http"
-	"text/template"
-	"github.com/iwind/TeaGo/Tea"
-	"github.com/iwind/TeaGo/logs"
-	"strings"
-	"fmt"
-	"github.com/pquerna/ffjson/ffjson"
-	"github.com/iwind/TeaGo/utils/string"
-	"github.com/iwind/TeaGo/caches"
 	"encoding/json"
+	"fmt"
+	"github.com/iwind/TeaGo/Tea"
+	"github.com/iwind/TeaGo/caches"
+	"github.com/iwind/TeaGo/logs"
+	"github.com/iwind/TeaGo/types"
+	"github.com/iwind/TeaGo/utils/string"
+	"github.com/pquerna/ffjson/ffjson"
+	"net/http"
+	"strings"
+	"text/template"
 )
 
 type ActionObject struct {
@@ -83,6 +84,18 @@ func (this *ActionObject) Param(name string) (value string, found bool) {
 	return values[0], true
 }
 
+// 获取字符串参数
+func (this *ActionObject) ParamString(name string) string {
+	v, _ := this.Param(name)
+	return v
+}
+
+// 获取整型参数
+func (this *ActionObject) ParamInt(name string) int {
+	v, _ := this.Param(name)
+	return types.Int(v)
+}
+
 // 获取参数数组
 func (this *ActionObject) ParamArray(name string) []string {
 	values, ok := this.ParamsMap[name]
@@ -147,7 +160,7 @@ func (this *ActionObject) Error(error string, code int) {
 }
 
 // 输出内容
-func (this *ActionObject) WriteString(output ... string) {
+func (this *ActionObject) WriteString(output ...string) {
 	for _, outputArg := range output {
 		this.Write([]byte(outputArg))
 	}
@@ -163,9 +176,9 @@ func (this *ActionObject) Write(bytes []byte) {
 }
 
 // 输出可以格式化的内容
-func (this *ActionObject) WriteFormat(format string, args ... interface{}) {
+func (this *ActionObject) WriteFormat(format string, args ...interface{}) {
 	if len(args) > 0 {
-		format = fmt.Sprintf(format, args ...)
+		format = fmt.Sprintf(format, args...)
 	}
 	this.Write([]byte(format))
 }
@@ -183,7 +196,7 @@ func (this *ActionObject) WriteJSON(value interface{}) {
 }
 
 // 成功返回
-func (this *ActionObject) Success(message ... string) {
+func (this *ActionObject) Success(message ...string) {
 	if len(message) > 0 {
 		this.Message = message[0]
 	}
@@ -227,7 +240,7 @@ func (this *ActionObject) Success(message ... string) {
 }
 
 // 失败返回
-func (this *ActionObject) Fail(message ... string) {
+func (this *ActionObject) Fail(message ...string) {
 	if len(message) > 0 {
 		this.Message = strings.Join(message, "")
 	}
@@ -237,7 +250,7 @@ func (this *ActionObject) Fail(message ... string) {
 }
 
 // 字段错误提示
-func (this *ActionObject) FailField(field string, message ... string) {
+func (this *ActionObject) FailField(field string, message ...string) {
 	panic([]ActionParamError{{
 		Param:    field,
 		Messages: message,
@@ -355,7 +368,7 @@ func (this *ActionObject) File(field string) *File {
 }
 
 // 设置下一个动作
-func (this *ActionObject) Next(nextAction string, params map[string]interface{}, hash ... string) *ActionObject {
+func (this *ActionObject) Next(nextAction string, params map[string]interface{}, hash ...string) *ActionObject {
 	this.next.Action = nextAction
 	this.next.Params = params
 	if len(hash) > 0 {
