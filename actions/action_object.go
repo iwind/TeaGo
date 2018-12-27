@@ -139,6 +139,20 @@ func (this *ActionObject) RequestRemoteIP() string {
 	return addr
 }
 
+// 判断URL的Path部分是否包含任一前缀
+func (this *ActionObject) HasPrefix(prefix ...string) bool {
+	if len(prefix) == 0 {
+		return false
+	}
+	path := this.Request.URL.Path
+	for _, p := range prefix {
+		if strings.HasPrefix(path, p) {
+			return true
+		}
+	}
+	return false
+}
+
 // 设置头部信息
 func (this *ActionObject) Header(name, value string) {
 	this.ResponseWriter.Header().Add(name, value)

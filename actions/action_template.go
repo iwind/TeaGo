@@ -136,7 +136,7 @@ func (this *ActionObject) render(dir string) error {
 	body = reg.ReplaceAllStringFunc(body, func(s string) string {
 		matches := reg.FindStringSubmatch(s)
 		varMaps = append(varMaps, maps.Map{
-			matches[1]: matches[2],
+			matches[1]: formatHTML(matches[2]),
 		})
 		return ""
 	})
