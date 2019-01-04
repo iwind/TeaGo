@@ -3,6 +3,7 @@ package types
 import (
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"strconv"
 )
@@ -75,37 +76,85 @@ func Int8(value interface{}) int8 {
 		}
 		return 0
 	case int:
+		if value < math.MinInt8 {
+			return math.MinInt8
+		}
+		if value > math.MaxInt8 {
+			return math.MaxInt8
+		}
 		return int8(value)
 	case int8:
 		return int8(value)
 	case int16:
+		if value < math.MinInt8 {
+			return math.MinInt8
+		}
+		if value > math.MaxInt8 {
+			return math.MaxInt8
+		}
 		return int8(value)
 	case int32:
+		if value < math.MinInt8 {
+			return math.MinInt8
+		}
+		if value > math.MaxInt8 {
+			return math.MaxInt8
+		}
 		return int8(value)
 	case int64:
+		if value < math.MinInt8 {
+			return math.MinInt8
+		}
+		if value > math.MaxInt8 {
+			return math.MaxInt8
+		}
 		return int8(value)
 	case uint:
+		if value > math.MaxInt8 {
+			return math.MaxInt8
+		}
 		return int8(value)
 	case uint8:
 		return int8(value)
 	case uint16:
+		if value > math.MaxInt8 {
+			return math.MaxInt8
+		}
 		return int8(value)
 	case uint32:
+		if value > math.MaxInt8 {
+			return math.MaxInt8
+		}
 		return int8(value)
 	case uint64:
+		if value > math.MaxInt8 {
+			return math.MaxInt8
+		}
 		return int8(value)
 	case float32:
+		if value < math.MinInt8 {
+			return math.MinInt8
+		}
+		if value > math.MaxInt8 {
+			return math.MaxInt8
+		}
 		return int8(value)
 	case float64:
+		if value < math.MinInt8 {
+			return math.MinInt8
+		}
+		if value > math.MaxInt8 {
+			return math.MaxInt8
+		}
 		return int8(value)
 	case string:
 		var result, err = strconv.ParseInt(value, 10, 64)
 		if err == nil {
-			return int8(result)
+			return Int8(result)
 		} else {
 			floatResult, err := strconv.ParseFloat(value, 64)
 			if err == nil {
-				return int8(floatResult)
+				return Int8(floatResult)
 			}
 		}
 	}
@@ -125,37 +174,79 @@ func Int16(value interface{}) int16 {
 		}
 		return 0
 	case int:
+		if value < math.MinInt16 {
+			return math.MinInt16
+		}
+		if value > math.MaxInt16 {
+			return math.MaxInt16
+		}
 		return int16(value)
 	case int8:
 		return int16(value)
 	case int16:
 		return int16(value)
 	case int32:
+		if value < math.MinInt16 {
+			return math.MinInt16
+		}
+		if value > math.MaxInt16 {
+			return math.MaxInt16
+		}
 		return int16(value)
 	case int64:
+		if value < math.MinInt16 {
+			return math.MinInt16
+		}
+		if value > math.MaxInt16 {
+			return math.MaxInt16
+		}
 		return int16(value)
 	case uint:
+		if value > math.MaxInt16 {
+			return math.MaxInt16
+		}
 		return int16(value)
 	case uint8:
 		return int16(value)
 	case uint16:
+		if value > math.MaxInt16 {
+			return math.MaxInt16
+		}
 		return int16(value)
 	case uint32:
+		if value > math.MaxInt16 {
+			return math.MaxInt16
+		}
 		return int16(value)
 	case uint64:
+		if value > math.MaxInt16 {
+			return math.MaxInt16
+		}
 		return int16(value)
 	case float32:
+		if value < math.MinInt16 {
+			return math.MinInt16
+		}
+		if value > math.MaxInt16 {
+			return math.MaxInt16
+		}
 		return int16(value)
 	case float64:
+		if value < math.MinInt16 {
+			return math.MinInt16
+		}
+		if value > math.MaxInt16 {
+			return math.MaxInt16
+		}
 		return int16(value)
 	case string:
 		var result, err = strconv.ParseInt(value, 10, 64)
 		if err == nil {
-			return int16(result)
+			return Int16(result)
 		} else {
 			floatResult, err := strconv.ParseFloat(value, 64)
 			if err == nil {
-				return int16(floatResult)
+				return Int16(floatResult)
 			}
 		}
 	}
@@ -175,6 +266,12 @@ func Int32(value interface{}) int32 {
 		}
 		return 0
 	case int:
+		if value < math.MinInt32 {
+			return math.MinInt32
+		}
+		if value > math.MaxInt32 {
+			return math.MaxInt32
+		}
 		return int32(value)
 	case int8:
 		return int32(value)
@@ -183,6 +280,12 @@ func Int32(value interface{}) int32 {
 	case int32:
 		return int32(value)
 	case int64:
+		if value < math.MinInt32 {
+			return math.MinInt32
+		}
+		if value > math.MaxInt32 {
+			return math.MaxInt32
+		}
 		return int32(value)
 	case uint:
 		return int32(value)
@@ -191,21 +294,39 @@ func Int32(value interface{}) int32 {
 	case uint16:
 		return int32(value)
 	case uint32:
+		if value > math.MaxInt32 {
+			return math.MaxInt32
+		}
 		return int32(value)
 	case uint64:
+		if value > math.MaxInt32 {
+			return math.MaxInt32
+		}
 		return int32(value)
 	case float32:
+		if value < math.MinInt32 {
+			return math.MinInt32
+		}
+		if value > math.MaxInt32 {
+			return math.MaxInt32
+		}
 		return int32(value)
 	case float64:
+		if value < math.MinInt32 {
+			return math.MinInt32
+		}
+		if value > math.MaxInt32 {
+			return math.MaxInt32
+		}
 		return int32(value)
 	case string:
 		var result, err = strconv.ParseInt(value, 10, 32)
 		if err == nil {
-			return int32(result)
+			return Int32(result)
 		} else {
 			floatResult, err := strconv.ParseFloat(value, 32)
 			if err == nil {
-				return int32(floatResult)
+				return Int32(floatResult)
 			}
 		}
 	}
@@ -243,10 +364,22 @@ func Int64(value interface{}) int64 {
 	case uint32:
 		return int64(value)
 	case uint64:
+		if value > math.MaxInt64 {
+			return math.MaxInt64
+		}
 		return int64(value)
 	case float32:
+		if value > math.MaxInt64 {
+			return math.MaxInt64
+		}
 		return int64(value)
 	case float64:
+		if value < math.MinInt64 {
+			return math.MinInt64
+		}
+		if value > math.MaxInt64 {
+			return math.MaxInt64
+		}
 		return int64(value)
 	case string:
 		var result, err = strconv.ParseInt(value, 10, 64)
@@ -255,7 +388,7 @@ func Int64(value interface{}) int64 {
 		} else {
 			floatResult, err := strconv.ParseFloat(value, 64)
 			if err == nil {
-				return int64(floatResult)
+				return Int64(floatResult)
 			}
 		}
 	}
@@ -275,14 +408,29 @@ func Uint(value interface{}) uint {
 		}
 		return 0
 	case int:
+		if value < 0 {
+			return 0
+		}
 		return uint(value)
 	case int8:
+		if value < 0 {
+			return 0
+		}
 		return uint(value)
 	case int16:
+		if value < 0 {
+			return 0
+		}
 		return uint(value)
 	case int32:
+		if value < 0 {
+			return 0
+		}
 		return uint(value)
 	case int64:
+		if value < 0 {
+			return 0
+		}
 		return uint(value)
 	case uint:
 		return uint(value)
@@ -295,17 +443,23 @@ func Uint(value interface{}) uint {
 	case uint64:
 		return uint(value)
 	case float32:
+		if value < 0 {
+			return 0
+		}
 		return uint(value)
 	case float64:
+		if value < 0 {
+			return 0
+		}
 		return uint(value)
 	case string:
 		var result, err = strconv.ParseInt(value, 10, 32)
 		if err == nil {
-			return uint(result)
+			return Uint(result)
 		} else {
 			floatResult, err := strconv.ParseFloat(value, 32)
 			if err == nil {
-				return uint(floatResult)
+				return Uint(floatResult)
 			}
 		}
 	}
@@ -325,37 +479,88 @@ func Uint8(value interface{}) uint8 {
 		}
 		return 0
 	case int:
+		if value < 0 {
+			return 0
+		}
+		if value > math.MaxUint8 {
+			return math.MaxUint8
+		}
 		return uint8(value)
 	case int8:
+		if value < 0 {
+			return 0
+		}
 		return uint8(value)
 	case int16:
+		if value < 0 {
+			return 0
+		}
+		if value > math.MaxUint8 {
+			return math.MaxUint8
+		}
 		return uint8(value)
 	case int32:
+		if value < 0 {
+			return 0
+		}
+		if value > math.MaxUint8 {
+			return math.MaxUint8
+		}
 		return uint8(value)
 	case int64:
+		if value < 0 {
+			return 0
+		}
+		if value > math.MaxUint8 {
+			return math.MaxUint8
+		}
 		return uint8(value)
 	case uint:
+		if value > math.MaxUint8 {
+			return math.MaxUint8
+		}
 		return uint8(value)
 	case uint8:
 		return uint8(value)
 	case uint16:
+		if value > math.MaxUint8 {
+			return math.MaxUint8
+		}
 		return uint8(value)
 	case uint32:
+		if value > math.MaxUint8 {
+			return math.MaxUint8
+		}
 		return uint8(value)
 	case uint64:
+		if value > math.MaxUint8 {
+			return math.MaxUint8
+		}
 		return uint8(value)
 	case float32:
+		if value < 0 {
+			return 0
+		}
+		if value > math.MaxUint8 {
+			return math.MaxUint8
+		}
 		return uint8(value)
 	case float64:
+		if value < 0 {
+			return 0
+		}
+		if value > math.MaxUint8 {
+			return math.MaxUint8
+		}
 		return uint8(value)
 	case string:
 		var result, err = strconv.ParseInt(value, 10, 32)
 		if err == nil {
-			return uint8(result)
+			return Uint8(result)
 		} else {
 			floatResult, err := strconv.ParseFloat(value, 32)
 			if err == nil {
-				return uint8(floatResult)
+				return Uint8(floatResult)
 			}
 		}
 	}
@@ -375,14 +580,38 @@ func Uint16(value interface{}) uint16 {
 		}
 		return 0
 	case int:
+		if value < 0 {
+			return 0
+		}
+		if value > math.MaxUint16 {
+			return math.MaxUint16
+		}
 		return uint16(value)
 	case int8:
+		if value < 0 {
+			return 0
+		}
 		return uint16(value)
 	case int16:
+		if value < 0 {
+			return 0
+		}
 		return uint16(value)
 	case int32:
+		if value < 0 {
+			return 0
+		}
+		if value > math.MaxUint16 {
+			return math.MaxUint16
+		}
 		return uint16(value)
 	case int64:
+		if value < 0 {
+			return 0
+		}
+		if value > math.MaxUint16 {
+			return math.MaxUint16
+		}
 		return uint16(value)
 	case uint:
 		return uint16(value)
@@ -391,21 +620,39 @@ func Uint16(value interface{}) uint16 {
 	case uint16:
 		return uint16(value)
 	case uint32:
+		if value > math.MaxUint16 {
+			return math.MaxUint16
+		}
 		return uint16(value)
 	case uint64:
+		if value > math.MaxUint16 {
+			return math.MaxUint16
+		}
 		return uint16(value)
 	case float32:
+		if value < 0 {
+			return 0
+		}
+		if value > math.MaxUint16 {
+			return math.MaxUint16
+		}
 		return uint16(value)
 	case float64:
+		if value < 0 {
+			return 0
+		}
+		if value > math.MaxUint16 {
+			return math.MaxUint16
+		}
 		return uint16(value)
 	case string:
 		var result, err = strconv.ParseInt(value, 10, 32)
 		if err == nil {
-			return uint16(result)
+			return Uint16(result)
 		} else {
 			floatResult, err := strconv.ParseFloat(value, 32)
 			if err == nil {
-				return uint16(floatResult)
+				return Uint16(floatResult)
 			}
 		}
 	}
@@ -425,14 +672,35 @@ func Uint32(value interface{}) uint32 {
 		}
 		return 0
 	case int:
+		if value < 0 {
+			return 0
+		}
+		if value > math.MaxUint32 {
+			return math.MaxUint32
+		}
 		return uint32(value)
 	case int8:
+		if value < 0 {
+			return 0
+		}
 		return uint32(value)
 	case int16:
+		if value < 0 {
+			return 0
+		}
 		return uint32(value)
 	case int32:
+		if value < 0 {
+			return 0
+		}
 		return uint32(value)
 	case int64:
+		if value < 0 {
+			return 0
+		}
+		if value > math.MaxUint32 {
+			return math.MaxUint32
+		}
 		return uint32(value)
 	case uint:
 		return uint32(value)
@@ -443,19 +711,34 @@ func Uint32(value interface{}) uint32 {
 	case uint32:
 		return uint32(value)
 	case uint64:
+		if value > math.MaxUint32 {
+			return math.MaxUint32
+		}
 		return uint32(value)
 	case float32:
+		if value < 0 {
+			return 0
+		}
+		if value > math.MaxUint32 {
+			return math.MaxUint32
+		}
 		return uint32(value)
 	case float64:
+		if value < 0 {
+			return 0
+		}
+		if value > math.MaxUint32 {
+			return math.MaxUint32
+		}
 		return uint32(value)
 	case string:
 		var result, err = strconv.ParseInt(value, 10, 32)
 		if err == nil {
-			return uint32(result)
+			return Uint32(result)
 		} else {
 			floatResult, err := strconv.ParseFloat(value, 32)
 			if err == nil {
-				return uint32(floatResult)
+				return Uint32(floatResult)
 			}
 		}
 	}
@@ -475,14 +758,29 @@ func Uint64(value interface{}) uint64 {
 		}
 		return 0
 	case int:
+		if value < 0 {
+			return 0
+		}
 		return uint64(value)
 	case int8:
+		if value < 0 {
+			return 0
+		}
 		return uint64(value)
 	case int16:
+		if value < 0 {
+			return 0
+		}
 		return uint64(value)
 	case int32:
+		if value < 0 {
+			return 0
+		}
 		return uint64(value)
 	case int64:
+		if value < 0 {
+			return 0
+		}
 		return uint64(value)
 	case uint:
 		return uint64(value)
@@ -495,72 +793,30 @@ func Uint64(value interface{}) uint64 {
 	case uint64:
 		return uint64(value)
 	case float32:
+		if value < 0 {
+			return 0
+		}
 		return uint64(value)
 	case float64:
+		if value < 0 {
+			return 0
+		}
+		if value > math.MaxUint64 {
+			return math.MaxUint64
+		}
 		return uint64(value)
 	case string:
 		var result, err = strconv.ParseInt(value, 10, 64)
 		if err == nil {
-			return uint64(result)
+			return Uint64(result)
 		} else {
 			floatResult, err := strconv.ParseFloat(value, 64)
 			if err == nil {
-				return uint64(floatResult)
+				return Uint64(floatResult)
 			}
 		}
 	}
 	return 0
-}
-
-// 将值转换成int32，也会返回转换过程中的错误
-func Int32Value(value interface{}) (int32, error) {
-	if value == nil {
-		return 0, errors.New("value should not be nil")
-	}
-
-	switch value := value.(type) {
-	case bool:
-		if value {
-			return 1, nil
-		}
-		return 0, nil
-	case int:
-		return int32(value), nil
-	case int8:
-		return int32(value), nil
-	case int16:
-		return int32(value), nil
-	case int32:
-		return int32(value), nil
-	case int64:
-		return int32(value), nil
-	case uint:
-		return int32(value), nil
-	case uint8:
-		return int32(value), nil
-	case uint16:
-		return int32(value), nil
-	case uint32:
-		return int32(value), nil
-	case uint64:
-		return int32(value), nil
-	case float32:
-		return int32(value), nil
-	case float64:
-		return int32(value), nil
-	case string:
-		var result, err = strconv.ParseInt(value, 10, 32)
-		if err == nil {
-			return int32(result), nil
-		} else {
-			floatResult, err := strconv.ParseFloat(value, 32)
-			if err == nil {
-				return int32(floatResult), nil
-			}
-			return 0, err
-		}
-	}
-	return 0, nil
 }
 
 // 将值转换成float64
@@ -629,6 +885,9 @@ func Float32(value interface{}) float32 {
 	case int32:
 		return float32(value)
 	case int64:
+		if float64(value) > math.MaxFloat32 {
+			return math.MaxFloat32
+		}
 		return float32(value)
 	case uint:
 		return float32(value)
@@ -643,11 +902,14 @@ func Float32(value interface{}) float32 {
 	case float32:
 		return float32(value)
 	case float64:
+		if value > math.MaxFloat32 {
+			return math.MaxFloat32
+		}
 		return float32(value)
 	case string:
 		floatResult, err := strconv.ParseFloat(value, 32)
 		if err == nil {
-			return float32(floatResult)
+			return Float32(floatResult)
 		}
 	}
 	return 0
