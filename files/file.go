@@ -380,3 +380,8 @@ func (this *File) Reader() (*Reader, error) {
 	reader.file = fp
 	return reader, nil
 }
+
+// 修改模式
+func (this *File) Chmod(mode os.FileMode) error {
+	return os.Chmod(this.path, mode)
+}

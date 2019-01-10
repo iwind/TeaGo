@@ -20,6 +20,7 @@ type Assertion struct {
 	t         *testing.T
 	beginTime time.Time
 	quiet     bool // 是否为静默模式，此模式下的测试通过的项不会提示
+	isPassed  bool
 }
 
 // 取得一个新的断言
@@ -495,6 +496,14 @@ func (this *Assertion) IsSlice(value interface{}, msg ...interface{}) *Assertion
 	return this
 }
 
+// 成功后执行
+func (this *Assertion) Then(f func()) *Assertion {
+	if f != nil {
+		f()
+	}
+	return this
+}
+
 // 检查是否有panic
 func (this *Assertion) Panic(f func(), msg ...interface{}) *Assertion {
 	defer func() {
@@ -560,18 +569,21 @@ func (this *Assertion) Logf(format string, args ...interface{}) *Assertion {
 // 返回失败
 func (this *Assertion) Fail(msg ...interface{}) *Assertion {
 	this.output("[FAIL]", msg...)
+	this.isPassed = false
 	return this
 }
 
 // 返回致命错误
 func (this *Assertion) Fatal(msg ...interface{}) *Assertion {
 	this.output("[FATAL]", msg...)
+	this.isPassed = false
 	return this
 }
 
 // 返回成功
 func (this *Assertion) Pass(msg ...interface{}) *Assertion {
 	this.output("[PASS]", msg...)
+	this.isPassed = true
 	return this
 }
 

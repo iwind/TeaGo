@@ -20,6 +20,8 @@ type ActionSpec struct {
 	ClassName string
 
 	caches.CacheFactory
+
+	Context *ActionContext
 }
 
 // 创建新定义
@@ -31,6 +33,7 @@ func NewActionSpec(actionPtr ActionWrapper) *ActionSpec {
 		PkgPath:   valueType.PkgPath(),
 		ClassName: valueType.String(),
 		Funcs:     map[string]*reflect.Value{},
+		Context:   NewActionContext(),
 	}
 
 	ptrType := ptrValue.Type()
@@ -62,7 +65,12 @@ func NewActionSpec(actionPtr ActionWrapper) *ActionSpec {
 
 // 新建一个Action指针
 func (this *ActionSpec) NewPtrValue() reflect.Value {
-	return reflect.New(this.Type)
+	actionPtr := reflect.New(this.Type)
+	wrapper, ok := actionPtr.Interface().(ActionWrapper)
+	if ok {
+		wrapper.Object().Context = this.Context
+	}
+	return actionPtr
 }
 
 // class名是否包含任一前缀

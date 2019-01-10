@@ -21,6 +21,8 @@ type ActionObject struct {
 	ResponseWriter http.ResponseWriter
 	ParamsMap      Params
 
+	Context *ActionContext
+
 	Module string
 
 	Code    int
@@ -154,8 +156,13 @@ func (this *ActionObject) HasPrefix(prefix ...string) bool {
 }
 
 // 设置头部信息
-func (this *ActionObject) Header(name, value string) {
+func (this *ActionObject) AddHeader(name, value string) {
 	this.ResponseWriter.Header().Add(name, value)
+}
+
+// 获取Header值
+func (this *ActionObject) Header(name string) string {
+	return this.Request.Header.Get(name)
 }
 
 // 设置cookie
@@ -362,7 +369,7 @@ func (this *ActionObject) ViewFunc(name string, f interface{}) {
 
 // 显示模板
 func (this *ActionObject) Show() {
-	this.Header("Content-Type", "text/html; charset=utf-8")
+	this.AddHeader("Content-Type", "text/html; charset=utf-8")
 
 	err := this.render(Tea.ViewsDir() + "/" + this.viewDir)
 	if err != nil {
