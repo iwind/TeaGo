@@ -1,16 +1,16 @@
 package maps
 
 import (
-	"github.com/iwind/TeaGo/types"
-	"reflect"
-	"github.com/pquerna/ffjson/ffjson"
 	"encoding/json"
+	"github.com/iwind/TeaGo/types"
+	"github.com/pquerna/ffjson/ffjson"
+	"reflect"
 )
 
 type Map map[string]interface{}
 
 // 新建Map
-func NewMap(maps ... interface{}) Map {
+func NewMap(maps ...interface{}) Map {
 	m := Map{}
 	for _, mp := range maps {
 		v := reflect.ValueOf(mp)
@@ -171,8 +171,33 @@ func (this Map) GetString(key string) string {
 	return types.String(this[key])
 }
 
+// 取得Map类型的键值
+func (this Map) GetMap(key string) Map {
+	value, found := this[key]
+	if !found || value == nil || reflect.TypeOf(value).Kind() != reflect.Map {
+		return nil
+	}
+	return NewMap(value)
+}
+
+// 取得Slice类型的键值
+func (this Map) GetSlice(key string) []interface{} {
+	value, found := this[key]
+	if !found || value == nil || reflect.TypeOf(value).Kind() != reflect.Slice {
+		return nil
+	}
+	result := []interface{}{}
+	v := reflect.ValueOf(value)
+	count := v.Len()
+	for i := 0; i < count; i++ {
+		item := v.Index(i).Interface()
+		result = append(result, item)
+	}
+	return result
+}
+
 // 删除键
-func (this Map) Delete(key ... string) {
+func (this Map) Delete(key ...string) {
 	for _, oneKey := range key {
 		delete(this, oneKey)
 	}
