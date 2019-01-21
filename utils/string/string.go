@@ -2,8 +2,10 @@ package stringutil
 
 import (
 	"crypto/md5"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/pquerna/ffjson/ffjson"
 	"math"
 	"math/rand"
 	"regexp"
@@ -107,14 +109,6 @@ func Reverse(s string) string {
 	return string(runes)
 }
 
-func ReplaceCommentsInJSON(jsonBytes []byte) []byte {
-	commentReg, err := RegexpCompile("/([*]+((.|\n|\r)+?)[*]+/)|(\n\\s+//.+)")
-	if err != nil {
-		panic(err)
-	}
-	return commentReg.ReplaceAll(jsonBytes, []byte{})
-}
-
 // 从字符串中分析尺寸
 func ParseFileSize(sizeString string) (float64, error) {
 	if len(sizeString) == 0 {
@@ -216,4 +210,22 @@ func VersionCompare(version1 string, version2 string) int8 {
 	}
 
 	return -1
+}
+
+// JSON Encode
+func JSONEncode(v interface{}) string {
+	b, err := ffjson.Marshal(v)
+	if err != nil {
+		return "null"
+	}
+	return string(b)
+}
+
+// JSON Encode Pretty
+func JSONEncodePretty(v interface{}) string {
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return "null"
+	}
+	return string(b)
 }
