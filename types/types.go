@@ -675,9 +675,6 @@ func Uint32(value interface{}) uint32 {
 		if value < 0 {
 			return 0
 		}
-		if value > math.MaxUint32 {
-			return math.MaxUint32
-		}
 		return uint32(value)
 	case int8:
 		if value < 0 {
