@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 var reuseRegexpMap = map[string]*regexp.Regexp{}
@@ -63,6 +64,8 @@ func Rand(n int) string {
 	)
 
 	b := make([]byte, n)
+	rand.Seed(time.Now().UnixNano() + int64(rand.Int()))
+
 	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
 	for i, cache, remain := n-1, rand.Int(), randomLetterIdxMax; i >= 0; {
 		if remain == 0 {
