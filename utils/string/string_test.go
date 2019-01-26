@@ -1,9 +1,39 @@
 package stringutil
 
-import "testing"
+import (
+	"log"
+	"sync"
+	"testing"
+)
 
 func TestRandString(t *testing.T) {
 	t.Log(Rand(10))
+}
+
+func TestRandStringUnique(t *testing.T) {
+	m := map[string]bool{}
+	locker := sync.Mutex{}
+	wg := sync.WaitGroup{}
+	wg.Add(10000)
+	for i := 0; i < 10000; i++ {
+		go func() {
+			defer wg.Done()
+			s := Rand(16)
+			locker.Lock()
+			_, found := m[s]
+			locker.Unlock()
+			if found {
+				log.Println("duplicated", s)
+				return
+			}
+			locker.Lock()
+			m[s] = true
+			locker.Unlock()
+		}()
+	}
+	wg.Wait()
+	t.Log("all unique")
+	t.Log(m)
 }
 
 func TestConvertID(t *testing.T) {
