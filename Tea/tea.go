@@ -130,14 +130,16 @@ func findRoot() string {
 	}
 
 	// GOPATH变量
-	root = strings.TrimSpace(os.Getenv("GOPATH"))
-	if len(root) > 0 {
-		abs, err := filepath.Abs(root)
-		if err != nil {
-			logs.Errorf("invalid GOPATH '%s'", root)
-			return root + DS + "src" + DS + "main"
+	if filepath.Base(os.Args[0]) == "main" || filepath.Base(os.Args[0]) == "main.exe" {
+		root = strings.TrimSpace(os.Getenv("GOPATH"))
+		if len(root) > 0 {
+			abs, err := filepath.Abs(root)
+			if err != nil {
+				logs.Errorf("invalid GOPATH '%s'", root)
+				return root + DS + "src" + DS + "main"
+			}
+			return abs + DS + "src" + DS + "main"
 		}
-		return abs + DS + "src" + DS + "main"
 	}
 
 	// 当前执行的目录
