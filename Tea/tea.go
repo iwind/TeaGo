@@ -130,7 +130,8 @@ func findRoot() string {
 	}
 
 	// GOPATH变量
-	if filepath.Base(os.Args[0]) == "main" || filepath.Base(os.Args[0]) == "main.exe" {
+	execFile := filepath.Base(os.Args[0])
+	if execFile == "main" || execFile == "main.exe" || strings.HasPrefix(execFile, "___") {
 		root = strings.TrimSpace(os.Getenv("GOPATH"))
 		if len(root) > 0 {
 			abs, err := filepath.Abs(root)
