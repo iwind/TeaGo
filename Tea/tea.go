@@ -1,7 +1,6 @@
 package Tea
 
 import (
-	"flag"
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/utils/string"
 	"os"
@@ -45,7 +44,8 @@ func Is(env ...string) bool {
 
 // 判断是否在测试模式下
 func IsTesting() bool {
-	return flag.Lookup("test.v") != nil
+	execFile := filepath.Base(os.Args[0])
+	return execFile == "main" || execFile == "main.exe" || strings.HasPrefix(execFile, "___")
 }
 
 // 取得临时目录
@@ -130,8 +130,7 @@ func findRoot() string {
 	}
 
 	// GOPATH变量
-	execFile := filepath.Base(os.Args[0])
-	if execFile == "main" || execFile == "main.exe" || strings.HasPrefix(execFile, "___") {
+	if IsTesting() {
 		root = strings.TrimSpace(os.Getenv("GOPATH"))
 		if len(root) > 0 {
 			abs, err := filepath.Abs(root)
