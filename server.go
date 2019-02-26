@@ -46,8 +46,22 @@ var textMimeMap = map[string]bool{
 }
 
 // 服务启动之前的要执行的函数
-var beforeFunctions = []func(server *Server){}
-var beforeOnce = sync.Once{}
+var beforeStartFunctions = []func(server *Server){}
+var beforeStartOnce = sync.Once{}
+
+// 服务停止之前的要执行的函数
+var beforeStopFunctions = []func(server *Server){}
+var beforeStopOnce = sync.Once{}
+
+// 在服务启动之前执行一个函数
+func BeforeStart(fn func(server *Server)) {
+	beforeStartFunctions = append(beforeStartFunctions, fn)
+}
+
+// 在服务停止之前执行一个函数
+func BeforeStop(fn func(server *Server)) {
+	beforeStopFunctions = append(beforeStopFunctions, fn)
+}
 
 // Web服务
 type Server struct {
@@ -101,11 +115,6 @@ func NewServer(singleInstance ...bool) *Server {
 	return server
 }
 
-// 在服务启动之前执行一个函数
-func BeforeStart(fn func(server *Server)) {
-	beforeFunctions = append(beforeFunctions, fn)
-}
-
 // 初始化
 func (this *Server) init() {
 	this.directRoutes = make(map[string]func(writer http.ResponseWriter, request *http.Request))
@@ -142,10 +151,10 @@ func (this *Server) StartOn(address string) {
 	var serverMux = http.NewServeMux()
 
 	// Functions
-	beforeOnce.Do(func() {
+	beforeStartOnce.Do(func() {
 		locker := sync.Mutex{}
-		if len(beforeFunctions) > 0 {
-			for _, fn := range beforeFunctions {
+		if len(beforeStartFunctions) > 0 {
+			for _, fn := range beforeStartFunctions {
 				locker.Lock()
 				fn(this)
 				locker.Unlock()
@@ -357,6 +366,20 @@ func (this *Server) StartOn(address string) {
 	for {
 		time.Sleep(365 * 24 * time.Hour)
 	}
+}
+
+func (this *Server) Stop() {
+	// call stop Functions
+	beforeStopOnce.Do(func() {
+		locker := sync.Mutex{}
+		if len(beforeStopFunctions) > 0 {
+			for _, fn := range beforeStopFunctions {
+				locker.Lock()
+				fn(this)
+				locker.Unlock()
+			}
+		}
+	})
 }
 
 // 配置路由

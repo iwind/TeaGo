@@ -11,6 +11,7 @@ import (
 	"github.com/pquerna/ffjson/ffjson"
 	"net/http"
 	"strings"
+	"sync"
 	"text/template"
 )
 
@@ -34,6 +35,7 @@ type ActionObject struct {
 
 	SessionManager interface{}
 	session        *Session
+	sessionLocker  sync.Mutex
 
 	viewDir        string
 	viewTemplate   string
@@ -318,6 +320,13 @@ func (this *ActionObject) SetSessionManager(sessionManager interface{}) {
 
 // 读取Session
 func (this *ActionObject) Session() *Session {
+	if this.session != nil {
+		return this.session
+	}
+
+	this.sessionLocker.Lock()
+	defer this.sessionLocker.Unlock()
+
 	if this.session != nil {
 		return this.session
 	}

@@ -1,17 +1,18 @@
 package sessions
 
 import (
-	"github.com/iwind/TeaGo/actions"
-	"os"
-	"io/ioutil"
 	"fmt"
-	"github.com/pquerna/ffjson/ffjson"
-	"github.com/iwind/TeaGo/logs"
-	"time"
-	"path/filepath"
-	"github.com/iwind/TeaGo/utils/string"
-	"sync"
 	"github.com/iwind/TeaGo/Tea"
+	"github.com/iwind/TeaGo/actions"
+	"github.com/iwind/TeaGo/files"
+	"github.com/iwind/TeaGo/logs"
+	"github.com/iwind/TeaGo/utils/string"
+	"github.com/pquerna/ffjson/ffjson"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"sync"
+	"time"
 )
 
 type FileSessionManager struct {
@@ -61,7 +62,7 @@ func NewFileSessionManager(lifeSeconds uint, encryptKey string) *FileSessionMana
 	return manager
 }
 
-func (this *FileSessionManager) Init(config *actions.SessionConfig) () {
+func (this *FileSessionManager) Init(config *actions.SessionConfig) {
 	this.life = config.Life
 
 	// 默认为30天
@@ -143,7 +144,8 @@ func (this *FileSessionManager) writeSession(session *FileSessionData) bool {
 	this.mutex.Lock()
 	defer this.mutex.Unlock()
 
-	err = ioutil.WriteFile(file, data, 0666)
+	f := files.NewFile(file)
+	err = f.Write(data)
 	if err != nil {
 		logs.Errorf("%s", err.Error())
 		return false
