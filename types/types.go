@@ -1008,6 +1008,22 @@ func IsFloat(value interface{}) bool {
 	return false
 }
 
+// 判断是否为Slice
+func IsSlice(value interface{}) bool {
+	if value == nil {
+		return false
+	}
+	return reflect.TypeOf(value).Kind() == reflect.Slice
+}
+
+// 判断是否为Map
+func IsMap(value interface{}) bool {
+	if value == nil {
+		return false
+	}
+	return reflect.TypeOf(value).Kind() == reflect.Map
+}
+
 // 判断是否为nil
 func IsNil(value interface{}) bool {
 	if value == nil {

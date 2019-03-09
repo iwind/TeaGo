@@ -55,6 +55,49 @@ func TestInt8(t *testing.T) {
 	assert(t, Uint64(123) == 123)
 }
 
+func TestIsSlice(t *testing.T) {
+	assert(t, !IsSlice(nil))
+
+	{
+		var s []string = nil
+		assert(t, IsSlice(s))
+	}
+
+	{
+		var s interface{} = nil
+		assert(t, !IsSlice(s))
+	}
+
+	{
+		var s *[]string = nil
+		assert(t, !IsSlice(s))
+	}
+
+	{
+		assert(t, IsSlice([]string{"a", "b", "c"}))
+	}
+}
+
+func TestIsMap(t *testing.T) {
+	assert(t, !IsMap(nil))
+
+	{
+		var s map[string]interface{} = nil
+		assert(t, IsMap(s))
+	}
+
+	{
+		var s interface{} = nil
+		assert(t, !IsMap(s))
+	}
+
+	{
+		assert(t, IsMap(map[string]interface{}{
+			"a": "b",
+		}))
+	}
+}
+
 func assert(t *testing.T, b bool) {
 	if !b {
 		t.Fail()

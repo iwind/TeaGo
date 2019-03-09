@@ -235,3 +235,14 @@ func LastIndex(slice interface{}, item interface{}) int {
 func Join(slice interface{}, sep string, mapFunc func(k int, v interface{}) interface{}) string {
 	return strings.Join(MapString(slice, mapFunc), sep)
 }
+
+// 遍历Map
+func Each(slice interface{}, eachFunc func(k int, v interface{})) {
+	value := reflect.ValueOf(slice)
+	size := value.Len()
+
+	for i := 0; i < size; i++ {
+		v := value.Index(i)
+		eachFunc(i, v.Interface())
+	}
+}
