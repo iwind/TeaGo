@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"testing"
 )
 
 type Writer interface {
@@ -248,12 +249,18 @@ func Dump(variable interface{}) {
 	Printf("<code>%s</code>", buffer.String())
 }
 
-func PrintAsJSON(value interface{}) {
+func PrintAsJSON(value interface{}, t ...*testing.T) {
 	data, err := json.MarshalIndent(value, "", "   ")
 	if err != nil {
 		Error(err)
 		return
 	}
 
-	Println(string(data))
+	if len(t) > 0 {
+		for _, t1 := range t {
+			t1.Log(string(data))
+		}
+	} else {
+		Println(string(data))
+	}
 }

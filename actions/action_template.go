@@ -425,6 +425,10 @@ window.TEA = {
 		return tpl.HasVar(s)
 	}
 
+	funcMap["isNil"] = func(s interface{}) bool {
+		return s == nil
+	}
+
 	return funcMap
 }
 
