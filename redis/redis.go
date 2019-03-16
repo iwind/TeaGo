@@ -61,11 +61,10 @@ func (this *RedisClient) GetInt(key string, defaultValue int) int {
 	if err != nil {
 		return defaultValue
 	}
-	value, err := types.Int32Value(result)
-	if err != nil {
+	if len(result) == 0 {
 		return defaultValue
 	}
-	return int(value)
+	return types.Int(result)
 }
 
 func (this *RedisClient) GetString(key string) string {
