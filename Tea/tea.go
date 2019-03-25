@@ -150,6 +150,13 @@ func findRoot() string {
 	return "./"
 }
 
+func UpdateRoot(root string) {
+	Root = root
+	publicDir = ""
+	viewsDir = ""
+	configDir = ""
+}
+
 func findLatestDir(parent string, name string) string {
 	matches, err := filepath.Glob(parent + DS + name + ".*")
 	if err != nil {
