@@ -38,6 +38,28 @@ func Contains(slice interface{}, item interface{}) bool {
 	return false
 }
 
+// 判断string slice是否包含某个item
+// 比Contains()更加高效
+func ContainsString(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
+// 判断int slice是否包含某个item
+// 比Contains()更加高效
+func ContainsInt(slice []int, item int) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
 // 判断slice是否包含所有的item
 // 如果没有任何item，则返回false
 func ContainsAll(slice interface{}, item ...interface{}) bool {
