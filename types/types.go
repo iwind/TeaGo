@@ -59,6 +59,8 @@ func Int(value interface{}) int {
 				return int(floatResult)
 			}
 		}
+	case []byte:
+		return Int(string(value))
 	}
 	return 0
 }
@@ -157,6 +159,8 @@ func Int8(value interface{}) int8 {
 				return Int8(floatResult)
 			}
 		}
+	case []byte:
+		return Int8(string(value))
 	}
 	return 0
 }
@@ -249,6 +253,8 @@ func Int16(value interface{}) int16 {
 				return Int16(floatResult)
 			}
 		}
+	case []byte:
+		return Int16(string(value))
 	}
 	return 0
 }
@@ -329,6 +335,8 @@ func Int32(value interface{}) int32 {
 				return Int32(floatResult)
 			}
 		}
+	case []byte:
+		return Int32(string(value))
 	}
 	return 0
 }
@@ -391,6 +399,8 @@ func Int64(value interface{}) int64 {
 				return Int64(floatResult)
 			}
 		}
+	case []byte:
+		return Int64(string(value))
 	}
 	return 0
 }
@@ -462,6 +472,8 @@ func Uint(value interface{}) uint {
 				return Uint(floatResult)
 			}
 		}
+	case []byte:
+		return Uint(string(value))
 	}
 	return 0
 }
@@ -563,6 +575,8 @@ func Uint8(value interface{}) uint8 {
 				return Uint8(floatResult)
 			}
 		}
+	case []byte:
+		return Uint8(string(value))
 	}
 	return 0
 }
@@ -655,6 +669,8 @@ func Uint16(value interface{}) uint16 {
 				return Uint16(floatResult)
 			}
 		}
+	case []byte:
+		return Uint16(string(value))
 	}
 	return 0
 }
@@ -738,6 +754,8 @@ func Uint32(value interface{}) uint32 {
 				return Uint32(floatResult)
 			}
 		}
+	case []byte:
+		return Uint32(string(value))
 	}
 	return 0
 }
@@ -812,6 +830,8 @@ func Uint64(value interface{}) uint64 {
 				return Uint64(floatResult)
 			}
 		}
+	case []byte:
+		return Uint64(string(value))
 	}
 	return 0
 }
@@ -857,6 +877,8 @@ func Float64(value interface{}) float64 {
 		if err == nil {
 			return floatResult
 		}
+	case []byte:
+		return Float64(string(value))
 	}
 	return 0
 }
@@ -908,6 +930,8 @@ func Float32(value interface{}) float32 {
 		if err == nil {
 			return Float32(floatResult)
 		}
+	case []byte:
+		return Float32(string(value))
 	}
 	return 0
 }
