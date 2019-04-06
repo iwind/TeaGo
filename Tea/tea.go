@@ -85,6 +85,10 @@ func PublicDir() string {
 	return publicDir
 }
 
+func SetPublicDir(dir string) {
+	publicDir = dir
+}
+
 func PublicFile(file string) string {
 	if runtime.GOOS == "windows" {
 		file = strings.Replace(file, "/", DS, -1)
@@ -101,6 +105,10 @@ func ViewsDir() string {
 	return viewsDir
 }
 
+func SetViewsDir(dir string) {
+	viewsDir = dir
+}
+
 func ConfigDir() string {
 	if len(configDir) > 0 {
 		return configDir
@@ -108,6 +116,10 @@ func ConfigDir() string {
 
 	configDir = findLatestDir(Root, "configs")
 	return configDir
+}
+
+func SetConfigDir(dir string) {
+	configDir = dir
 }
 
 func ConfigFile(file string) string {
