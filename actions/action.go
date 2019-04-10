@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+	"unicode"
 )
 
 type Params map[string][]string
@@ -359,7 +360,7 @@ func runActionCopy(spec *ActionSpec,
 		}
 
 		if hasValue {
-			firstParamValue := fieldParamValue[0]
+			firstParamValue := strings.TrimRightFunc(fieldParamValue[0], unicode.IsSpace)
 			switch field.Type.Kind() {
 			case reflect.Int:
 				fieldValue.Set(reflect.ValueOf(types.Int(firstParamValue)))
