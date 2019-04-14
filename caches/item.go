@@ -4,14 +4,14 @@ import "time"
 
 // 缓存条目定义
 type Item struct {
-	key        string
-	value      interface{}
+	Key        string
+	Value      interface{}
 	expireTime time.Time
 }
 
 // 设置值
 func (this *Item) Set(value interface{}) *Item {
-	this.value = value
+	this.Value = value
 	return this
 }
 
