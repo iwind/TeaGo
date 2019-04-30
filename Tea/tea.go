@@ -21,6 +21,7 @@ var DS = string(os.PathSeparator)
 var publicDir string
 var viewsDir string
 var configDir string
+var tmpDir string
 
 var Root string
 
@@ -50,7 +51,15 @@ func IsTesting() bool {
 
 // 取得临时目录
 func TmpDir() string {
+	if len(tmpDir) > 0 {
+		return tmpDir
+	}
 	return Root + DS + "tmp"
+}
+
+// 设置临时目录
+func SetTmpDir(dir string) {
+	tmpDir = dir
 }
 
 // 取得临时文件
