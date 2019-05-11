@@ -401,6 +401,12 @@ func runActionCopy(spec *ActionSpec,
 				} else { // slice
 					sliceValue, err := types.Slice(fieldParamValue, field.Type)
 					if err == nil {
+						// trim right spaces in string value
+						if stringSlice, ok := sliceValue.([]string); ok {
+							for k, v := range stringSlice {
+								stringSlice[k] = strings.TrimRightFunc(v, unicode.IsSpace)
+							}
+						}
 						fieldValue.Set(reflect.ValueOf(sliceValue))
 					}
 				}
