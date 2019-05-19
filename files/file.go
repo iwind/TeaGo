@@ -154,6 +154,7 @@ func (this *File) Write(data []byte) error {
 	writer.Lock()
 	writer.Truncate()
 	_, err = writer.Write(data)
+	writer.Sync()
 	writer.Unlock()
 	writer.Close()
 	return err
