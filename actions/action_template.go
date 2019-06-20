@@ -131,7 +131,7 @@ func (this *ActionObject) render(dir string) error {
 	}
 
 	// 支持{$var "varName"}var value{$end}
-	reg, _ := stringutil.RegexpCompile("(?U)\\{\\s*\\$var\\s+\"(\\w+)\"\\s*\\}((.|\n)+){\\s*\\$end\\s*}(\n|$)")
+	reg, _ := stringutil.RegexpCompile("(?U)\\{\\s*\\$var\\s+\"(\\w+)\"\\s*\\}((.|\n)+){\\s*\\$end\\s*}(\r?\n|$)")
 	varMaps := []maps.Map{}
 	body = reg.ReplaceAllStringFunc(body, func(s string) string {
 		matches := reg.FindStringSubmatch(s)
@@ -213,7 +213,7 @@ func loadChildTemplate(watchingFiles *map[string]int64, tpl *Template, dir strin
 	body = formatHTML(body)
 
 	// 支持{$var "varName"}var value{$end}
-	reg, _ := stringutil.RegexpCompile("(?U)\\{\\s*\\$var\\s+\"(\\w+)\"\\s*\\}((.|\n)+){\\s*\\$end\\s*}(\n|$)")
+	reg, _ := stringutil.RegexpCompile("(?U)\\{\\s*\\$var\\s+\"(\\w+)\"\\s*\\}((.|\n)+){\\s*\\$end\\s*}(\r?\n|$)")
 	body = reg.ReplaceAllStringFunc(body, func(s string) string {
 		matches := reg.FindStringSubmatch(s)
 		tpl.SetVars(maps.Map{
