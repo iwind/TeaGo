@@ -69,6 +69,7 @@ type Server struct {
 
 	directRoutes   map[string]func(writer http.ResponseWriter, request *http.Request)
 	patternRoutes  []ServerRoutePattern
+	routerLocker   sync.Mutex
 	staticDirs     []ServerStaticDir
 	sessionManager interface{}
 
@@ -80,7 +81,8 @@ type Server struct {
 	logWriter LogWriter
 	accessLog bool // 是否记录访问日志
 
-	locker sync.Mutex
+	httpServers      []*http.Server
+	httpServerLocker sync.Mutex
 }
 
 // 路由配置
@@ -299,9 +301,6 @@ func (this *Server) StartOn(address string) {
 
 	})
 
-	// http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = runtime.NumCPU() * 100
-	// http.DefaultTransport.(*http.Transport).MaxIdleConns = runtime.NumCPU() * 2048
-
 	// 如果没有指定地址，则从配置中加载
 	if len(address) == 0 {
 		// http
@@ -310,9 +309,14 @@ func (this *Server) StartOn(address string) {
 				logs.Println("start http server on", addr)
 
 				server := &http.Server{
-					Addr:    addr,
-					Handler: serverMux,
+					Addr:        addr,
+					Handler:     serverMux,
+					IdleTimeout: 2 * time.Minute,
 				}
+
+				this.httpServerLocker.Lock()
+				this.httpServers = append(this.httpServers, server)
+				this.httpServerLocker.Unlock()
 
 				go func() {
 					err := server.ListenAndServe()
@@ -329,9 +333,15 @@ func (this *Server) StartOn(address string) {
 				logs.Println("start ssl server on", addr)
 
 				server := &http.Server{
-					Addr:    addr,
-					Handler: serverMux,
+					Addr:        addr,
+					Handler:     serverMux,
+					IdleTimeout: 2 * time.Minute,
 				}
+
+				this.httpServerLocker.Lock()
+				this.httpServers = append(this.httpServers, server)
+				this.httpServerLocker.Unlock()
+
 				go func() {
 					err := server.ListenAndServeTLS(this.config.Https.Cert, this.config.Https.Key)
 					if err != nil {
@@ -369,6 +379,13 @@ func (this *Server) StartOn(address string) {
 }
 
 func (this *Server) Stop() {
+	// stop servers
+	this.httpServerLocker.Lock()
+	for _, server := range this.httpServers {
+		server.Close()
+	}
+	this.httpServerLocker.Unlock()
+
 	// call stop Functions
 	beforeStopOnce.Do(func() {
 		locker := sync.Mutex{}
@@ -384,8 +401,8 @@ func (this *Server) Stop() {
 
 // 配置路由
 func (this *Server) router(pattern string, method string, actionPtr interface{}) {
-	this.locker.Lock()
-	defer this.locker.Unlock()
+	this.routerLocker.Lock()
+	defer this.routerLocker.Unlock()
 
 	pattern = this.lastPrefix + pattern
 
