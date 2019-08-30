@@ -170,6 +170,8 @@ func Errorf(format string, args ...interface{}) {
 				if err == nil {
 					filename = strings.TrimPrefix(filename, absGoPath)[1:]
 				}
+			} else if strings.Contains(filename, "src") {
+				filename = filename[strings.Index(filename, "src"):]
 			}
 
 			errorString += "\n\t\t" + string(filename) + ":" + fmt.Sprintf("%d", lineNo)
