@@ -52,14 +52,16 @@ func (this *Must) Value(value interface{}) *Must {
 	var kind = reflectValue.Kind()
 
 	if kind == reflect.Ptr {
-		realValue := reflect.Indirect(reflectValue)
-		kind = realValue.Kind()
+		if !reflectValue.IsNil() {
+			realValue := reflect.Indirect(reflectValue)
+			kind = realValue.Kind()
 
-		if kind == reflect.String {
-			this.valueString = realValue.Interface().(string)
-		} else {
-			this.valueString = fmt.Sprintf("%v", realValue.Interface())
-			this.valueFloat = types.Float64(value)
+			if kind == reflect.String {
+				this.valueString = realValue.Interface().(string)
+			} else {
+				this.valueString = fmt.Sprintf("%v", realValue.Interface())
+				this.valueFloat = types.Float64(value)
+			}
 		}
 	} else if kind == reflect.String {
 		this.valueString = value.(string)

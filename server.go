@@ -8,7 +8,6 @@ import (
 	"github.com/iwind/TeaGo/lists"
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/processes"
-	"github.com/iwind/TeaGo/tasks"
 	"github.com/iwind/TeaGo/types"
 	"github.com/iwind/TeaGo/utils/string"
 	"log"
@@ -19,7 +18,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -370,7 +368,7 @@ func (this *Server) StartOn(address string) {
 	}
 
 	// 启动任务管理器
-	tasks.Start(runtime.NumCPU() * 4)
+	//tasks.Start(runtime.NumCPU() * 4)
 
 	// 等待
 	for {

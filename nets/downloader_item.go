@@ -1,14 +1,15 @@
 package nets
 
 import (
-	"net/http"
-	"strconv"
-	"os"
 	"errors"
-	"strings"
 	"io"
-	"time"
+	"io/ioutil"
+	"net/http"
+	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type DownloaderItem struct {
@@ -141,6 +142,16 @@ func (this *DownloaderItem) Start() {
 		return
 	}
 
+	if resp.Body != nil {
+		io.Copy(ioutil.Discard, resp.Body)
+		resp.Body.Close()
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		this.addError(errors.New("response status not 200"))
+		return
+	}
+
 	contentLength, err := strconv.Atoi(resp.Header.Get("Content-Length"))
 	if err != nil {
 		this.addError(err)
@@ -206,6 +217,12 @@ func (this *DownloaderItem) Start() {
 	resp, err = client.Do(request)
 	if err != nil {
 		this.addError(err)
+		resp.Body.Close()
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		this.addError(errors.New("response status not 200"))
 		resp.Body.Close()
 		return
 	}

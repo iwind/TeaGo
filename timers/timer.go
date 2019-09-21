@@ -1,8 +1,8 @@
 package timers
 
 import (
-	"time"
 	"sync"
+	"time"
 )
 
 // 延时执行函数，不阻塞当前进程
@@ -31,11 +31,11 @@ func At(atTime time.Time, task func(timer *time.Timer)) *time.Timer {
 func Every(duration time.Duration, task func(ticker *time.Ticker)) *time.Ticker {
 	ticker := time.NewTicker(duration)
 	go func() {
-		for {
-			<-ticker.C
+		for range ticker.C {
 			task(ticker)
 		}
 	}()
+
 	return ticker
 }
 
