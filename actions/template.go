@@ -109,7 +109,6 @@ func (this *Template) VarValue(varName string) string {
 		if err != nil {
 			logs.Error(err)
 		} else {
-			logs.Println(string(b.Bytes()))
 			value = string(b.Bytes())
 		}
 	}
