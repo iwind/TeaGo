@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"bytes"
 	"github.com/iwind/TeaGo/Tea"
 	"github.com/iwind/TeaGo/files"
 	"github.com/iwind/TeaGo/gohtml"
@@ -136,24 +135,10 @@ func (this *ActionObject) render(dir string) error {
 	varMaps := []maps.Map{}
 	body = reg.ReplaceAllStringFunc(body, func(s string) string {
 		matches := reg.FindStringSubmatch(s)
-		varBody := matches[2]
 
-		t, err := template.New("").Delims("{$", "}").Funcs(this.viewFuncMap).Parse(varBody)
-		if err != nil {
-			logs.Error(err)
-			varMaps = append(varMaps, maps.Map{
-				matches[1]: formatHTML(varBody),
-			})
-		} else {
-			writer := bytes.NewBuffer([]byte{})
-			err := t.Execute(writer, nil)
-			if err != nil {
-				logs.Error(err)
-			}
-			varMaps = append(varMaps, maps.Map{
-				matches[1]: formatHTML(string(writer.Bytes())),
-			})
-		}
+		varMaps = append(varMaps, maps.Map{
+			matches[1]: formatHTML(matches[2]),
+		})
 
 		return ""
 	})

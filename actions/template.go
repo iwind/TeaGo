@@ -1,6 +1,8 @@
 package actions
 
 import (
+	"bytes"
+	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/maps"
 	"io"
 	"text/template"
@@ -10,6 +12,7 @@ import (
 type Template struct {
 	native *template.Template
 	vars   maps.Map
+	data   interface{}
 }
 
 // 创建新模板
@@ -40,11 +43,17 @@ func (this *Template) Parse(text string) (*Template, error) {
 
 // 执行模板
 func (this *Template) ExecuteTemplate(wr io.Writer, name string, data interface{}) error {
+	if this.vars.Len() > 0 {
+		this.data = data
+	}
 	return this.native.ExecuteTemplate(wr, name, data)
 }
 
 // 执行模板
 func (this *Template) Execute(wr io.Writer, data interface{}) error {
+	if this.vars.Len() > 0 {
+		this.data = data
+	}
 	return this.native.Execute(wr, data)
 }
 
@@ -90,7 +99,21 @@ func (this *Template) AddVar(varName, value string) *Template {
 
 // 取得变量值
 func (this *Template) VarValue(varName string) string {
-	return this.vars.GetString(varName)
+	value := this.vars.GetString(varName)
+	tpl, err := template.New("").Delims("{$", "}").Parse(value)
+	if err != nil {
+		logs.Error(err)
+	} else {
+		b := bytes.NewBuffer([]byte{})
+		err = tpl.Execute(b, this.data)
+		if err != nil {
+			logs.Error(err)
+		} else {
+			logs.Println(string(b.Bytes()))
+			value = string(b.Bytes())
+		}
+	}
+	return value
 }
 
 // 判断是否有某个变量
