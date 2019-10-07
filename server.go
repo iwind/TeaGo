@@ -341,9 +341,19 @@ func (this *Server) StartOn(address string) {
 				this.httpServerLocker.Unlock()
 
 				go func() {
-					err := server.ListenAndServeTLS(this.config.Https.Cert, this.config.Https.Key)
+					certFile := this.config.Https.Cert
+					if !filepath.IsAbs(certFile) {
+						certFile = Tea.Root + Tea.DS + certFile
+					}
+
+					keyFile := this.config.Https.Key
+					if !filepath.IsAbs(keyFile) {
+						keyFile = Tea.Root + Tea.DS + keyFile
+					}
+
+					err := server.ListenAndServeTLS(certFile, keyFile)
 					if err != nil {
-						logs.Error(err)
+						logs.Error(errors.New("tls: " + err.Error()))
 					}
 				}()
 			}
