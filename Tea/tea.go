@@ -46,7 +46,11 @@ func Is(env ...string) bool {
 // 判断是否在测试模式下
 func IsTesting() bool {
 	execFile := filepath.Base(os.Args[0])
-	return execFile == "main" || execFile == "main.exe" || strings.HasPrefix(execFile, "___")
+	return execFile == "main" ||
+		execFile == "main.exe" ||
+		strings.HasPrefix(execFile, "___") ||
+		strings.HasSuffix(execFile, ".test") ||
+		strings.HasSuffix(execFile, ".test.exe")
 }
 
 // 取得临时目录
