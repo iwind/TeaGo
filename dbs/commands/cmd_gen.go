@@ -213,7 +213,9 @@ func New` + model + `DAO() *` + model + `DAO {
 			PkName: "` + primaryKey + `",
 		},
 	}).(*` + model + `DAO)
-}` + "\n"
+}
+
+var Shared` + model + `DAO = New` + model + `DAO()` + "\n"
 
 	// state
 	if stringutil.Contains(fieldNames, "state") {
