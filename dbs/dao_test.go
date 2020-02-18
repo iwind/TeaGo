@@ -2,6 +2,7 @@ package dbs
 
 import (
 	"fmt"
+	"github.com/iwind/TeaGo/maps"
 	"github.com/pquerna/ffjson/ffjson"
 	"log"
 	"testing"
@@ -45,7 +46,7 @@ func NewUserDAO() *UserDAO {
 	}).(*UserDAO)
 }
 
-func (dao *UserDAO) FindUsers() ([]map[string]interface{}, []string, error) {
+func (dao *UserDAO) FindUsers() ([]maps.Map, []string, error) {
 	return dao.Query().
 		Where("id>=:minId").
 		Param("minId", 1).

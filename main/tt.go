@@ -35,7 +35,7 @@ func main() {
 
 			// 对命令代码进行排序
 			codes := []string{}
-			for code, _ := range commands {
+			for code := range commands {
 				codes = append(codes, code)
 			}
 

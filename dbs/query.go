@@ -11,7 +11,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 const (
@@ -61,9 +60,6 @@ const (
 	QueryForOrderBy = "ORDER BY"
 	QueryForGroupBy = "GROUP BY"
 )
-
-var queryParamPrefixIndex = int64(0) // 参数前缀，为了组合多个Query的时候不会冲突
-var queryParamLocker = &sync.Mutex{}
 
 // 错误信息
 var ErrNotFound = errors.New("record not found")
@@ -140,11 +136,11 @@ type QueryUseIndex struct {
 
 func NewQuery(model interface{}) *Query {
 	var query = &Query{}
-	query.Init(model)
+	query.init(model)
 	return query
 }
 
-func (this *Query) Init(model interface{}) *Query {
+func (this *Query) init(model interface{}) *Query {
 	if model != nil {
 		this.model = NewModel(model)
 	}
@@ -175,10 +171,7 @@ func (this *Query) Init(model interface{}) *Query {
 	this.namedParams = map[string]interface{}{}
 	this.namedParamIndex = 0
 
-	queryParamLocker.Lock()
-	queryParamPrefixIndex++
-	this.namedParamPrefix = fmt.Sprintf("%020d_", queryParamPrefixIndex)
-	queryParamLocker.Unlock()
+	this.namedParamPrefix = ""
 
 	return this
 }
@@ -344,6 +337,61 @@ func (this *Query) Having(cond string) *Query {
 // @TODO 支持Query、SQL
 func (this *Query) Where(wheres ...string) *Query {
 	this.wheres = append(this.wheres, wheres...)
+
+	return this
+}
+
+// 设置大于条件
+func (this *Query) Gt(attr string, value interface{}) *Query {
+	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
+	this.namedParams[param] = value
+	this.namedParamIndex++
+
+	this.Where(this.wrapKeyword(attr) + ">" + ":" + param)
+
+	return this
+}
+
+// 设置大于等于条件
+func (this *Query) Gte(attr string, value interface{}) *Query {
+	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
+	this.namedParams[param] = value
+	this.namedParamIndex++
+
+	this.Where(this.wrapKeyword(attr) + ">=" + ":" + param)
+
+	return this
+}
+
+// 设置小于条件
+func (this *Query) Lt(attr string, value interface{}) *Query {
+	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
+	this.namedParams[param] = value
+	this.namedParamIndex++
+
+	this.Where(this.wrapKeyword(attr) + "<" + ":" + param)
+
+	return this
+}
+
+// 设置小于等于条件
+func (this *Query) Lte(attr string, value interface{}) *Query {
+	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
+	this.namedParams[param] = value
+	this.namedParamIndex++
+
+	this.Where(this.wrapKeyword(attr) + "<=" + ":" + param)
+
+	return this
+}
+
+// 设置不等于条件
+func (this *Query) Neq(attr string, value interface{}) *Query {
+	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
+	this.namedParams[param] = value
+	this.namedParamIndex++
+
+	this.Where(this.wrapKeyword(attr) + "!=" + ":" + param)
 
 	return this
 }

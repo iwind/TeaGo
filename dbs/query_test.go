@@ -56,14 +56,8 @@ func TestQuerySlice(t *testing.T) {
 }
 
 func TestQuery_AsSQL(t *testing.T) {
-	var db, err = Instance("db2")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	var query = NewQuery(nil)
 	query.Table("pp_users")
-	query.DB(db)
 	query.action = QueryActionFind
 
 	query.Where("name=:name AND age=:age").
@@ -72,6 +66,11 @@ func TestQuery_AsSQL(t *testing.T) {
 		Param("age", 20)
 
 	query.Attr("state", 1).State(2)
+	query.Gt("number", 0)
+	query.Gte("number", 1)
+	query.Lt("number", 100)
+	query.Lte("number", 99)
+	query.Neq("number", 50)
 
 	query.Limit(10)
 	//query.Debug(false)
