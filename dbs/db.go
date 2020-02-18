@@ -88,11 +88,15 @@ func NewInstance(dbId string) (*DB, error) {
 
 func loadConfig() {
 	dbInitOnce.Do(func() {
-		var dbConfigFile = Tea.ConfigFile("db.conf")
+		var dbConfigFile = Tea.ConfigFile("db.yaml")
 		var fileBytes, err = ioutil.ReadFile(dbConfigFile)
 		if err != nil {
-			logs.Errorf("[DB]%s", err.Error())
-			return
+			dbConfigFile = Tea.ConfigFile("db.conf")
+			fileBytes, err = ioutil.ReadFile(dbConfigFile)
+			if err != nil {
+				logs.Errorf("[DB]%s", err.Error())
+				return
+			}
 		}
 		err = yaml.Unmarshal(fileBytes, &dbConfig)
 		if err != nil {

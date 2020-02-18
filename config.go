@@ -33,11 +33,17 @@ type ServerConfig struct {
 }
 
 func (this *ServerConfig) Load() {
-	configFile := Tea.ConfigFile("server.conf")
+	// 先查找yaml
+	configFile := Tea.ConfigFile("server.yaml")
 	_, err := os.Stat(configFile)
 	if err != nil {
-		logs.Errorf("%s", err.Error())
-		return
+		// 查找server.conf
+		configFile = Tea.ConfigFile("server.conf")
+		_, err = os.Stat(configFile)
+		if err != nil {
+			logs.Errorf("%s", err.Error())
+			return
+		}
 	}
 
 	fileBytes, err := ioutil.ReadFile(configFile)
