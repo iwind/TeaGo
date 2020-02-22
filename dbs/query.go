@@ -102,6 +102,7 @@ type Query struct {
 
 	filterFn func(one maps.Map) bool
 	mapFn    func(one maps.Map) maps.Map
+	slicePtr interface{}
 
 	namedParamPrefix string // 命名参数名前缀
 	namedParams      map[string]interface{}
@@ -578,6 +579,13 @@ func (this *Query) Map(mapFn func(one maps.Map) maps.Map) *Query {
 	return this
 }
 
+// 设置返回的Slice指针
+// 在FindAll()方法中生效
+func (this *Query) Slice(slicePtr interface{}) *Query {
+	this.slicePtr = slicePtr
+	return this
+}
+
 // 将查询转换为SQL语句
 func (this *Query) AsSQL() (string, error) {
 	// SQL
@@ -900,9 +908,19 @@ func (this *Query) FindAll() ([]interface{}, error) {
 	}
 
 	var results = []interface{}{}
-	for _, one := range ones {
-		var value = this.copyModelValue(this.model.Type, one)
-		results = append(results, value)
+	if this.slicePtr == nil {
+		for _, one := range ones {
+			var value = this.copyModelValue(this.model.Type, one)
+			results = append(results, value)
+		}
+	} else { // 将模型对象存入到指定的Slice中
+		ptrValue := reflect.ValueOf(this.slicePtr)
+		sliceValue := reflect.Indirect(ptrValue)
+		for _, one := range ones {
+			var value = this.copyModelValue(this.model.Type, one)
+			sliceValue = reflect.Append(sliceValue, reflect.ValueOf(value))
+		}
+		ptrValue.Elem().Set(sliceValue)
 	}
 
 	return results, nil
@@ -955,6 +973,12 @@ func (this *Query) Exist() (bool, error) {
 // 执行COUNT查询
 func (this *Query) Count() (int64, error) {
 	return this.CountAttr("*")
+}
+
+// 执行Count查询并返回int
+func (this *Query) CountInt() (int, error) {
+	count, err := this.Count()
+	return int(count), err
 }
 
 // 对某个字段进行COUNT查询
