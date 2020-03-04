@@ -332,14 +332,12 @@ func (this *GenModelCommand) modelToTable(modelName string) (string, error) {
 	var tableName = modelName + "s"
 
 	// ies
-	reg, err := stringutil.RegexpCompile("(?i)(cit|categor|part|activit|stor|famil|bab|lad|librar|difficult|histor|compan|deliver|cop|stud|enem|repl|glor|communit|propert)ys")
-	if err != nil {
-		return tableName, err
+	if !regexp.MustCompile("[aeiou]ys$").MatchString(tableName) {
+		tableName = tableName[:len(tableName)-2] + "ies"
 	}
-	tableName = reg.ReplaceAllString(tableName, "${1}ies")
 
 	// oes
-	reg, err = stringutil.RegexpCompile("(?i)(hero|potato|tomato|echo|tornado|torpedo|domino|veto|mosquito|negro|mango|buffalo|volcano|match|dish|brush|branch|dress|glass|bus|class|boss|process|box|fox|watch|index)s")
+	reg, err := stringutil.RegexpCompile("(?i)(hero|potato|tomato|echo|tornado|torpedo|domino|veto|mosquito|negro|mango|buffalo|volcano|match|dish|brush|branch|dress|glass|bus|class|boss|process|box|fox|watch|index)s")
 	if err != nil {
 		return tableName, err
 	}
