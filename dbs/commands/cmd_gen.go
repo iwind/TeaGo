@@ -332,7 +332,7 @@ func (this *GenModelCommand) modelToTable(modelName string) (string, error) {
 	var tableName = modelName + "s"
 
 	// ies
-	if !regexp.MustCompile("[aeiou]ys$").MatchString(tableName) {
+	if strings.HasSuffix(tableName, "ys") && !regexp.MustCompile("[aeiou]ys$").MatchString(tableName) {
 		tableName = tableName[:len(tableName)-2] + "ies"
 	}
 
