@@ -1,6 +1,9 @@
 package TeaGo
 
 import (
+	"bufio"
+	"errors"
+	"net"
 	"net/http"
 )
 
@@ -35,4 +38,12 @@ func (this *responseWriter) Write(b []byte) (int, error) {
 		this.bytes += length
 	}
 	return length, err
+}
+
+func (this *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	h, ok := this.responseWriter.(http.Hijacker)
+	if ok {
+		return h.Hijack()
+	}
+	return nil, nil, errors.New("http.Hijacker not implemented by underlying http.ResponseWriter")
 }
