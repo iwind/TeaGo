@@ -98,18 +98,28 @@ func (this *ActionObject) render(dir string) error {
 
 	// 布局模板
 	{
-		reg, err := stringutil.RegexpCompile("\\{\\s*\\$(layout|TEA\\.LAYOUT)\\s*\\}")
+		reg, err := stringutil.RegexpCompile(`\{\s*\$(layout|TEA\.LAYOUT)\s*(\"\S+\")?\s*\}`)
 		if err != nil {
 			return err
 		}
 		hasLayout := false
+		layoutTemplate := ""
 		body = reg.ReplaceAllStringFunc(body, func(s string) string {
 			hasLayout = true
+
+			index := strings.Index(s, "\"")
+			if index > -1 {
+				layoutTemplate = s[index+1 : strings.LastIndex(s, "\"")]
+			}
+
 			return ""
 		})
 
 		if hasLayout {
-			layoutFile := dir + "/@layout.html"
+			if len(layoutTemplate) == 0 {
+				layoutTemplate = "layout"
+			}
+			layoutFile := dir + "/@" + layoutTemplate + ".html"
 			addFileToWatchingFiles(&watchingFiles, layoutFile)
 
 			_, err := os.Stat(layoutFile)
