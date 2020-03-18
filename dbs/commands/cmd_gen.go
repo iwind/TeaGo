@@ -135,7 +135,7 @@ type ` + model + ` struct {`
 	for _, field := range table.Fields {
 		var attr = this.convertFieldNameStyle(field.Name)
 		var dataType = field.ValueTypeName()
-		modelString += "\t" + attr + " " + dataType + " `field:\"" + field.Name + "\"` //" + field.Comment + "\n"
+		modelString += "\t" + attr + " " + dataType + " `field:\"" + field.Name + "\"` // " + field.Comment + "\n"
 	}
 
 	modelString += "}"
