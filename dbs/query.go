@@ -498,8 +498,9 @@ func (this *Query) Pk(pks ...interface{}) *Query {
 	for _, pk := range pks {
 		var value = reflect.ValueOf(pk)
 		if value.Kind() == reflect.Slice {
-			for _, newPk := range pk.([]interface{}) {
-				realPks = append(realPks, newPk)
+			count := value.Len()
+			for i := 0; i < count; i++ {
+				realPks = append(realPks, value.Index(i).Interface())
 			}
 		} else {
 			realPks = append(realPks, pk)
