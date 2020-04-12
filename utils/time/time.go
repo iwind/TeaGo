@@ -1,15 +1,15 @@
 package timeutil
 
 import (
-	"time"
 	"bytes"
-	"strconv"
 	"fmt"
+	"strconv"
+	"time"
 )
 
 // 文档 http://php.net/manual/en/function.date.php
 // 目前没有支持的 S, L, o, B, v, e, I
-func Format(format string, now ... time.Time) string {
+func Format(format string, now ...time.Time) string {
 	var t1 time.Time
 	if len(now) > 0 {
 		t1 = now[0]
@@ -103,4 +103,9 @@ func Format(format string, now ... time.Time) string {
 	}
 
 	return buffer.String()
+}
+
+// 格式化时间戳
+func FormatTime(format string, timestamp int64) string {
+	return Format(format, time.Unix(timestamp, 0))
 }
