@@ -181,7 +181,17 @@ func (this *Server) StartOn(address string) {
 					defer this.logWriter.Print(time.Now(), writer.(*responseWriter), request)
 				}
 
-				this.outputMimeType(writer, request.URL.Path)
+				_, isText := this.outputMimeType(writer, request.URL.Path)
+				if isText {
+					newWriter, err := newGzipWriter(writer, 5)
+					if err == nil {
+						writer = newWriter
+						defer func() {
+							_ = newWriter.Close()
+						}()
+					}
+				}
+
 				http.StripPrefix(strings.TrimSuffix(prefix, "/"), http.FileServer(http.Dir(staticDir.dir+"/"))).ServeHTTP(writer, request)
 			})
 		}
@@ -203,7 +213,17 @@ func (this *Server) StartOn(address string) {
 		}
 		request.URL.Path = strings.TrimPrefix(request.URL.Path, "/_/")
 
-		this.outputMimeType(writer, request.URL.Path)
+		_, isText := this.outputMimeType(writer, request.URL.Path)
+		if isText {
+			newWriter, err := newGzipWriter(writer, 5)
+			if err == nil {
+				writer = newWriter
+				defer func() {
+					_ = newWriter.Close()
+				}()
+			}
+		}
+
 		http.FileServer(http.Dir(Tea.ViewsDir())).ServeHTTP(writer, request)
 	})
 
@@ -287,7 +307,19 @@ func (this *Server) StartOn(address string) {
 		publicFilePath := Tea.PublicFile(requestPath)
 		stat, err := os.Stat(publicFilePath)
 		if err == nil && !stat.IsDir() {
-			this.outputMimeType(writer, requestPath)
+			_, isText := this.outputMimeType(writer, requestPath)
+
+			// 试着压缩
+			if isText {
+				newWriter, err := newGzipWriter(writer, 5)
+				if err == nil {
+					writer = newWriter
+					defer func() {
+						_ = newWriter.Close()
+					}()
+				}
+			}
+
 			http.FileServer(http.Dir(Tea.PublicDir())).ServeHTTP(writer, request)
 			return
 		}
@@ -390,7 +422,7 @@ func (this *Server) Stop() {
 	// stop servers
 	this.httpServerLocker.Lock()
 	for _, server := range this.httpServers {
-		server.Close()
+		_ = server.Close()
 	}
 	this.httpServerLocker.Unlock()
 
@@ -736,23 +768,31 @@ func (this *Server) AccessLog(bool bool) *Server {
 	return this
 }
 
-func (this *Server) outputMimeType(writer http.ResponseWriter, path string) {
+func (this *Server) outputMimeType(writer http.ResponseWriter, path string) (mimeType string, isText bool) {
 	ext := filepath.Ext(path)
 	if len(ext) == 0 {
 		return
 	}
 
-	mimeType := mime.TypeByExtension(ext)
+	mimeType = mime.TypeByExtension(ext)
 	if len(mimeType) == 0 {
 		return
 	}
 
+	index := strings.Index(mimeType, ";")
+	if index > -1 {
+		mimeType = mimeType[:index]
+	}
+
 	_, found := textMimeMap[mimeType]
 	if !found {
+		writer.Header().Set("Content-Type", mimeType)
 		return
 	}
 
+	isText = true
 	writer.Header().Set("Content-Type", mimeType+"; charset="+this.config.Charset)
+	return
 }
 
 // 执行参数，如果找到可执行的参数，则返回 true
@@ -765,7 +805,7 @@ func (this *Server) execArgs() {
 	arg := os.Args[1]
 	if arg == "start" { // 启动
 		process := processes.NewProcess(cmd)
-		process.StartBackground()
+		_ = process.StartBackground()
 		log.Println("started in background")
 		os.Exit(0)
 	} else if arg == "stop" { // 停止
@@ -785,7 +825,7 @@ func (this *Server) execArgs() {
 
 		this.writeNewPid(0)
 
-		process.Kill()
+		_ = process.Kill()
 
 		log.Println("kill pid", pid)
 
@@ -795,12 +835,12 @@ func (this *Server) execArgs() {
 		if pid > 0 {
 			process, err := os.FindProcess(pid)
 			if err == nil {
-				process.Kill()
+				_ = process.Kill()
 			}
 		}
 
 		process := processes.NewProcess(cmd)
-		process.StartBackground()
+		_ = process.StartBackground()
 		log.Println("started in background")
 		os.Exit(0)
 	}
@@ -841,7 +881,7 @@ func (this *Server) checkPid() {
 	}
 
 	logs.Println("kill previous process", pid)
-	process.Kill()
+	_ = process.Kill()
 
 	// 等待sock关闭
 	time.Sleep(100 * time.Millisecond)
@@ -855,11 +895,11 @@ func (this *Server) writePid() {
 		err := pidDir.Mkdir()
 		if err == nil {
 			pidFile := pidDir.Child("pid")
-			pidFile.WriteFormat("%d", pid)
+			_ = pidFile.WriteFormat("%d", pid)
 		}
 	} else {
 		pidFile := pidDir.Child("pid")
-		pidFile.WriteFormat("%d", pid)
+		_ = pidFile.WriteFormat("%d", pid)
 	}
 }
 
@@ -870,10 +910,10 @@ func (this *Server) writeNewPid(pid int) {
 		err := pidDir.Mkdir()
 		if err == nil {
 			pidFile := pidDir.Child("pid")
-			pidFile.WriteFormat("%d", pid)
+			_ = pidFile.WriteFormat("%d", pid)
 		}
 	} else {
 		pidFile := pidDir.Child("pid")
-		pidFile.WriteFormat("%d", pid)
+		_ = pidFile.WriteFormat("%d", pid)
 	}
 }
