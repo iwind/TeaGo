@@ -44,6 +44,8 @@ func (this *Field) parseDataKind() {
 	this.IsUnsigned = strings.Contains(this.FullType, "unsigned")
 
 	var dbDataType = strings.ToLower(strings.TrimSpace(pieces[0]))
+	this.Type = dbDataType
+
 	switch dbDataType {
 	// numbers
 	case "bit":

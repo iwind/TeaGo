@@ -1,10 +1,12 @@
 package commands
 
 import (
-	"github.com/iwind/TeaGo/cmd"
-	"regexp"
-	"github.com/iwind/TeaGo/dbs"
 	"fmt"
+	"github.com/iwind/TeaGo/cmd"
+	"github.com/iwind/TeaGo/dbs"
+	"github.com/iwind/TeaGo/types"
+	stringutil "github.com/iwind/TeaGo/utils/string"
+	"regexp"
 )
 
 type CompareDBCommandOptions struct {
@@ -53,14 +55,18 @@ func (this *CompareDBCommand) Run() {
 		this.Error(err)
 		return
 	}
-	defer db1.Close()
+	defer func() {
+		_ = db1.Close()
+	}()
 
 	db2, err := dbs.NewInstance(dbId2)
 	if err != nil {
 		this.Error(err)
 		return
 	}
-	defer db2.Close()
+	defer func() {
+		_ = db2.Close()
+	}()
 
 	options := &CompareDBCommandOptions{
 		Tables:    true,
@@ -70,6 +76,19 @@ func (this *CompareDBCommand) Run() {
 }
 
 func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *CompareDBCommandOptions) {
+	version1, err := db1.FindCol(0, "SELECT VERSION()")
+	if err != nil {
+		this.Error(err)
+		return
+	}
+
+	version2, err := db2.FindCol(0, "SELECT VERSION()")
+	if err != nil {
+		this.Error(err)
+		return
+	}
+	isMySQL80 := stringutil.VersionCompare(types.String(version1), "8.0.0") >= 0 || stringutil.VersionCompare(types.String(version2), "8.0.0") >= 0
+
 	compareIssues = map[int]*CompareDBIssue{}
 
 	tableNames1, err := db1.TableNames()
@@ -97,7 +116,7 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 
 			// table2不存在
 			if err != nil || table2 == nil {
-				countIssues ++
+				countIssues++
 				this.Output("<code>+"+tableName1+" table</code>", fmt.Sprintf("[%d]", countIssues), "\n")
 				if len(table1.Code) > 0 {
 					reg := regexp.MustCompile(" AUTO_INCREMENT=\\d+")
@@ -115,7 +134,7 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 			for _, field := range table1.Fields {
 				field2 := table2.FindFieldWithName(field.Name)
 				if field2 == nil {
-					countIssues ++
+					countIssues++
 					this.Output("<code>+"+tableName1+" field: "+field.Name+" "+field.Definition()+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
 					this.Output("   suggest: ALTER TABLE `" + tableName1 + "` ADD `" + field.Name + "` " + field.Definition() + "\n")
 					compareIssues[countIssues] = &CompareDBIssue{
@@ -124,7 +143,16 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 					}
 				} else {
 					if field.Definition() != field2.Definition() {
-						countIssues ++
+						// 检查是否是MySQL 8.0 以后的整型
+						if isMySQL80 && (field.Type == "int" || field.Type == "tinyint" || field.Type == "bigint") {
+							fullType1 := regexp.MustCompile(`\(\d+\)`).ReplaceAllString(field.FullType, "")
+							fullType2 := regexp.MustCompile(`\(\d+\)`).ReplaceAllString(field2.FullType, "")
+							if fullType1 == fullType2 {
+								continue
+							}
+						}
+
+						countIssues++
 						this.Output("<code>*"+tableName1+" field: "+field.Name+" "+field.Definition()+
 							"</code>", fmt.Sprintf("[%d]", countIssues), "\n   from "+field2.Name+" "+field2.Definition()+"\n")
 						this.Output("   suggest: ALTER TABLE `" + tableName1 + "` MODIFY `" + field.Name + "` " + field.Definition() + "\n")
@@ -139,7 +167,7 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 			for _, field := range table2.Fields {
 				field1 := table1.FindFieldWithName(field.Name)
 				if field1 == nil {
-					countIssues ++
+					countIssues++
 					this.Output("<code>-"+tableName1+" field: "+field.Name+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
 					this.Output("   suggest: ALTER TABLE `" + tableName1 + "` DROP COLUMN `" + field.Name + "`\n")
 					compareIssues[countIssues] = &CompareDBIssue{
@@ -155,13 +183,13 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 			for _, partition := range table1.Partitions {
 				partition2 := table2.FindPartitionWithName(partition.Name)
 				if partition2 == nil {
-					countIssues ++
+					countIssues++
 					this.Output("<code>+" + tableName1 + " partition: " + partition.Method + " (" + partition.Expression + ") " + partition.Name + " (" + partition.Description + ")</code>\n")
 				} else {
 					if partition.Method != partition2.Method ||
 						partition.Description != partition2.Description ||
 						partition.Expression != partition2.Expression {
-						countIssues ++
+						countIssues++
 						this.Output("<code>*" + tableName1 + " partition: " + partition.Method + " (" + partition.Expression + ") " + partition.Name + " (" + partition.Description + ")</code>\n")
 						this.Output("   from " + partition2.Method + " (" + partition2.Expression + ") " + partition2.Name + " (" + partition2.Description + ")\n")
 					}
@@ -171,7 +199,7 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 			for _, partition := range table2.Partitions {
 				partition1 := table1.FindPartitionWithName(partition.Name)
 				if partition1 == nil {
-					countIssues ++
+					countIssues++
 					this.Output("<code>-" + tableName1 + " partition: " + partition.Method + " (" + partition.Expression + ") " + partition.Name + " (" + partition.Description + ")</code>\n")
 				}
 			}
@@ -180,7 +208,7 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 			for _, index := range table1.Indexes {
 				index2 := table2.FindIndexWithName(index.Name)
 				if index2 == nil {
-					countIssues ++
+					countIssues++
 					this.Output("<code>+"+tableName1+" index: "+index.Definition()+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
 					this.Output("   suggest: ALTER TABLE `" + tableName1 + "` ADD " + index.Definition() + "\n")
 					compareIssues[countIssues] = &CompareDBIssue{
@@ -189,7 +217,7 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 					}
 				} else {
 					if index.Definition() != index2.Definition() {
-						countIssues ++
+						countIssues++
 						this.Output("<code>*" + tableName1 + " index: " + index.Definition() + "</code>\n")
 						this.Output("   from " + index2.Definition() + "\n")
 					}
@@ -199,7 +227,7 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 			for _, index := range table2.Indexes {
 				index1 := table1.FindIndexWithName(index.Name)
 				if index1 == nil {
-					countIssues ++
+					countIssues++
 					this.Output("<code>-"+tableName1+" index: "+index.Definition()+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
 					this.Output("   suggest: ALTER TABLE `" + tableName1 + "` DROP INDEX `" + index.Name + "`\n")
 					compareIssues[countIssues] = &CompareDBIssue{
@@ -217,7 +245,7 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 		for _, tableName2 := range tableNames2 {
 			table1, err := db1.FindTable(tableName2)
 			if err != nil || table1 == nil {
-				countIssues ++
+				countIssues++
 				this.Output("<code>-"+tableName2+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
 				this.Output("   suggest: DROP TABLE `" + tableName2 + "`\n")
 				compareIssues[countIssues] = &CompareDBIssue{
@@ -236,17 +264,18 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 		this.Output("\n[functions]\n")
 		functions1, _ := db1.FindFunctions()
 		functions2, _ := db2.FindFunctions()
+
 		for _, function := range functions1 {
 			function2 := this.findFunctionWithName(functions2, function.Name)
 			if function2 == nil {
-				countIssues ++
+				countIssues++
 				this.Output("<code>+" + function.Name + " function</code>\n")
 			} else {
 				// 去除definer后比较
 				code := this.cleanFunctionCode(function.Code)
 				code2 := this.cleanFunctionCode(function2.Code)
 				if code != code2 {
-					countIssues ++
+					countIssues++
 					this.Output("<code>*" + function.Name + " function</code>\n")
 				}
 			}
@@ -255,7 +284,7 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 		for _, function := range functions2 {
 			function1 := this.findFunctionWithName(functions1, function.Name)
 			if function1 == nil {
-				countIssues ++
+				countIssues++
 				this.Output("<code>-" + function.Name + " function</code>\n")
 			}
 		}

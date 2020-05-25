@@ -715,7 +715,7 @@ func (this *DB) FindFullTable(tableName string) (*Table, error) {
 
 // 查找所有函数
 func (this *DB) FindFunctions() ([]*Function, error) {
-	ones, _, err := this.FindOnes("SHOW FUNCTION STATUS")
+	ones, _, err := this.FindOnes("SHOW FUNCTION STATUS WHERE Db='" + this.Name() + "'")
 	if err != nil {
 		return []*Function{}, err
 	}
@@ -775,6 +775,6 @@ func (this *DB) TablePrefix() string {
 }
 
 // 取得原始的数据库连接句柄
-func (this *DB) OriginDB() *sql.DB {
+func (this *DB) Raw() *sql.DB {
 	return this.sqlDB
 }
