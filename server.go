@@ -12,6 +12,7 @@ import (
 	"github.com/iwind/TeaGo/utils/string"
 	"log"
 	"mime"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -81,6 +82,7 @@ type Server struct {
 
 	httpServers      []*http.Server
 	httpServerLocker sync.Mutex
+	connState        func(conn net.Conn, state http.ConnState)
 }
 
 // 路由配置
@@ -344,6 +346,10 @@ func (this *Server) StartOn(address string) {
 					IdleTimeout: 2 * time.Minute,
 				}
 
+				if this.connState != nil {
+					server.ConnState = this.connState
+				}
+
 				this.httpServerLocker.Lock()
 				this.httpServers = append(this.httpServers, server)
 				this.httpServerLocker.Unlock()
@@ -366,6 +372,10 @@ func (this *Server) StartOn(address string) {
 					Addr:        addr,
 					Handler:     serverMux,
 					IdleTimeout: 2 * time.Minute,
+				}
+
+				if this.connState != nil {
+					server.ConnState = this.connState
 				}
 
 				this.httpServerLocker.Lock()
@@ -742,6 +752,12 @@ func (this *Server) Static(prefix string, dir string) *Server {
 		prefix: prefix,
 		dir:    dir,
 	})
+	return this
+}
+
+// 连接状态
+func (this *Server) ConnState(connState func(conn net.Conn, state http.ConnState)) *Server {
+	this.connState = connState
 	return this
 }
 

@@ -1,11 +1,11 @@
 package actions
 
 import (
-	"compress/gzip"
-	"regexp"
-	"github.com/iwind/TeaGo/types"
 	"compress/flate"
+	"compress/gzip"
 	"github.com/iwind/TeaGo/logs"
+	"github.com/iwind/TeaGo/types"
+	"regexp"
 )
 
 type Gzip struct {
@@ -67,6 +67,6 @@ func (this *Gzip) Write(data []byte) (n int, err error) {
 
 func (this *Gzip) AfterAction() {
 	if this.gzipWriter != nil {
-		this.gzipWriter.Close()
+		_ = this.gzipWriter.Close()
 	}
 }
