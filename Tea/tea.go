@@ -22,6 +22,7 @@ var publicDir string
 var viewsDir string
 var configDir string
 var tmpDir string
+var isTesting = checkIsTesting()
 
 var Root string
 
@@ -45,6 +46,10 @@ func Is(env ...string) bool {
 
 // 判断是否在测试模式下
 func IsTesting() bool {
+	return isTesting
+}
+
+func checkIsTesting() bool {
 	execFile := filepath.Base(os.Args[0])
 	return execFile == "main" ||
 		execFile == "main.exe" ||
