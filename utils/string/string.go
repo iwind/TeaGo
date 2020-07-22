@@ -5,14 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/iwind/TeaGo/rands"
 	"github.com/pquerna/ffjson/ffjson"
 	"math"
-	"math/rand"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 )
 
 var reuseRegexpMap = map[string]*regexp.Regexp{}
@@ -53,33 +52,8 @@ func Md5(source string) string {
 }
 
 // 取得随机字符串
-// 代码来自 https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-golang
 func Rand(n int) string {
-	const randomLetterBytes = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-	const (
-		randomLetterIdxBits = 6                          // 6 bits to represent a letter index
-		randomLetterIdxMask = 1<<randomLetterIdxBits - 1 // All 1-bits, as many as letterIdxBits
-		randomLetterIdxMax  = 63 / randomLetterIdxBits   // # of letter indices fitting in 63 bits
-	)
-
-	b := make([]byte, n)
-	rand.Seed(time.Now().UnixNano() + int64(rand.Int()))
-
-	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
-	for i, cache, remain := n-1, rand.Int(), randomLetterIdxMax; i >= 0; {
-		if remain == 0 {
-			cache, remain = rand.Int(), randomLetterIdxMax
-		}
-		if idx := int(cache & randomLetterIdxMask); idx < len(randomLetterBytes) {
-			b[i] = randomLetterBytes[idx]
-			i--
-		}
-		cache >>= randomLetterIdxBits
-		remain--
-	}
-
-	return string(b)
+	return rands.String(n)
 }
 
 // 转换数字ID到字符串

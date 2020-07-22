@@ -7,7 +7,8 @@ import (
 )
 
 func TestRandString(t *testing.T) {
-	t.Log(Rand(10))
+	s := Rand(10)
+	t.Log(s, len(s))
 }
 
 func TestRandStringUnique(t *testing.T) {
