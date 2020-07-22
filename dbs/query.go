@@ -962,6 +962,24 @@ func (this *Query) FindCol(defaultValue interface{}) (interface{}, error) {
 	return value, nil
 }
 
+// 查询单个字段值并返回字符串
+func (this *Query) FindStringCol(defaultValue string) (string, error) {
+	col, err := this.FindCol(defaultValue)
+	return types.String(col), err
+}
+
+// 查询某个字段值并返回整型
+func (this *Query) FindIntCol(defaultValue int) (int, error) {
+	col, err := this.FindCol(defaultValue)
+	return types.Int(col), err
+}
+
+// 查询某个字段值并返回浮点型
+func (this *Query) FindFloat64Col(defaultValue float64) (float64, error) {
+	col, err := this.FindCol(defaultValue)
+	return types.Float64(col), err
+}
+
 // 判断记录是否存在
 func (this *Query) Exist() (bool, error) {
 	var one, _, err = this.ResultPk().FindOne()
