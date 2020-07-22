@@ -282,11 +282,10 @@ func (this *${daoName}) FindEnabled${model}(${pkName} ${pkNameType}) (*${model},
 	if stringutil.Contains(fieldNames, "name") && table.FindFieldWithName("name").ValueTypeName() == "string" {
 		daoString += `// 根据主键查找名称
 func (this *${daoName}) Find${model}Name(${pkName} ${pkNameType}) (string, error) {
-	name, err := this.Query().
+	return this.Query().
 		Pk(${pkName}).
 		Result("name").
-		FindCol("")
-	return name.(string), err
+		FindStringCol("")
 }
 `
 	}
