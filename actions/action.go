@@ -41,10 +41,11 @@ func RunAction(actionPtr interface{},
 	responseWriter http.ResponseWriter,
 	params Params,
 	helpers []interface{},
+	initData Data,
 ) interface{} {
 	// 运行
 	action := actionPtr.(ActionWrapper).Object()
-	runActionCopy(spec, request, responseWriter, params, action.SessionManager, action.maxSize, helpers)
+	runActionCopy(spec, request, responseWriter, params, action.SessionManager, action.maxSize, helpers, initData)
 
 	return actionPtr
 }
@@ -57,6 +58,7 @@ func runActionCopy(spec *ActionSpec,
 	sessionManager interface{},
 	maxSize float64,
 	helpers []interface{},
+	initData Data,
 ) {
 	var actionPtrValue = spec.NewPtrValue()
 	var actionObject = actionPtrValue.Interface().(ActionWrapper).Object()
@@ -148,6 +150,9 @@ func runActionCopy(spec *ActionSpec,
 
 	// 初始化
 	actionObject.init()
+	if initData != nil {
+		actionObject.Data = initData
+	}
 
 	// 执行Helpers
 	for _, helper := range helpers {

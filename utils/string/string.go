@@ -15,7 +15,7 @@ import (
 )
 
 var reuseRegexpMap = map[string]*regexp.Regexp{}
-var reuseRegexpMutex = &sync.Mutex{}
+var reuseRegexpMutex = &sync.RWMutex{}
 
 // 判断slice中是否包含某个字符串
 func Contains(slice []string, item string) bool {

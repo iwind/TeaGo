@@ -70,7 +70,7 @@ func (this *Testing) Cost() *Testing {
 }
 
 // 执行
-func (this *Testing) Run(t *testing.T) (*TestingResponseWriter) {
+func (this *Testing) Run(t *testing.T) *TestingResponseWriter {
 	values := url.Values{}
 
 	for k, v := range this.params {
@@ -94,7 +94,7 @@ func (this *Testing) Run(t *testing.T) (*TestingResponseWriter) {
 	beforeTime := time.Now()
 
 	resp := &TestingResponseWriter{}
-	RunAction(this.actionPtr, spec, request, resp, this.params, []interface{}{})
+	RunAction(this.actionPtr, spec, request, resp, this.params, []interface{}{}, nil)
 
 	if this.cost {
 		t.Logf("cost:%.6f %s", time.Since(beforeTime).Seconds()*1000, "ms")

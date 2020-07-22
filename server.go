@@ -75,6 +75,7 @@ type Server struct {
 	lastModule  string        //当前的模块
 	lastPrefix  string        //当前的URL前缀
 	lastHelpers []interface{} // 当前的Helper列表
+	lastData    actions.Data  // 当前的变量列表
 
 	config    *ServerConfig
 	logWriter LogWriter
@@ -574,6 +575,12 @@ func (this *Server) buildHandle(actionPtr interface{}) func(writer http.Response
 	spec.Module = this.lastModule
 
 	var helpers = append([]interface{}{}, this.lastHelpers...)
+	var data = actions.Data{}
+	if this.lastData != nil {
+		for k, v := range this.lastData {
+			data[k] = v
+		}
+	}
 
 	return func(writer http.ResponseWriter, request *http.Request) {
 		// URI Query
@@ -604,7 +611,7 @@ func (this *Server) buildHandle(actionPtr interface{}) func(writer http.Response
 		actionObject.SetMaxSize(this.config.MaxSize())
 		actionObject.SetSessionManager(this.sessionManager)
 
-		actions.RunAction(actionPtr, spec, request, writer, params, helpers)
+		actions.RunAction(actionPtr, spec, request, writer, params, helpers, data)
 	}
 }
 
@@ -629,6 +636,21 @@ func (this *Server) Prefix(prefix string) *Server {
 // 结束前缀定义
 func (this *Server) EndPrefix() *Server {
 	this.lastPrefix = ""
+	return this
+}
+
+// 设置变量
+func (this *Server) Data(name string, value interface{}) *Server {
+	if this.lastData == nil {
+		this.lastData = actions.Data{}
+	}
+	this.lastData[name] = value
+	return this
+}
+
+// 结束设置变量
+func (this *Server) EndData() *Server {
+	this.lastData = nil
 	return this
 }
 
@@ -670,6 +692,7 @@ func (this *Server) EndAll() *Server {
 	this.EndPrefix()
 	this.EndModule()
 	this.EndHelpers()
+	this.EndData()
 	return this
 }
 
