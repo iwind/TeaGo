@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/iwind/TeaGo/types"
+	stringutil "github.com/iwind/TeaGo/utils/string"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -563,6 +564,14 @@ func (this *Assertion) Log(msg ...interface{}) *Assertion {
 func (this *Assertion) Logf(format string, args ...interface{}) *Assertion {
 	this.Log(fmt.Sprintf(format, args...))
 
+	return this
+}
+
+// 输出JSON格式的日志
+func (this *Assertion) LogJSON(msg ...interface{}) *Assertion {
+	for _, m := range msg {
+		this.t.Log(stringutil.JSONEncodePretty(m))
+	}
 	return this
 }
 

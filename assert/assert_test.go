@@ -1,10 +1,10 @@
 package assert
 
 import (
-	"testing"
-	"reflect"
-	"time"
 	"github.com/iwind/TeaGo/maps"
+	"reflect"
+	"testing"
+	"time"
 )
 
 func TestAssertion(t *testing.T) {
@@ -100,4 +100,10 @@ func TestAssertion_Map(t *testing.T) {
 		a.IsInteger(age)
 		a.Gt(age, 1)
 	}
+}
+
+func TestAssertion_LogJSON(t *testing.T) {
+	a := NewAssertion(t)
+	a.LogJSON([]string{"a", "b", "c"})
+	a.LogJSON("d")
 }
