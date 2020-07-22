@@ -184,6 +184,35 @@ func New` + model + `Operator() *` + model + `Operator {
 		}
 	}
 
+	// model ext
+	extString := `package ` + subPackage + `
+`
+	formatted, err = format.Source([]byte(extString))
+	if err == nil {
+		extString = string(formatted)
+	}
+
+	if len(dir) == 0 {
+		fmt.Println("Model Ext:")
+		fmt.Println("~~~")
+		fmt.Println(extString)
+		fmt.Println("~~~")
+	} else {
+		// 写入文件
+		target := os.Getenv("GOPATH") + Tea.DS + dir + Tea.DS + this.convertToUnderlineName(model) + "_model_ext.go"
+		file := files.NewFile(target)
+		if file.Exists() {
+			this.Output("<error>write failed: '" + strings.TrimPrefix(target, os.Getenv("GOPATH")) + "' already exists</error>\n")
+		} else {
+			err := file.WriteString(extString)
+			if err != nil {
+				this.Error(err)
+			} else {
+				this.Output("<ok>write '" + strings.TrimPrefix(target, os.Getenv("GOPATH")) + "' ok</ok>\n")
+			}
+		}
+	}
+
 	// DAO
 	daoString := `package ` + subPackage + `
 
