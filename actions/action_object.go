@@ -100,6 +100,12 @@ func (this *ActionObject) ParamInt(name string) int {
 	return types.Int(v)
 }
 
+// 获取int64参数
+func (this *ActionObject) ParamInt64(name string) int64 {
+	v, _ := this.Param(name)
+	return types.Int64(v)
+}
+
 // 获取参数数组
 func (this *ActionObject) ParamArray(name string) []string {
 	values, ok := this.ParamsMap[name]
