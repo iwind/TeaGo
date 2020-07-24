@@ -84,8 +84,8 @@ type Query struct {
 	orders  []QueryOrder
 	groups  []QueryGroup
 
-	limit  int
-	offset int
+	limit  int64
+	offset int64
 
 	results    []string
 	joins      []QueryJoin
@@ -228,18 +228,18 @@ func (this *Query) Attr(name string, value interface{}) *Query {
 }
 
 // 设置偏移量
-func (this *Query) Offset(offset int) *Query {
+func (this *Query) Offset(offset int64) *Query {
 	this.offset = offset
 	return this
 }
 
 // 设置Limit条件，同limit()
-func (this *Query) Size(size int) *Query {
+func (this *Query) Size(size int64) *Query {
 	return this.Limit(size)
 }
 
 // 设置Limit条件，同size()
-func (this *Query) Limit(size int) *Query {
+func (this *Query) Limit(size int64) *Query {
 	this.limit = size
 	return this
 }
