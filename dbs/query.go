@@ -1048,7 +1048,7 @@ func (this *Query) SumInt(attr string, defaultValue int) (int, error) {
 	if value == nil {
 		return defaultValue, nil
 	}
-	return types.int(value), err
+	return types.Int(value), err
 }
 
 // 执行SUM查询，并返回Int64
