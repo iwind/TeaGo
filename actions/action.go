@@ -356,7 +356,7 @@ func runActionCopy(spec *ActionSpec,
 
 		// default:"默认值"
 		// 注意：DefaultValue不对字符串进行Trim()处理
-		if !hasValue || len(fieldParamValue[0]) == 0 {
+		if !hasValue || (len(fieldParamValue) == 0 || len(fieldParamValue[0]) == 0) {
 			defaultValue, ok := field.Tag.Lookup("default")
 			if ok {
 				hasValue = true
@@ -365,7 +365,7 @@ func runActionCopy(spec *ActionSpec,
 		}
 
 		if hasValue {
-			firstParamValue := strings.TrimRightFunc(fieldParamValue[0], unicode.IsSpace)
+			firstParamValue := strings.TrimFunc(fieldParamValue[0], unicode.IsSpace)
 			switch field.Type.Kind() {
 			case reflect.Int:
 				fieldValue.Set(reflect.ValueOf(types.Int(firstParamValue)))
@@ -409,7 +409,7 @@ func runActionCopy(spec *ActionSpec,
 						// trim right spaces in string value
 						if stringSlice, ok := sliceValue.([]string); ok {
 							for k, v := range stringSlice {
-								stringSlice[k] = strings.TrimRightFunc(v, unicode.IsSpace)
+								stringSlice[k] = strings.TrimFunc(v, unicode.IsSpace)
 							}
 						}
 						fieldValue.Set(reflect.ValueOf(sliceValue))

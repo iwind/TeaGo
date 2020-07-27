@@ -121,7 +121,7 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 				if len(table1.Code) > 0 {
 					reg := regexp.MustCompile(" AUTO_INCREMENT=\\d+")
 					table1.Code = reg.ReplaceAllString(table1.Code, "")
-					this.Output("   suggest: \n  " + table1.Code + "\n")
+					this.Output("   suggest: \n  " + table1.Code + ";\n")
 					compareIssues[countIssues] = &CompareDBIssue{
 						dbId: db2.Id(),
 						sql:  table1.Code,
@@ -136,7 +136,7 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 				if field2 == nil {
 					countIssues++
 					this.Output("<code>+"+tableName1+" field: "+field.Name+" "+field.Definition()+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
-					this.Output("   suggest: ALTER TABLE `" + tableName1 + "` ADD `" + field.Name + "` " + field.Definition() + "\n")
+					this.Output("   suggest: ALTER TABLE `" + tableName1 + "` ADD `" + field.Name + "` " + field.Definition() + ";\n")
 					compareIssues[countIssues] = &CompareDBIssue{
 						dbId: db2.Id(),
 						sql:  "ALTER TABLE `" + tableName1 + "` ADD `" + field.Name + "` " + field.Definition(),
@@ -155,7 +155,7 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 						countIssues++
 						this.Output("<code>*"+tableName1+" field: "+field.Name+" "+field.Definition()+
 							"</code>", fmt.Sprintf("[%d]", countIssues), "\n   from "+field2.Name+" "+field2.Definition()+"\n")
-						this.Output("   suggest: ALTER TABLE `" + tableName1 + "` MODIFY `" + field.Name + "` " + field.Definition() + "\n")
+						this.Output("   suggest: ALTER TABLE `" + tableName1 + "` MODIFY `" + field.Name + "` " + field.Definition() + ";\n")
 						compareIssues[countIssues] = &CompareDBIssue{
 							dbId: db2.Id(),
 							sql:  "ALTER TABLE `" + tableName1 + "` MODIFY `" + field.Name + "` " + field.Definition(),
@@ -169,7 +169,7 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 				if field1 == nil {
 					countIssues++
 					this.Output("<code>-"+tableName1+" field: "+field.Name+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
-					this.Output("   suggest: ALTER TABLE `" + tableName1 + "` DROP COLUMN `" + field.Name + "`\n")
+					this.Output("   suggest: ALTER TABLE `" + tableName1 + "` DROP COLUMN `" + field.Name + "`;\n")
 					compareIssues[countIssues] = &CompareDBIssue{
 						dbId: db2.Id(),
 						sql:  "ALTER TABLE `" + tableName1 + "` DROP COLUMN `" + field.Name + "`",
@@ -210,7 +210,7 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 				if index2 == nil {
 					countIssues++
 					this.Output("<code>+"+tableName1+" index: "+index.Definition()+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
-					this.Output("   suggest: ALTER TABLE `" + tableName1 + "` ADD " + index.Definition() + "\n")
+					this.Output("   suggest: ALTER TABLE `" + tableName1 + "` ADD " + index.Definition() + ";\n")
 					compareIssues[countIssues] = &CompareDBIssue{
 						dbId: db2.Id(),
 						sql:  "ALTER TABLE `" + tableName1 + "` ADD " + index.Definition(),
@@ -229,7 +229,7 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 				if index1 == nil {
 					countIssues++
 					this.Output("<code>-"+tableName1+" index: "+index.Definition()+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
-					this.Output("   suggest: ALTER TABLE `" + tableName1 + "` DROP INDEX `" + index.Name + "`\n")
+					this.Output("   suggest: ALTER TABLE `" + tableName1 + "` DROP INDEX `" + index.Name + "`;\n")
 					compareIssues[countIssues] = &CompareDBIssue{
 						dbId: db2.Id(),
 						sql:  "ALTER TABLE `" + tableName1 + "` DROP INDEX `" + index.Name + "`",
@@ -247,7 +247,7 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 			if err != nil || table1 == nil {
 				countIssues++
 				this.Output("<code>-"+tableName2+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
-				this.Output("   suggest: DROP TABLE `" + tableName2 + "`\n")
+				this.Output("   suggest: DROP TABLE `" + tableName2 + "`;\n")
 				compareIssues[countIssues] = &CompareDBIssue{
 					dbId: db2.Id(),
 					sql:  "DROP TABLE `" + tableName2 + "`",

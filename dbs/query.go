@@ -1033,6 +1033,42 @@ func (this *Query) Sum(attr string, defaultValue float64) (float64, error) {
 	return types.Float64(value), err
 }
 
+// 执行SUM查询，并返回Int
+func (this *Query) SumInt(attr string, defaultValue int) (int, error) {
+	this.action = QueryActionFind
+	this.subAction = QuerySubActionSum
+	this.NoPk(true)
+
+	this.results = []string{"SUM(" + this.wrapKeyword(attr) + ")"}
+	var value, err = this.FindCol(defaultValue)
+	if err != nil {
+		return 0, err
+	}
+
+	if value == nil {
+		return defaultValue, nil
+	}
+	return types.int(value), err
+}
+
+// 执行SUM查询，并返回Int64
+func (this *Query) SumInt64(attr string, defaultValue int64) (int64, error) {
+	this.action = QueryActionFind
+	this.subAction = QuerySubActionSum
+	this.NoPk(true)
+
+	this.results = []string{"SUM(" + this.wrapKeyword(attr) + ")"}
+	var value, err = this.FindCol(defaultValue)
+	if err != nil {
+		return 0, err
+	}
+
+	if value == nil {
+		return defaultValue, nil
+	}
+	return types.Int64(value), err
+}
+
 // 执行MIN查询
 func (this *Query) Min(attr string, defaultValue float64) (float64, error) {
 	this.action = QueryActionFind
