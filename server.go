@@ -84,6 +84,8 @@ type Server struct {
 	httpServers      []*http.Server
 	httpServerLocker sync.Mutex
 	connState        func(conn net.Conn, state http.ConnState)
+
+	internalErrorLogger *log.Logger
 }
 
 // 路由配置
@@ -345,6 +347,7 @@ func (this *Server) StartOn(address string) {
 					Addr:        addr,
 					Handler:     serverMux,
 					IdleTimeout: 2 * time.Minute,
+					ErrorLog:    this.internalErrorLogger,
 				}
 
 				if this.connState != nil {
@@ -373,6 +376,7 @@ func (this *Server) StartOn(address string) {
 					Addr:        addr,
 					Handler:     serverMux,
 					IdleTimeout: 2 * time.Minute,
+					ErrorLog:    this.internalErrorLogger,
 				}
 
 				if this.connState != nil {
@@ -804,6 +808,11 @@ func (this *Server) LogWriter(logWriter LogWriter) *Server {
 // 设置是否打印访问日志
 func (this *Server) AccessLog(bool bool) *Server {
 	this.accessLog = bool
+	return this
+}
+
+func (this *Server) InternalErrorLogger(errorLogger *log.Logger) *Server {
+	this.internalErrorLogger = errorLogger
 	return this
 }
 
