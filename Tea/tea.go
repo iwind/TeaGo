@@ -161,7 +161,7 @@ func findRoot() string {
 
 	// GOPATH变量
 	if IsTesting() {
-		root = strings.TrimSpace(os.Getenv("GOPATH"))
+		root = strings.TrimSpace("..")
 		if len(root) > 0 {
 			abs, err := filepath.Abs(root)
 			if err != nil {
