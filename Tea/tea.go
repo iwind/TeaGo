@@ -166,9 +166,9 @@ func findRoot() string {
 			abs, err := filepath.Abs(root)
 			if err != nil {
 				logs.Errorf("invalid GOPATH '%s'", root)
-				return root + DS + "src" + DS + "main"
+				return root + DS + "src"
 			}
-			return abs + DS + "src" + DS + "main"
+			return abs + DS + "src"
 		}
 	}
 
