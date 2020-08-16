@@ -3,7 +3,6 @@ package maps
 import (
 	"encoding/json"
 	"github.com/iwind/TeaGo/types"
-	"github.com/pquerna/ffjson/ffjson"
 	"reflect"
 )
 
@@ -28,7 +27,7 @@ func NewMap(maps ...interface{}) Map {
 // 从字节数据中解码map
 func DecodeJSON(jsonData []byte) (Map, error) {
 	m := Map{}
-	err := ffjson.Unmarshal(jsonData, &m)
+	err := json.Unmarshal(jsonData, &m)
 	if err != nil {
 		return m, err
 	}
@@ -220,7 +219,7 @@ func (this Map) GoMap() map[string]interface{} {
 
 // 转换为JSON
 func (this Map) AsJSON() []byte {
-	data, err := ffjson.Marshal(this)
+	data, err := json.Marshal(this)
 	if err != nil {
 		return []byte{}
 	}

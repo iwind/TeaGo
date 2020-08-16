@@ -1,14 +1,13 @@
 package actions
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/iwind/TeaGo/Tea"
 	"github.com/iwind/TeaGo/caches"
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/types"
 	"github.com/iwind/TeaGo/utils/string"
-	"github.com/pquerna/ffjson/ffjson"
+	json "github.com/json-iterator/go"
 	"net/http"
 	"strings"
 	"sync"
@@ -440,5 +439,5 @@ func (this *ActionObject) marshal(value interface{}) ([]byte, error) {
 	if this.pretty {
 		return json.MarshalIndent(value, "", "   ")
 	}
-	return ffjson.Marshal(value)
+	return json.Marshal(value)
 }

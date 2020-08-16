@@ -1,9 +1,9 @@
 package dbs
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/iwind/TeaGo/maps"
-	"github.com/pquerna/ffjson/ffjson"
 	"log"
 	"testing"
 	"time"
@@ -88,7 +88,7 @@ func TestDAOQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, one := range ones {
-		oneBytes, err := ffjson.Marshal(one)
+		oneBytes, err := json.Marshal(one)
 		if err != nil {
 			t.Fatal(err)
 		}

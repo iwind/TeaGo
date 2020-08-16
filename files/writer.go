@@ -2,7 +2,6 @@ package files
 
 import (
 	"encoding/json"
-	"github.com/pquerna/ffjson/ffjson"
 	"gopkg.in/yaml.v2"
 	"io"
 	"os"
@@ -36,7 +35,7 @@ func (this *Writer) WriteIOReader(reader io.Reader) (n int64, err error) {
 
 func (this *Writer) WriteJSON(value interface{}, pretty ...bool) (n int64, err error) {
 	if len(pretty) == 0 || !pretty[0] {
-		data, err := ffjson.Marshal(value)
+		data, err := json.Marshal(value)
 		if err != nil {
 			return 0, err
 		}

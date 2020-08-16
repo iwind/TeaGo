@@ -2,7 +2,6 @@ package lists
 
 import (
 	"encoding/json"
-	"github.com/pquerna/ffjson/ffjson"
 	"math/rand"
 	"reflect"
 	"sort"
@@ -379,7 +378,7 @@ func (this *List) Copy() *List {
 
 // 格式化为JSON
 func (this *List) AsJSON() (string, error) {
-	jsonBytes, err := ffjson.Marshal(this.Slice)
+	jsonBytes, err := json.Marshal(this.Slice)
 	return string(jsonBytes), err
 }
 

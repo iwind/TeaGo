@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/iwind/TeaGo/rands"
-	"github.com/pquerna/ffjson/ffjson"
 	"math"
 	"regexp"
 	"strconv"
@@ -188,7 +187,7 @@ func VersionCompare(version1 string, version2 string) int8 {
 
 // JSON Encode
 func JSONEncode(v interface{}) string {
-	b, err := ffjson.Marshal(v)
+	b, err := json.Marshal(v)
 	if err != nil {
 		return "null"
 	}

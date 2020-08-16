@@ -8,7 +8,7 @@ import (
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/maps"
 	"github.com/iwind/TeaGo/utils/string"
-	"github.com/pquerna/ffjson/ffjson"
+	json "github.com/json-iterator/go"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -294,7 +294,7 @@ func createTeaFuncMap(tpl *Template, funcMap template.FuncMap, module string, di
 		"parent":      parent,
 		"actionParam": false,
 	}
-	dataBytes, err := ffjson.Marshal(actionData)
+	dataBytes, err := json.Marshal(actionData)
 	jsonString := ""
 	if err != nil {
 		logs.Errorf("%s", err.Error())

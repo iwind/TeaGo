@@ -1,13 +1,13 @@
 package sessions
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/iwind/TeaGo/Tea"
 	"github.com/iwind/TeaGo/actions"
 	"github.com/iwind/TeaGo/files"
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/utils/string"
-	"github.com/pquerna/ffjson/ffjson"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -175,7 +175,7 @@ func (this *FileSessionManager) Delete(sid string) bool {
 func (this *FileSessionManager) encryptData(data *FileSessionData) ([]byte, error) {
 	// 由于ffjson.Marshal()或json.Marshal()函数并不是并发安全的，所以需要lock
 	this.mutex.Lock()
-	jsonData, err := ffjson.Marshal(data)
+	jsonData, err := json.Marshal(data)
 	this.mutex.Unlock()
 	if err != nil {
 		return nil, err
@@ -197,7 +197,7 @@ func (this *FileSessionManager) decryptData(data []byte) (*FileSessionData, erro
 	}
 
 	var sessionData = &FileSessionData{}
-	err = ffjson.Unmarshal(sourceData, sessionData)
+	err = json.Unmarshal(sourceData, sessionData)
 	if err != nil {
 		return nil, err
 	}

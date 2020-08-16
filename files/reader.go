@@ -1,9 +1,9 @@
 package files
 
 import (
+	"encoding/json"
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/maps"
-	"github.com/pquerna/ffjson/ffjson"
 	"gopkg.in/yaml.v2"
 	"io"
 	"os"
@@ -64,7 +64,7 @@ func (this *Reader) ReadAll() []byte {
 // 从JSON文件中读取数据
 func (this *Reader) ReadJSON(ptr interface{}) error {
 	data := this.ReadAll()
-	return ffjson.Unmarshal(data, ptr)
+	return json.Unmarshal(data, ptr)
 }
 
 // 从JSON文件中读取Map数据
