@@ -2,8 +2,8 @@ package files
 
 import (
 	"encoding/json"
-	"github.com/go-yaml/yaml"
 	"github.com/pquerna/ffjson/ffjson"
+	"gopkg.in/yaml.v2"
 	"io"
 	"os"
 	"sync"

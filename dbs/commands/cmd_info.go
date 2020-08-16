@@ -3,7 +3,7 @@ package commands
 import (
 	"github.com/iwind/TeaGo/cmd"
 	"github.com/iwind/TeaGo/dbs"
-	"github.com/go-yaml/yaml"
+	"gopkg.in/yaml.v2"
 )
 
 type InfoCommand struct {

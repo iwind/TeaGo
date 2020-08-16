@@ -1,10 +1,10 @@
 package TeaGo
 
 import (
-	"github.com/go-yaml/yaml"
 	"github.com/iwind/TeaGo/Tea"
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/utils/string"
+	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -28,7 +28,7 @@ type ServerConfig struct {
 	Upload  struct {
 		MaxSize      string `yaml:"maxSize" json:"maxSize"` // 允许上传的最大尺寸
 		maxSizeFloat float64
-	} `yaml:"upload" json:"upload"` // 上传配置
+	} `yaml:"upload" json:"upload"`                             // 上传配置
 	Errors map[string]interface{} `yaml:"errors" json:"errors"` // 错误配置
 }
 

@@ -1,10 +1,10 @@
 package files
 
 import (
-	"github.com/go-yaml/yaml"
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/maps"
 	"github.com/pquerna/ffjson/ffjson"
+	"gopkg.in/yaml.v2"
 	"io"
 	"os"
 )

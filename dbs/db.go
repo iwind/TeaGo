@@ -3,11 +3,11 @@ package dbs
 import (
 	"database/sql"
 	"errors"
-	"github.com/go-yaml/yaml"
 	"github.com/iwind/TeaGo/Tea"
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/maps"
 	"github.com/iwind/TeaGo/types"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"path/filepath"
 	"reflect"
