@@ -150,8 +150,11 @@ func runActionCopy(spec *ActionSpec,
 
 	// 初始化
 	actionObject.init()
+	actionObject.Data = Data{}
 	if initData != nil {
-		actionObject.Data = initData
+		for k, v := range initData {
+			actionObject.Data[k] = v
+		}
 	}
 
 	// 执行Helpers
