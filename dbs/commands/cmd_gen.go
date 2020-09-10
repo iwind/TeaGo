@@ -404,7 +404,14 @@ func (this *GenModelCommand) convertFieldNameStyle(fieldName string) string {
 }
 
 func (this *GenModelCommand) convertToUnderlineName(modelName string) string {
-	reg := regexp.MustCompile("[A-Z]")
+	// 如果名字前面有多个大写字母则认为是同一个单词
+	reg := regexp.MustCompile(`[A-Z]{2,}`)
+	modelName = reg.ReplaceAllStringFunc(modelName, func(s string) string {
+		return "_" + strings.ToLower(s[:len(s)-1]) + s[len(s)-1:]
+	})
+
+	// 将单个大写字母转换为"下划线_小写"
+	reg = regexp.MustCompile(`[A-Z]`)
 	return strings.TrimPrefix(reg.ReplaceAllStringFunc(modelName, func(s string) string {
 		return "_" + strings.ToLower(s)
 	}), "_")
