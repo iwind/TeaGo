@@ -250,19 +250,21 @@ var Shared` + model + `DAO = New` + model + `DAO()` + "\n"
 	if stringutil.Contains(fieldNames, "state") {
 		daoString += `
 // 启用条目
-func (this *${daoName}) Enable${model}(${pkName} ${pkNameType}) (rowsAffected int64, err error) {
-	return this.Query().
+func (this *${daoName}) Enable${model}(${pkName} ${pkNameType}) error {
+	_, err := this.Query().
 		Pk(${pkName}).
 		Set("state", ${model}StateEnabled).
 		Update()
+	return err
 }
 
 // 禁用条目
-func (this *${daoName}) Disable${model}(${pkName} ${pkNameType}) (rowsAffected int64, err error) {
-	return this.Query().
+func (this *${daoName}) Disable${model}(${pkName} ${pkNameType}) error {
+	_, err := this.Query().
 		Pk(${pkName}).
 		Set("state", ${model}StateDisabled).
 		Update()
+	return err
 }
 
 // 查找启用中的条目
