@@ -21,3 +21,11 @@ func TestRegister(t *testing.T) {
 	Register(command)
 	t.Log(Run("test"))
 }
+
+func TestCommand_Param(t *testing.T) {
+	commandArgs = []string{"-name", "-age=20"}
+	cmd := &Command{}
+	t.Log(cmd.Param("name"))
+	t.Log(cmd.Param("age"))
+	t.Log(cmd.Param("hello"))
+}

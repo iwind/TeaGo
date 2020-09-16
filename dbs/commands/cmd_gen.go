@@ -172,7 +172,7 @@ func New` + model + `Operator() *` + model + `Operator {
 		// 写入文件
 		target := os.Getenv("GOPATH") + Tea.DS + dir + Tea.DS + this.convertToUnderlineName(model) + "_model.go"
 		file := files.NewFile(target)
-		if file.Exists() {
+		if file.Exists() && !this.HasParam("force") {
 			this.Output("<error>write failed: '" + strings.TrimPrefix(target, os.Getenv("GOPATH")) + "' already exists</error>\n")
 		} else {
 			err := file.WriteString(modelString)
