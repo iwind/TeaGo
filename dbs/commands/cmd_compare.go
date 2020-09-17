@@ -76,6 +76,8 @@ func (this *CompareDBCommand) Run() {
 }
 
 func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *CompareDBCommandOptions) {
+	onlyFixes := this.HasParam("fixes")
+
 	version1, err := db1.FindCol(0, "SELECT VERSION()")
 	if err != nil {
 		this.Error(err)
@@ -117,11 +119,17 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 			// table2不存在
 			if err != nil || table2 == nil {
 				countIssues++
-				this.Output("<code>+"+tableName1+" table</code>", fmt.Sprintf("[%d]", countIssues), "\n")
+				if !onlyFixes {
+					this.Output("<code>+"+tableName1+" table</code>", fmt.Sprintf("[%d]", countIssues), "\n")
+				}
 				if len(table1.Code) > 0 {
 					reg := regexp.MustCompile(" AUTO_INCREMENT=\\d+")
 					table1.Code = reg.ReplaceAllString(table1.Code, "")
-					this.Output("   suggest: \n  " + table1.Code + ";\n")
+					if !onlyFixes {
+						this.Output("   suggest: \n  " + table1.Code + ";\n")
+					} else {
+						this.Output("    \n  " + table1.Code + ";\n")
+					}
 					compareIssues[countIssues] = &CompareDBIssue{
 						dbId: db2.Id(),
 						sql:  table1.Code,
@@ -135,8 +143,12 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 				field2 := table2.FindFieldWithName(field.Name)
 				if field2 == nil {
 					countIssues++
-					this.Output("<code>+"+tableName1+" field: "+field.Name+" "+field.Definition()+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
-					this.Output("   suggest: ALTER TABLE `" + tableName1 + "` ADD `" + field.Name + "` " + field.Definition() + ";\n")
+					if !onlyFixes {
+						this.Output("<code>+"+tableName1+" field: "+field.Name+" "+field.Definition()+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
+						this.Output("   suggest: ALTER TABLE `" + tableName1 + "` ADD `" + field.Name + "` " + field.Definition() + ";\n")
+					} else {
+						this.Output("    ALTER TABLE `" + tableName1 + "` ADD `" + field.Name + "` " + field.Definition() + ";\n")
+					}
 					compareIssues[countIssues] = &CompareDBIssue{
 						dbId: db2.Id(),
 						sql:  "ALTER TABLE `" + tableName1 + "` ADD `" + field.Name + "` " + field.Definition(),
@@ -153,9 +165,13 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 						}
 
 						countIssues++
-						this.Output("<code>*"+tableName1+" field: "+field.Name+" "+field.Definition()+
-							"</code>", fmt.Sprintf("[%d]", countIssues), "\n   from "+field2.Name+" "+field2.Definition()+"\n")
-						this.Output("   suggest: ALTER TABLE `" + tableName1 + "` MODIFY `" + field.Name + "` " + field.Definition() + ";\n")
+						if !onlyFixes {
+							this.Output("<code>*"+tableName1+" field: "+field.Name+" "+field.Definition()+
+								"</code>", fmt.Sprintf("[%d]", countIssues), "\n   from "+field2.Name+" "+field2.Definition()+"\n")
+							this.Output("   suggest: ALTER TABLE `" + tableName1 + "` MODIFY `" + field.Name + "` " + field.Definition() + ";\n")
+						} else {
+							this.Output("    ALTER TABLE `" + tableName1 + "` MODIFY `" + field.Name + "` " + field.Definition() + ";\n")
+						}
 						compareIssues[countIssues] = &CompareDBIssue{
 							dbId: db2.Id(),
 							sql:  "ALTER TABLE `" + tableName1 + "` MODIFY `" + field.Name + "` " + field.Definition(),
@@ -168,8 +184,13 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 				field1 := table1.FindFieldWithName(field.Name)
 				if field1 == nil {
 					countIssues++
-					this.Output("<code>-"+tableName1+" field: "+field.Name+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
-					this.Output("   suggest: ALTER TABLE `" + tableName1 + "` DROP COLUMN `" + field.Name + "`;\n")
+
+					if !onlyFixes {
+						this.Output("<code>-"+tableName1+" field: "+field.Name+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
+						this.Output("   suggest: ALTER TABLE `" + tableName1 + "` DROP COLUMN `" + field.Name + "`;\n")
+					} else {
+						this.Output("    ALTER TABLE `" + tableName1 + "` DROP COLUMN `" + field.Name + "`;\n")
+					}
 					compareIssues[countIssues] = &CompareDBIssue{
 						dbId: db2.Id(),
 						sql:  "ALTER TABLE `" + tableName1 + "` DROP COLUMN `" + field.Name + "`",
@@ -184,14 +205,18 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 				partition2 := table2.FindPartitionWithName(partition.Name)
 				if partition2 == nil {
 					countIssues++
-					this.Output("<code>+" + tableName1 + " partition: " + partition.Method + " (" + partition.Expression + ") " + partition.Name + " (" + partition.Description + ")</code>\n")
+					if !onlyFixes {
+						this.Output("<code>+" + tableName1 + " partition: " + partition.Method + " (" + partition.Expression + ") " + partition.Name + " (" + partition.Description + ")</code>\n")
+					}
 				} else {
 					if partition.Method != partition2.Method ||
 						partition.Description != partition2.Description ||
 						partition.Expression != partition2.Expression {
 						countIssues++
-						this.Output("<code>*" + tableName1 + " partition: " + partition.Method + " (" + partition.Expression + ") " + partition.Name + " (" + partition.Description + ")</code>\n")
-						this.Output("   from " + partition2.Method + " (" + partition2.Expression + ") " + partition2.Name + " (" + partition2.Description + ")\n")
+						if !onlyFixes {
+							this.Output("<code>*" + tableName1 + " partition: " + partition.Method + " (" + partition.Expression + ") " + partition.Name + " (" + partition.Description + ")</code>\n")
+							this.Output("   from " + partition2.Method + " (" + partition2.Expression + ") " + partition2.Name + " (" + partition2.Description + ")\n")
+						}
 					}
 				}
 			}
@@ -200,7 +225,9 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 				partition1 := table1.FindPartitionWithName(partition.Name)
 				if partition1 == nil {
 					countIssues++
-					this.Output("<code>-" + tableName1 + " partition: " + partition.Method + " (" + partition.Expression + ") " + partition.Name + " (" + partition.Description + ")</code>\n")
+					if !onlyFixes {
+						this.Output("<code>-" + tableName1 + " partition: " + partition.Method + " (" + partition.Expression + ") " + partition.Name + " (" + partition.Description + ")</code>\n")
+					}
 				}
 			}
 
@@ -209,8 +236,12 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 				index2 := table2.FindIndexWithName(index.Name)
 				if index2 == nil {
 					countIssues++
-					this.Output("<code>+"+tableName1+" index: "+index.Definition()+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
-					this.Output("   suggest: ALTER TABLE `" + tableName1 + "` ADD " + index.Definition() + ";\n")
+					if !onlyFixes {
+						this.Output("<code>+"+tableName1+" index: "+index.Definition()+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
+						this.Output("   suggest: ALTER TABLE `" + tableName1 + "` ADD " + index.Definition() + ";\n")
+					} else {
+						this.Output("    ALTER TABLE `" + tableName1 + "` ADD " + index.Definition() + ";\n")
+					}
 					compareIssues[countIssues] = &CompareDBIssue{
 						dbId: db2.Id(),
 						sql:  "ALTER TABLE `" + tableName1 + "` ADD " + index.Definition(),
@@ -218,8 +249,12 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 				} else {
 					if index.Definition() != index2.Definition() {
 						countIssues++
-						this.Output("<code>*" + tableName1 + " index: " + index.Definition() + "</code>\n")
-						this.Output("   from " + index2.Definition() + "\n")
+						if !onlyFixes {
+							this.Output("<code>*" + tableName1 + " index: " + index.Definition() + "</code>\n")
+							this.Output("   from " + index2.Definition() + "\n")
+
+							// TODO 给出修复建议
+						}
 					}
 				}
 			}
@@ -228,8 +263,12 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 				index1 := table1.FindIndexWithName(index.Name)
 				if index1 == nil {
 					countIssues++
-					this.Output("<code>-"+tableName1+" index: "+index.Definition()+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
-					this.Output("   suggest: ALTER TABLE `" + tableName1 + "` DROP INDEX `" + index.Name + "`;\n")
+					if !onlyFixes {
+						this.Output("<code>-"+tableName1+" index: "+index.Definition()+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
+						this.Output("   suggest: ALTER TABLE `" + tableName1 + "` DROP INDEX `" + index.Name + "`;\n")
+					} else {
+						this.Output("    ALTER TABLE `" + tableName1 + "` DROP INDEX `" + index.Name + "`;\n")
+					}
 					compareIssues[countIssues] = &CompareDBIssue{
 						dbId: db2.Id(),
 						sql:  "ALTER TABLE `" + tableName1 + "` DROP INDEX `" + index.Name + "`",
@@ -246,8 +285,12 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 			table1, err := db1.FindTable(tableName2)
 			if err != nil || table1 == nil {
 				countIssues++
-				this.Output("<code>-"+tableName2+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
-				this.Output("   suggest: DROP TABLE `" + tableName2 + "`;\n")
+				if !onlyFixes {
+					this.Output("<code>-"+tableName2+"</code>", fmt.Sprintf("[%d]", countIssues), "\n")
+					this.Output("   suggest: DROP TABLE `" + tableName2 + "`;\n")
+				} else {
+					this.Output("    DROP TABLE `" + tableName2 + "`;\n")
+				}
 				compareIssues[countIssues] = &CompareDBIssue{
 					dbId: db2.Id(),
 					sql:  "DROP TABLE `" + tableName2 + "`",
@@ -269,14 +312,18 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 			function2 := this.findFunctionWithName(functions2, function.Name)
 			if function2 == nil {
 				countIssues++
-				this.Output("<code>+" + function.Name + " function</code>\n")
+				if !onlyFixes {
+					this.Output("<code>+" + function.Name + " function</code>\n")
+				}
 			} else {
 				// 去除definer后比较
 				code := this.cleanFunctionCode(function.Code)
 				code2 := this.cleanFunctionCode(function2.Code)
 				if code != code2 {
 					countIssues++
-					this.Output("<code>*" + function.Name + " function</code>\n")
+					if !onlyFixes {
+						this.Output("<code>*" + function.Name + " function</code>\n")
+					}
 				}
 			}
 		}
@@ -285,7 +332,9 @@ func (this *CompareDBCommand) compareTables(db1 *dbs.DB, db2 *dbs.DB, options *C
 			function1 := this.findFunctionWithName(functions1, function.Name)
 			if function1 == nil {
 				countIssues++
-				this.Output("<code>-" + function.Name + " function</code>\n")
+				if !onlyFixes {
+					this.Output("<code>-" + function.Name + " function</code>\n")
+				}
 			}
 		}
 	}
