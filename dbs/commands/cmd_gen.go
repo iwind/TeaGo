@@ -72,7 +72,11 @@ func (this *GenModelCommand) Run() {
 
 			dirFile := files.NewFile(dir)
 			if !dirFile.Exists() {
-				dirFile.MkdirAll()
+				err := dirFile.MkdirAll()
+				if err != nil {
+					this.Println(err.Error())
+					return
+				}
 			}
 		} else {
 			subPackage = packagePieces[len(packagePieces)-2]
@@ -170,7 +174,7 @@ func New` + model + `Operator() *` + model + `Operator {
 		fmt.Println("~~~")
 	} else {
 		// 写入文件
-		target := os.Getenv("GOPATH") + Tea.DS + dir + Tea.DS + this.convertToUnderlineName(model) + "_model.go"
+		target := filepath.Clean(os.Getenv("GOPATH") + Tea.DS + dir + Tea.DS + this.convertToUnderlineName(model) + "_model.go")
 		file := files.NewFile(target)
 		if file.Exists() && !this.HasParam("force") {
 			this.Output("<error>write failed: '" + strings.TrimPrefix(target, os.Getenv("GOPATH")) + "' already exists</error>\n")
@@ -199,7 +203,7 @@ func New` + model + `Operator() *` + model + `Operator {
 		fmt.Println("~~~")
 	} else {
 		// 写入文件
-		target := os.Getenv("GOPATH") + Tea.DS + dir + Tea.DS + this.convertToUnderlineName(model) + "_model_ext.go"
+		target := filepath.Clean(os.Getenv("GOPATH") + Tea.DS + dir + Tea.DS + this.convertToUnderlineName(model) + "_model_ext.go")
 		file := files.NewFile(target)
 		if file.Exists() {
 			this.Output("<error>write failed: '" + strings.TrimPrefix(target, os.Getenv("GOPATH")) + "' already exists</error>\n")
@@ -310,7 +314,7 @@ func (this *${daoName}) Find${model}Name(${pkName} ${pkNameType}) (string, error
 		fmt.Println("~~~")
 	} else {
 		// 写入文件
-		target := os.Getenv("GOPATH") + Tea.DS + dir + Tea.DS + this.convertToUnderlineName(model) + "_dao.go"
+		target := filepath.Clean(os.Getenv("GOPATH") + Tea.DS + dir + Tea.DS + this.convertToUnderlineName(model) + "_dao.go")
 		file := files.NewFile(target)
 		if file.Exists() {
 			this.Output("<error>write failed: '" + strings.TrimPrefix(target, os.Getenv("GOPATH")) + "' already exists</error>\n")
@@ -343,7 +347,7 @@ import (
 		fmt.Println("~~~")
 	} else {
 		// 写入文件
-		target := os.Getenv("GOPATH") + Tea.DS + dir + Tea.DS + this.convertToUnderlineName(model) + "_dao_test.go"
+		target := filepath.Clean(os.Getenv("GOPATH") + Tea.DS + dir + Tea.DS + this.convertToUnderlineName(model) + "_dao_test.go")
 		file := files.NewFile(target)
 		if file.Exists() {
 			this.Output("<error>write failed: '" + strings.TrimPrefix(target, os.Getenv("GOPATH")) + "' already exists</error>\n")
@@ -398,7 +402,7 @@ func (this *GenModelCommand) convertFieldNameStyle(fieldName string) string {
 	pieces := strings.Split(fieldName, "_")
 	newPieces := []string{}
 	for _, piece := range pieces {
-		newPieces = append(newPieces, strings.ToUpper(string(piece[0]))+string(piece[1:]))
+		newPieces = append(newPieces, strings.ToUpper(string(piece[0]))+piece[1:])
 	}
 	return strings.Join(newPieces, "")
 }
