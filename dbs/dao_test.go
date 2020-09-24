@@ -161,3 +161,21 @@ func TestDaoSave2(t *testing.T) {
 	var user2 = new(User2)
 	user2.Gender = 1
 }
+
+func TestDAOObject_NotifyInsert(t *testing.T) {
+	dao := &DAOObject{}
+	dao.OnInsert(func() error {
+		t.Log("func1")
+		return nil
+	})
+	dao.OnInsert(func() error {
+		t.Log("func2")
+		return ErrNotFound
+	})
+	dao.OnInsert(func() error {
+		t.Log("func3")
+		return nil
+	})
+	err := dao.NotifyInsert()
+	t.Log("expected:", err)
+}

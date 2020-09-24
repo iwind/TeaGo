@@ -9,6 +9,7 @@ import (
 	"github.com/iwind/TeaGo/types"
 	"github.com/iwind/TeaGo/utils/string"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -64,8 +65,13 @@ const (
 // 错误信息
 var ErrNotFound = errors.New("record not found")
 
+// 共享变量
+var keywordRegexp = regexp.MustCompile(`^\w+$`)
+var paramRegexp = regexp.MustCompile(`:(\w+)`)
+
 type Query struct {
-	db *DB
+	db  *DB
+	dao *DAOObject
 
 	model  *Model
 	table  string
@@ -180,6 +186,12 @@ func (this *Query) init(model interface{}) *Query {
 // 设置数据库实例
 func (this *Query) DB(db *DB) *Query {
 	this.db = db
+	return this
+}
+
+// 设置DAO
+func (this *Query) DAO(dao *DAOObject) *Query {
+	this.dao = dao
 	return this
 }
 
@@ -818,11 +830,7 @@ func (this *Query) AsSQL() (string, error) {
 	// 处理:NamedParam
 	var resultSQL = sql
 	if !this.isSub {
-		reg, err := stringutil.RegexpCompile(":(\\w+)")
-		if err != nil {
-			return "", err
-		}
-		var matchedParams = reg.FindAllStringSubmatch(sql, -1)
+		var matchedParams = paramRegexp.FindAllStringSubmatch(sql, -1)
 		this.params = []interface{}{}
 		if matchedParams != nil && len(matchedParams) > 0 {
 			for _, param := range matchedParams {
@@ -833,7 +841,7 @@ func (this *Query) AsSQL() (string, error) {
 					this.params = append(this.params, nil)
 				}
 			}
-			resultSQL = reg.ReplaceAllString(resultSQL, "?")
+			resultSQL = paramRegexp.ReplaceAllString(resultSQL, "?")
 		}
 	}
 
@@ -859,7 +867,9 @@ func (this *Query) FindOnes() (results []maps.Map, columnNames []string, err err
 		stmt, err = this.db.PrepareOnce(sql)
 	} else {
 		stmt, err = this.db.Prepare(sql)
-		defer stmt.Close()
+		defer func() {
+			_ = stmt.Close()
+		}()
 	}
 	if err != nil {
 		return nil, nil, err
@@ -972,6 +982,12 @@ func (this *Query) FindStringCol(defaultValue string) (string, error) {
 func (this *Query) FindIntCol(defaultValue int) (int, error) {
 	col, err := this.FindCol(defaultValue)
 	return types.Int(col), err
+}
+
+// 查询某个字段值并返回64位整型
+func (this *Query) FindInt64Col(defaultValue int64) (int64, error) {
+	col, err := this.FindCol(defaultValue)
+	return types.Int64(col), err
 }
 
 // 查询某个字段值并返回浮点型
@@ -1137,7 +1153,9 @@ func (this *Query) Exec() (*Result, error) {
 		stmt, err = this.db.PrepareOnce(sql)
 	} else {
 		stmt, err = this.db.Prepare(sql)
-		defer stmt.Close()
+		defer func() {
+			_ = stmt.Close()
+		}()
 	}
 	if err != nil {
 		return nil, err
@@ -1167,7 +1185,9 @@ func (this *Query) Replace() (rowsAffected int64, lastInsertId int64, err error)
 		stmt, err = this.db.PrepareOnce(sql)
 	} else {
 		stmt, err = this.db.Prepare(sql)
-		defer stmt.Close()
+		defer func() {
+			_ = stmt.Close()
+		}()
 	}
 	if err != nil {
 		return 0, 0, err
@@ -1206,7 +1226,9 @@ func (this *Query) Insert() (lastInsertId int64, err error) {
 		stmt, err = this.db.PrepareOnce(sql)
 	} else {
 		stmt, err = this.db.Prepare(sql)
-		defer stmt.Close()
+		defer func() {
+			_ = stmt.Close()
+		}()
 	}
 	if err != nil {
 		return 0, err
@@ -1217,7 +1239,14 @@ func (this *Query) Insert() (lastInsertId int64, err error) {
 		return 0, err
 	}
 
-	return result.LastInsertId()
+	lastInsertId, err = result.LastInsertId()
+	if err != nil {
+		return
+	}
+
+	// 事件通知
+	err = this.dao.NotifyInsert()
+	return lastInsertId, err
 }
 
 // 执行UPDATE
@@ -1237,7 +1266,9 @@ func (this *Query) Update() (rowsAffected int64, err error) {
 		stmt, err = this.db.PrepareOnce(sql)
 	} else {
 		stmt, err = this.db.Prepare(sql)
-		defer stmt.Close()
+		defer func() {
+			_ = stmt.Close()
+		}()
 	}
 	if err != nil {
 		return 0, err
@@ -1248,7 +1279,14 @@ func (this *Query) Update() (rowsAffected int64, err error) {
 		return 0, err
 	}
 
-	return result.RowsAffected()
+	rowsAffected, err = result.RowsAffected()
+	if err != nil {
+		return rowsAffected, err
+	}
+
+	// 事件通知
+	err = this.dao.NotifyUpdate()
+	return rowsAffected, err
 }
 
 // 插入或更改
@@ -1282,7 +1320,9 @@ func (this *Query) InsertOrUpdate(insertingValues maps.Map, updatingValues maps.
 		stmt, err = this.db.PrepareOnce(sql)
 	} else {
 		stmt, err = this.db.Prepare(sql)
-		defer stmt.Close()
+		defer func() {
+			_ = stmt.Close()
+		}()
 	}
 	if err != nil {
 		return 0, 0, err
@@ -1316,7 +1356,9 @@ func (this *Query) Delete() (rowsAffected int64, err error) {
 		stmt, err = this.db.PrepareOnce(sql)
 	} else {
 		stmt, err = this.db.Prepare(sql)
-		defer stmt.Close()
+		defer func() {
+			_ = stmt.Close()
+		}()
 	}
 	if err != nil {
 		return 0, err
@@ -1329,6 +1371,13 @@ func (this *Query) Delete() (rowsAffected int64, err error) {
 	if err != nil {
 		return 0, err
 	}
+
+	// 事件通知
+	err = this.dao.NotifyDelete()
+	if err != nil {
+		return rows, err
+	}
+
 	return rows, nil
 }
 
@@ -1426,11 +1475,7 @@ func (this *Query) wrapKeyword(keyword string) string {
 		logs.Errorf("[Query.wrapKeyword()]query.db should be not nil")
 		return "\"" + keyword + "\""
 	}
-	var reg, err = stringutil.RegexpCompile("^\\w+$")
-	if err != nil {
-		logs.Fatalf("%s", err.Error())
-	}
-	if !reg.MatchString(keyword) {
+	if !keywordRegexp.MatchString(keyword) {
 		return keyword
 	}
 	switch this.db.Driver() {
@@ -1457,12 +1502,7 @@ func (this *Query) wrapTable(keyword string) string {
 		logs.Errorf("[Query.wrapKeyword()]query.db should be not nil")
 		return "\"" + keyword + "\""
 	}
-	var reg, err = stringutil.RegexpCompile("^\\w+$")
-	if err != nil {
-		logs.Fatalf("%s", err.Error())
-		return ""
-	}
-	if !reg.MatchString(keyword) {
+	if !keywordRegexp.MatchString(keyword) {
 		return keyword
 	}
 	switch this.db.Driver() {

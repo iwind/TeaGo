@@ -12,6 +12,7 @@ import (
 	"strconv"
 )
 
+// 服务配置
 type ServerConfig struct {
 	Http struct {
 		On     bool     `yaml:"on" json:"on"`

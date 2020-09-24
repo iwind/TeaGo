@@ -16,6 +16,10 @@ type DAOObject struct {
 	pkAttr       string
 	modelWrapper *Model
 	fields       map[string]*Field
+
+	insertCallbacks []func() error
+	deleteCallbacks []func() error
+	updateCallbacks []func() error
 }
 
 type DAO struct {
@@ -81,7 +85,8 @@ func (this *DAOObject) Query() *Query {
 	return NewQuery(this.Model).
 		DB(db).
 		Table(this.Table).
-		PkName(this.PkName)
+		PkName(this.PkName).
+		DAO(this)
 }
 
 // 查找
@@ -208,6 +213,54 @@ func (this *DAOObject) Save(operatorPtr interface{}) (newOperatorPtr interface{}
 	}
 
 	return operatorPtr, err
+}
+
+// 添加Insert回调
+func (this *DAOObject) OnInsert(callback func() error) {
+	this.insertCallbacks = append(this.insertCallbacks, callback)
+}
+
+// 触发Insert回调
+func (this *DAOObject) NotifyInsert() error {
+	for _, c := range this.insertCallbacks {
+		err := c()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// 添加Delete回调
+func (this *DAOObject) OnDelete(callback func() error) {
+	this.deleteCallbacks = append(this.deleteCallbacks, callback)
+}
+
+// 触发Delete回调
+func (this *DAOObject) NotifyDelete() error {
+	for _, c := range this.deleteCallbacks {
+		err := c()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// 添加Update回调
+func (this *DAOObject) OnUpdate(callback func() error) {
+	this.updateCallbacks = append(this.updateCallbacks, callback)
+}
+
+// 触发Update回调
+func (this *DAOObject) NotifyUpdate() error {
+	for _, c := range this.updateCallbacks {
+		err := c()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 var daoMapping = sync.Map{}
