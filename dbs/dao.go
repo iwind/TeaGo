@@ -1,6 +1,7 @@
 package dbs
 
 import (
+	"errors"
 	"github.com/iwind/TeaGo/logs"
 	"log"
 	"reflect"
@@ -9,6 +10,8 @@ import (
 )
 
 type DAOObject struct {
+	Instance *DB
+
 	DB           string
 	Table        string
 	PkName       string
@@ -31,7 +34,7 @@ type DAOWrapper interface {
 }
 
 // 初始化
-func (this *DAOObject) Init() {
+func (this *DAOObject) Init() error {
 	// 主键field映射为attr
 	if len(this.PkName) == 0 {
 		this.PkName = "id"
@@ -41,33 +44,41 @@ func (this *DAOObject) Init() {
 
 	// 获取默认值
 	if this.fields == nil {
-		var db, err = Instance(this.DB)
-		if err != nil {
-			log.Fatal(err)
+		var db *DB
+		var err error
+
+		if this.Instance != nil {
+			db = this.Instance
+		} else {
+			db, err = Instance(this.DB)
+			if err != nil {
+				return err
+			}
 		}
 
 		this.fields = map[string]*Field{}
 		table, err := db.FindTable(this.Table)
 		if err != nil {
-			logs.Errorf("fail to fetch table fields '" + this.Table + " from db '" + this.DB + "'")
-		} else {
-			for _, field := range table.Fields {
-				kind, found := this.modelWrapper.KindsMap[field.Name]
-				if !found {
-					continue
-				}
-				attr, found := this.modelWrapper.findAttrWithField(field.Name)
-				if !found {
-					continue
-				}
-				if field.Name == this.PkName {
-					this.pkAttr = attr
-				}
-				field.DefaultValue = this.modelWrapper.convertValue(field.DefaultValue, kind)
-				this.fields[attr] = field
+			return errors.New("fail to fetch table fields '" + this.Table + " from db '" + this.DB + "'")
+		}
+		for _, field := range table.Fields {
+			kind, found := this.modelWrapper.KindsMap[field.Name]
+			if !found {
+				continue
 			}
+			attr, found := this.modelWrapper.findAttrWithField(field.Name)
+			if !found {
+				continue
+			}
+			if field.Name == this.PkName {
+				this.pkAttr = attr
+			}
+			field.DefaultValue = this.modelWrapper.convertValue(field.DefaultValue, kind)
+			this.fields[attr] = field
 		}
 	}
+
+	return nil
 }
 
 // 取得封装的对象
@@ -77,9 +88,15 @@ func (this *DAOObject) Object() *DAOObject {
 
 // 构造查询
 func (this *DAOObject) Query() *Query {
-	var db, err = Instance(this.DB)
-	if err != nil {
-		log.Fatal(err)
+	var db *DB
+	var err error
+	if this.Instance != nil {
+		db = this.Instance
+	} else {
+		db, err = Instance(this.DB)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	return NewQuery(this.Model).
@@ -280,7 +297,16 @@ func NewDAO(daoPointer interface{}) interface{} {
 
 	// 初始化
 	var pointerValue = reflect.ValueOf(daoPointer)
-	pointerValue.MethodByName("Init").Call([]reflect.Value{})
+	v := pointerValue.MethodByName("Init").Call([]reflect.Value{})
+	if len(v) > 0 {
+		v0 := v[0].Interface()
+		if v0 != nil {
+			err, ok := v0.(error)
+			if ok {
+				logs.Println("[DAO]" + err.Error())
+			}
+		}
+	}
 
 	daoMapping.Store(pointerType, daoPointer)
 	return daoPointer

@@ -86,6 +86,38 @@ func NewInstance(dbId string) (*DB, error) {
 	return db, err
 }
 
+// 从配置中构造实例
+func NewInstanceFromConfig(config *DBConfig) (*DB, error) {
+	sqlDb, err := sql.Open(config.Driver, config.Dsn)
+	if err != nil {
+		return nil, err
+	}
+
+	// 配置
+	if config.Connections.Pool > 0 {
+		sqlDb.SetMaxIdleConns(config.Connections.Pool)
+	} else {
+		sqlDb.SetMaxIdleConns(64)
+	}
+	if config.Connections.Max > 0 {
+		sqlDb.SetMaxOpenConns(config.Connections.Max)
+	} else {
+		sqlDb.SetMaxOpenConns(128)
+	}
+	if config.Connections.LifeDuration > 0 {
+		sqlDb.SetConnMaxLifetime(config.Connections.LifeDuration)
+	}
+
+	db := &DB{
+		dbStmtMux: &sync.Mutex{},
+		txStmtMux: &sync.Mutex{},
+	}
+	db.sqlDB = sqlDb
+	db.dbStatements = map[string]*Stmt{}
+	db.txStatements = map[string]*Stmt{}
+	return db, nil
+}
+
 func loadConfig() {
 	dbInitOnce.Do(func() {
 		var dbConfigFile = Tea.ConfigFile("db.yaml")
