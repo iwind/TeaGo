@@ -17,9 +17,10 @@ import (
 )
 
 type DB struct {
-	id    string
-	sqlDB *sql.DB
-	tx    *sql.Tx
+	id     string
+	config *DBConfig
+	sqlDB  *sql.DB
+	tx     *sql.Tx
 
 	dbStatements map[string]*Stmt // query => stmt
 	dbStmtMux    *sync.Mutex
@@ -29,7 +30,7 @@ type DB struct {
 }
 
 var dbInitOnce = sync.Once{}
-var dbConfig = Config{}
+var dbConfig = &Config{}
 var dbCachedFactory = map[string]*DB{} // ID => DB Instance
 var dbCacheMutex = &sync.Mutex{}
 
@@ -112,6 +113,7 @@ func NewInstanceFromConfig(config *DBConfig) (*DB, error) {
 		dbStmtMux: &sync.Mutex{},
 		txStmtMux: &sync.Mutex{},
 	}
+	db.config = config
 	db.sqlDB = sqlDb
 	db.dbStatements = map[string]*Stmt{}
 	db.txStatements = map[string]*Stmt{}
@@ -165,6 +167,7 @@ func (this *DB) init() error {
 	if !ok {
 		return errors.New("can not find configuration for '" + this.id + "'")
 	}
+	this.config = config
 
 	sqlDb, err := sql.Open(config.Driver, config.Dsn)
 	if err != nil {
@@ -193,8 +196,12 @@ func (this *DB) init() error {
 	return nil
 }
 
-func (this *DB) Config() (DBConfig, error) {
-	// 取得配置
+func (this *DB) Config() (*DBConfig, error) {
+	if this.config != nil {
+		return this.config, nil
+	}
+
+	// 根据ID取得配置
 	config, ok := dbConfig.DBs[this.id]
 	if !ok {
 		return config, errors.New("can not find configuration for '" + this.id + "'")
@@ -203,7 +210,7 @@ func (this *DB) Config() (DBConfig, error) {
 	return config, nil
 }
 
-func (this *DB) SetConfig(config DBConfig) {
+func (this *DB) SetConfig(config *DBConfig) {
 	dbConfig.DBs[this.id] = config
 }
 
