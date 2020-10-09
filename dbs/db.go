@@ -215,6 +215,9 @@ func (this *DB) SetConfig(config *DBConfig) {
 }
 
 func (this *DB) Driver() string {
+	if this.config != nil {
+		return this.config.Driver
+	}
 	config, ok := dbConfig.DBs[this.id]
 	if ok {
 		return config.Driver
