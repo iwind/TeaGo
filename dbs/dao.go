@@ -61,6 +61,9 @@ func (this *DAOObject) Init() error {
 		if err != nil {
 			return errors.New("fail to fetch table fields '" + this.Table + " from db '" + this.DB + "'")
 		}
+		if table == nil {
+			return errors.New("can not find table '" + this.Table + "' from db '" + this.DB + "'")
+		}
 		for _, field := range table.Fields {
 			kind, found := this.modelWrapper.KindsMap[field.Name]
 			if !found {
