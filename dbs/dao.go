@@ -54,6 +54,7 @@ func (this *DAOObject) Init() error {
 			if err != nil {
 				return err
 			}
+			this.Instance = db
 		}
 
 		this.fields = map[string]*Field{}
