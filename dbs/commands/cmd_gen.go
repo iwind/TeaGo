@@ -248,8 +248,15 @@ func New` + model + `DAO() *` + model + `DAO {
 	}).(*` + model + `DAO)
 }
 
-var Shared` + model + `DAO = New` + model + `DAO()` + "\n"
+var Shared` + model + `DAO *` + model + `DAO
 
+func init() {
+	dbs.OnReady(func () {
+		Shared` + model + `DAO = New` + model + `DAO()
+	})
+}
+
+`
 	// state
 	if stringutil.Contains(fieldNames, "state") {
 		daoString += `
