@@ -49,9 +49,49 @@ func ContainsString(slice []string, item string) bool {
 	return false
 }
 
-// 判断int slice是否包含某个item
+// 判断int slice是否包含某个Item
 // 比Contains()更加高效
 func ContainsInt(slice []int, item int) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
+// 判断int8 slice是否包含某个Item
+func ContainsInt8(slice []int8, item int8) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
+// 判断int16 slice是否包含某个Item
+func ContainsInt16(slice []int16, item int16) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
+// 判断int32 slice是否包含某个Item
+func ContainsInt32(slice []int32, item int32) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
+// 判断int64 slice是否包含某个Item
+func ContainsInt64(slice []int64, item int64) bool {
 	for _, s := range slice {
 		if s == item {
 			return true
