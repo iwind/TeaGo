@@ -212,7 +212,7 @@ func (this *Server) StartOn(address string) {
 		}
 
 		ext := strings.ToLower(filepath.Ext(request.URL.Path))
-		if stringutil.Contains([]string{".html"}, ext) {
+		if stringutil.Contains([]string{".html", ""}, ext) { // 禁止访问html和目录
 			http.Error(writer, "No permission to view page", http.StatusForbidden)
 			return
 		}
