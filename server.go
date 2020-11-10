@@ -86,6 +86,8 @@ type Server struct {
 	connState        func(conn net.Conn, state http.ConnState)
 
 	internalErrorLogger *log.Logger
+	readHeaderTimeout   time.Duration
+	readTimeout         time.Duration
 }
 
 // 路由配置
@@ -212,7 +214,7 @@ func (this *Server) StartOn(address string) {
 		}
 
 		ext := strings.ToLower(filepath.Ext(request.URL.Path))
-		if stringutil.Contains([]string{".html", ""}, ext) { // 禁止访问html和目录
+		if stringutil.Contains([]string{".html", ""}, ext) || strings.HasPrefix(filepath.Base(request.URL.Path), ".") { // 禁止访问html文件、目录、隐藏文件（.xxx）
 			http.Error(writer, "No permission to view page", http.StatusForbidden)
 			return
 		}
@@ -344,10 +346,12 @@ func (this *Server) StartOn(address string) {
 				logs.Println("start http server on", addr)
 
 				server := &http.Server{
-					Addr:        addr,
-					Handler:     serverMux,
-					IdleTimeout: 2 * time.Minute,
-					ErrorLog:    this.internalErrorLogger,
+					Addr:              addr,
+					Handler:           serverMux,
+					IdleTimeout:       2 * time.Minute,
+					ErrorLog:          this.internalErrorLogger,
+					ReadHeaderTimeout: this.readHeaderTimeout,
+					ReadTimeout:       this.readTimeout,
 				}
 
 				if this.connState != nil {
@@ -373,10 +377,12 @@ func (this *Server) StartOn(address string) {
 				logs.Println("start ssl server on", addr)
 
 				server := &http.Server{
-					Addr:        addr,
-					Handler:     serverMux,
-					IdleTimeout: 2 * time.Minute,
-					ErrorLog:    this.internalErrorLogger,
+					Addr:              addr,
+					Handler:           serverMux,
+					IdleTimeout:       2 * time.Minute,
+					ErrorLog:          this.internalErrorLogger,
+					ReadHeaderTimeout: this.readHeaderTimeout,
+					ReadTimeout:       this.readTimeout,
 				}
 
 				if this.connState != nil {
@@ -813,6 +819,16 @@ func (this *Server) AccessLog(bool bool) *Server {
 
 func (this *Server) InternalErrorLogger(errorLogger *log.Logger) *Server {
 	this.internalErrorLogger = errorLogger
+	return this
+}
+
+func (this *Server) ReadHeaderTimeout(timeout time.Duration) *Server {
+	this.readHeaderTimeout = timeout
+	return this
+}
+
+func (this *Server) ReadTimeout(timeout time.Duration) *Server {
+	this.readTimeout = timeout
 	return this
 }
 
