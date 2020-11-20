@@ -234,6 +234,7 @@ func (this *ActionObject) Success(message ...string) {
 	var code = this.Code
 	if code == 0 {
 		code = 200
+		this.Code = 200
 	}
 	respJson := JSON{
 		"code":    code,
@@ -279,6 +280,10 @@ func (this *ActionObject) Fail(message ...string) {
 
 // 字段错误提示
 func (this *ActionObject) FailField(field string, message ...string) {
+	if len(message) > 0 {
+		this.Message = message[0]
+	}
+
 	panic([]ActionParamError{{
 		Param:    field,
 		Messages: message,
