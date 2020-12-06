@@ -66,11 +66,13 @@ func BeforeStop(fn func(server *Server)) {
 type Server struct {
 	singleInstance bool
 
-	directRoutes   map[string]func(writer http.ResponseWriter, request *http.Request)
-	patternRoutes  []ServerRoutePattern
-	routerLocker   sync.Mutex
-	staticDirs     []ServerStaticDir
-	sessionManager interface{}
+	directRoutes  map[string]func(writer http.ResponseWriter, request *http.Request)
+	patternRoutes []ServerRoutePattern
+	routerLocker  sync.Mutex
+	staticDirs    []ServerStaticDir
+
+	sessionManager    interface{}
+	sessionCookieName string
 
 	lastModule  string        //当前的模块
 	lastPrefix  string        //当前的URL前缀
@@ -620,6 +622,7 @@ func (this *Server) buildHandle(actionPtr interface{}) func(writer http.Response
 		actionObject := actionWrapper.Object()
 		actionObject.SetMaxSize(this.config.MaxSize())
 		actionObject.SetSessionManager(this.sessionManager)
+		actionObject.SetSessionCookieName(this.sessionCookieName)
 
 		actions.RunAction(actionPtr, spec, request, writer, params, helpers, data)
 	}
@@ -795,8 +798,9 @@ func (this *Server) ConnState(connState func(conn net.Conn, state http.ConnState
 }
 
 // 设置SESSION管理器
-func (this *Server) Session(sessionManager interface{}) *Server {
+func (this *Server) Session(sessionManager interface{}, cookieName string) *Server {
 	this.sessionManager = sessionManager
+	this.sessionCookieName = cookieName
 	return this
 }
 

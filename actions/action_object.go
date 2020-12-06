@@ -5,8 +5,8 @@ import (
 	"github.com/iwind/TeaGo/Tea"
 	"github.com/iwind/TeaGo/caches"
 	"github.com/iwind/TeaGo/logs"
+	"github.com/iwind/TeaGo/rands"
 	"github.com/iwind/TeaGo/types"
-	"github.com/iwind/TeaGo/utils/string"
 	json "github.com/json-iterator/go"
 	"net/http"
 	"strings"
@@ -32,9 +32,10 @@ type ActionObject struct {
 
 	pretty bool // 格式化输出
 
-	SessionManager interface{}
-	session        *Session
-	sessionLocker  sync.Mutex
+	SessionManager    interface{}
+	sessionCookieName string
+	session           *Session
+	sessionLocker     sync.Mutex
 
 	viewDir        string
 	viewTemplate   string
@@ -328,6 +329,11 @@ func (this *ActionObject) SetSessionManager(sessionManager interface{}) {
 	this.SessionManager = sessionManager
 }
 
+// 设置Session Cookie名称
+func (this *ActionObject) SetSessionCookieName(cookieName string) {
+	this.sessionCookieName = cookieName
+}
+
 // 读取Session
 func (this *ActionObject) Session() *Session {
 	if this.session != nil {
@@ -345,19 +351,14 @@ func (this *ActionObject) Session() *Session {
 		return nil
 	}
 
-	var cookie, err = this.Request.Cookie("sid")
+	cookieName := this.sessionCookieName
+	if len(cookieName) == 0 {
+		cookieName = "sid"
+	}
+	var cookie, err = this.Request.Cookie(cookieName)
 	var sid string
 	if err != nil || cookie == nil || len(cookie.Value) != 32 {
-		sid = stringutil.Rand(32)
-		cookie = &http.Cookie{
-			Name:  "sid",
-			Value: sid,
-			Path:  "/",
-		}
-
-		//@TODO 可以根据配置或者方法设置cookie超时时间
-
-		this.AddCookie(cookie)
+		sid = rands.String(32)
 	} else {
 		sid = cookie.Value
 	}
