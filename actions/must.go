@@ -113,7 +113,7 @@ func (this *Must) Mobile(message string) *Must {
 	if this.HasErrors() {
 		return this
 	}
-	reg, err := stringutil.RegexpCompile("^1[34578]\\d{9}$")
+	reg, err := stringutil.RegexpCompile("^1[3456789]\\d{9}$")
 	if err != nil {
 		logs.Errorf("%s", err.Error())
 		this.addError(err.Error())
