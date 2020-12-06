@@ -45,7 +45,7 @@ func RunAction(actionPtr interface{},
 ) interface{} {
 	// 运行
 	action := actionPtr.(ActionWrapper).Object()
-	runActionCopy(spec, request, responseWriter, params, action.SessionManager, action.maxSize, helpers, initData)
+	runActionCopy(spec, request, responseWriter, params, action.SessionManager, action.sessionCookieName, action.maxSize, helpers, initData)
 
 	return actionPtr
 }
@@ -56,6 +56,7 @@ func runActionCopy(spec *ActionSpec,
 	responseWriter http.ResponseWriter,
 	params Params,
 	sessionManager interface{},
+	sessionCookieName string,
 	maxSize float64,
 	helpers []interface{},
 	initData Data,
@@ -138,6 +139,7 @@ func runActionCopy(spec *ActionSpec,
 
 	// 设置Session
 	actionObject.SessionManager = sessionManager
+	actionObject.sessionCookieName = sessionCookieName
 
 	// 设置最大文件上传尺寸
 	actionObject.maxSize = maxSize
