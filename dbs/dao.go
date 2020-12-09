@@ -3,6 +3,7 @@ package dbs
 import (
 	"errors"
 	"github.com/iwind/TeaGo/logs"
+	"github.com/iwind/TeaGo/types"
 	"log"
 	"reflect"
 	"sync"
@@ -126,7 +127,7 @@ func (this *DAOObject) Delete(pk interface{}) (rowsAffected int64, err error) {
 }
 
 // 保存
-func (this *DAOObject) Save(operatorPtr interface{}) (newOperatorPtr interface{}, err error) {
+func (this *DAOObject) Save(operatorPtr interface{}) (err error) {
 	var modelValue = reflect.Indirect(reflect.ValueOf(operatorPtr))
 	var hasPk = false
 	var pkTypeValue reflect.Value
@@ -226,14 +227,25 @@ func (this *DAOObject) Save(operatorPtr interface{}) (newOperatorPtr interface{}
 	} else {
 		lastId, err := query.Insert()
 		if err != nil {
-			return operatorPtr, err
+			return err
 		}
 		if len(this.pkAttr) > 0 {
 			pkTypeValue.Set(reflect.ValueOf(lastId).Convert(pkTypeValue.Type()))
 		}
 	}
 
-	return operatorPtr, err
+	return err
+}
+
+// 保存并返回整型ID
+func (this *DAOObject) SaveInt64(operatorPtr interface{}) (pkValue int64, err error) {
+	err = this.Save(operatorPtr)
+	if err != nil {
+		return 0, err
+	}
+	var modelValue = reflect.Indirect(reflect.ValueOf(operatorPtr))
+	pkValueObj := modelValue.FieldByName(this.pkAttr).Interface()
+	return types.Int64(pkValueObj), nil
 }
 
 // 添加Insert回调

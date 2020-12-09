@@ -21,6 +21,7 @@ type Field struct {
 	Comment            string // 字段的注释说明
 	Collation          string // 字符集信息
 	ValueType          byte   // 值类型，ValueType*
+	Extra              string
 
 	MappingName     string // 映射的名称
 	MappingKindName string // 映射的数据类型字符串格式
@@ -192,6 +193,9 @@ func (this *Field) ValueTypeName() string {
 
 func (this *Field) Definition() string {
 	definition := this.FullType
+	if len(this.Extra) > 0 {
+		definition += " " + this.Extra
+	}
 	if len(this.DefaultValueString) > 0 {
 		definition += " DEFAULT '" + this.DefaultValueString + "'"
 	}

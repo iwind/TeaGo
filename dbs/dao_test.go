@@ -125,7 +125,7 @@ func TestDaoSave(t *testing.T) {
 		user.IsShop = false
 		//user.CountViews = SQL("count_views+1")
 
-		_, err := dao.Save(user)
+		err := dao.Save(user)
 		if err != nil {
 			log.Fatal(err)
 		}

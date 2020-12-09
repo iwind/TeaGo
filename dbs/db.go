@@ -507,6 +507,7 @@ func (this *DB) FindTable(tableName string) (*Table, error) {
 		extra, ok := fieldInfo["Extra"]
 		if ok && extra != nil {
 			field.AutoIncrement = strings.Contains(types.String(extra), "auto_increment")
+			field.Extra = types.String(extra)
 		}
 
 		// default value
@@ -608,6 +609,7 @@ func (this *DB) FindFullTable(tableName string) (*Table, error) {
 		extra, ok := fieldInfo["Extra"]
 		if ok && extra != nil {
 			field.AutoIncrement = strings.Contains(types.String(extra), "auto_increment")
+			field.Extra = types.String(extra)
 		}
 
 		// default value
