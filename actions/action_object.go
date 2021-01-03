@@ -1,13 +1,13 @@
 package actions
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/iwind/TeaGo/Tea"
 	"github.com/iwind/TeaGo/caches"
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/rands"
 	"github.com/iwind/TeaGo/types"
-	json "github.com/json-iterator/go"
 	"net/http"
 	"strings"
 	"sync"

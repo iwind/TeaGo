@@ -92,7 +92,7 @@ func (this *DAOObject) Object() *DAOObject {
 }
 
 // 构造查询
-func (this *DAOObject) Query() *Query {
+func (this *DAOObject) Query(tx *Tx) *Query {
 	var db *DB
 	var err error
 	if this.Instance != nil {
@@ -106,28 +106,29 @@ func (this *DAOObject) Query() *Query {
 
 	return NewQuery(this.Model).
 		DB(db).
+		Tx(tx).
 		Table(this.Table).
 		PkName(this.PkName).
 		DAO(this)
 }
 
 // 查找
-func (this *DAOObject) Find(pk interface{}) (modelPtr interface{}, err error) {
-	return this.Query().Pk(pk).Find()
+func (this *DAOObject) Find(tx *Tx, pk interface{}) (modelPtr interface{}, err error) {
+	return this.Query(tx).Pk(pk).Find()
 }
 
 // 检查是否存在
-func (this *DAOObject) Exist(pk interface{}) (bool bool, err error) {
-	return this.Query().Pk(pk).Exist()
+func (this *DAOObject) Exist(tx *Tx, pk interface{}) (bool bool, err error) {
+	return this.Query(tx).Pk(pk).Exist()
 }
 
 // 删除
-func (this *DAOObject) Delete(pk interface{}) (rowsAffected int64, err error) {
-	return this.Query().Pk(pk).Delete()
+func (this *DAOObject) Delete(tx *Tx, pk interface{}) (rowsAffected int64, err error) {
+	return this.Query(tx).Pk(pk).Delete()
 }
 
 // 保存
-func (this *DAOObject) Save(operatorPtr interface{}) (err error) {
+func (this *DAOObject) Save(tx *Tx, operatorPtr interface{}) (err error) {
 	var modelValue = reflect.Indirect(reflect.ValueOf(operatorPtr))
 	var hasPk = false
 	var pkTypeValue reflect.Value
@@ -171,7 +172,7 @@ func (this *DAOObject) Save(operatorPtr interface{}) (err error) {
 		}
 	}
 
-	var query = this.Query()
+	var query = this.Query(tx)
 	var countFields = modelValue.NumField()
 	var modelType = modelValue.Type()
 	for i := 0; i < countFields; i++ {
@@ -238,8 +239,8 @@ func (this *DAOObject) Save(operatorPtr interface{}) (err error) {
 }
 
 // 保存并返回整型ID
-func (this *DAOObject) SaveInt64(operatorPtr interface{}) (pkValue int64, err error) {
-	err = this.Save(operatorPtr)
+func (this *DAOObject) SaveInt64(tx *Tx, operatorPtr interface{}) (pkValue int64, err error) {
+	err = this.Save(tx, operatorPtr)
 	if err != nil {
 		return 0, err
 	}

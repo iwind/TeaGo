@@ -20,13 +20,9 @@ type DB struct {
 	id     string
 	config *DBConfig
 	sqlDB  *sql.DB
-	tx     *sql.Tx
 
 	dbStatements map[string]*Stmt // query => stmt
 	dbStmtMux    *sync.Mutex
-
-	txStatements map[string]*Stmt // query => stmt
-	txStmtMux    *sync.Mutex
 }
 
 var dbInitOnce = sync.Once{}
@@ -60,7 +56,6 @@ func Instance(dbId string) (*DB, error) {
 
 	var db = &DB{
 		dbStmtMux: &sync.Mutex{},
-		txStmtMux: &sync.Mutex{},
 	}
 	db.id = dbId
 	err := db.init()
@@ -79,7 +74,6 @@ func NewInstance(dbId string) (*DB, error) {
 
 	var db = &DB{
 		dbStmtMux: &sync.Mutex{},
-		txStmtMux: &sync.Mutex{},
 	}
 	db.id = dbId
 	err := db.init()
@@ -111,12 +105,10 @@ func NewInstanceFromConfig(config *DBConfig) (*DB, error) {
 
 	db := &DB{
 		dbStmtMux: &sync.Mutex{},
-		txStmtMux: &sync.Mutex{},
 	}
 	db.config = config
 	db.sqlDB = sqlDb
 	db.dbStatements = map[string]*Stmt{}
-	db.txStatements = map[string]*Stmt{}
 	return db, nil
 }
 
@@ -171,7 +163,6 @@ func (this *DB) init() error {
 
 	sqlDb, err := sql.Open(config.Driver, config.Dsn)
 	if err != nil {
-		logs.Errorf("DB.init():%s", err.Error())
 		return err
 	}
 
@@ -192,7 +183,6 @@ func (this *DB) init() error {
 
 	this.sqlDB = sqlDb
 	this.dbStatements = map[string]*Stmt{}
-	this.txStatements = map[string]*Stmt{}
 	return nil
 }
 
@@ -246,34 +236,12 @@ func (this *DB) Name() string {
 	return base[:index]
 }
 
-func (this *DB) Begin() error {
+func (this *DB) Begin() (*Tx, error) {
 	tx, err := this.sqlDB.Begin()
 	if err != nil {
-		logs.Errorf("DB.Begin():%s", err.Error())
-		return err
+		return nil, err
 	}
-	this.tx = tx
-	return nil
-}
-
-func (this *DB) Commit() error {
-	if this.tx != nil {
-		var err = this.tx.Commit()
-		this.tx = nil
-		this.txStatements = map[string]*Stmt{}
-		return err
-	}
-	return errors.New("should begin transaction at first")
-}
-
-func (this *DB) Rollback() error {
-	if this.tx != nil {
-		var err = this.tx.Rollback()
-		this.tx = nil
-		this.txStatements = map[string]*Stmt{}
-		return err
-	}
-	return errors.New("should begin transaction at first")
+	return NewTx(tx), nil
 }
 
 func (this *DB) Close() error {
@@ -287,68 +255,37 @@ func (this *DB) Close() error {
 }
 
 func (db *DB) Exec(query string, params ...interface{}) (sql.Result, error) {
-	if db.tx == nil {
-		return db.sqlDB.Exec(query, params...)
-	} else {
-		return db.tx.Exec(query, params...)
-	}
+	return db.sqlDB.Exec(query, params...)
 }
 
 func (this *DB) Prepare(query string) (*Stmt, error) {
-	if this.tx == nil {
-		return BuildStmt(this.sqlDB.Prepare(query))
-	} else {
-		return BuildStmt(this.tx.Prepare(query))
-	}
+	return BuildStmt(this.sqlDB.Prepare(query))
 }
 
 func (this *DB) PrepareOnce(query string) (*Stmt, error) {
-	if this.tx == nil {
-		this.dbStmtMux.Lock()
-		defer this.dbStmtMux.Unlock()
+	this.dbStmtMux.Lock()
+	defer this.dbStmtMux.Unlock()
 
-		var stmt, ok = this.dbStatements[query]
-		if ok {
-			return stmt, nil
-		}
-
-		sqlStmt, err := this.sqlDB.Prepare(query)
-		if err != nil {
-			logs.Errorf("DB.PrepareOnce():%s, query:%s", err.Error(), query)
-			return BuildStmt(sqlStmt, err)
-		}
-
-		stmt, _ = BuildStmt(sqlStmt, nil)
-
-		this.dbStatements[query] = stmt
-
-		return stmt, nil
-	} else {
-		this.txStmtMux.Lock()
-		defer this.txStmtMux.Unlock()
-
-		var stmt, ok = this.txStatements[query]
-		if ok {
-			return stmt, nil
-		}
-
-		sqlStmt, err := this.tx.Prepare(query)
-		if err != nil {
-			logs.Errorf("DB.PrepareOnce():%s, query:%s", err.Error(), query)
-			return BuildStmt(sqlStmt, err)
-		}
-
-		stmt, _ = BuildStmt(sqlStmt, nil)
-
-		this.txStatements[query] = stmt
+	var stmt, ok = this.dbStatements[query]
+	if ok {
 		return stmt, nil
 	}
+
+	sqlStmt, err := this.sqlDB.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+
+	stmt, _ = BuildStmt(sqlStmt, nil)
+
+	this.dbStatements[query] = stmt
+
+	return stmt, nil
 }
 
 func (this *DB) FindOnes(query string, args ...interface{}) (results []maps.Map, columnNames []string, err error) {
 	stmt, err := this.Prepare(query)
 	if err != nil {
-		logs.Errorf("DB.FindOnes():%s", err.Error())
 		return nil, nil, err
 	}
 
@@ -360,7 +297,6 @@ func (this *DB) FindOnes(query string, args ...interface{}) (results []maps.Map,
 func (this *DB) FindOne(query string, args ...interface{}) (maps.Map, error) {
 	results, _, err := this.FindOnes(query, args...)
 	if err != nil {
-		logs.Errorf("DB.FindOne():%s", err.Error())
 		return nil, err
 	}
 
@@ -373,7 +309,6 @@ func (this *DB) FindOne(query string, args ...interface{}) (maps.Map, error) {
 func (this *DB) FindCol(colIndex int, query string, args ...interface{}) (interface{}, error) {
 	stmt, err := this.Prepare(query)
 	if err != nil {
-		logs.Errorf("DB.FindCol():%s", err.Error())
 		return nil, err
 	}
 
@@ -381,7 +316,6 @@ func (this *DB) FindCol(colIndex int, query string, args ...interface{}) (interf
 
 	rows, err := stmt.Query(args...)
 	if err != nil {
-		logs.Errorf("DB.FindCol():%s", err.Error())
 		return nil, err
 	}
 
@@ -389,7 +323,6 @@ func (this *DB) FindCol(colIndex int, query string, args ...interface{}) (interf
 
 	columnNames, err := rows.Columns()
 	if err != nil {
-		logs.Errorf("DB.FindCol():%s", err.Error())
 		return nil, err
 	}
 	var countColumns = len(columnNames)
@@ -406,7 +339,6 @@ func (this *DB) FindCol(colIndex int, query string, args ...interface{}) (interf
 	if rows.Next() {
 		err := rows.Scan(valuePointers...)
 		if err != nil {
-			logs.Errorf("DB.FindCol():%s", err.Error())
 			return nil, err
 		}
 
@@ -429,7 +361,6 @@ func (this *DB) FindCol(colIndex int, query string, args ...interface{}) (interf
 func (this *DB) TableNames() ([]string, error) {
 	ones, columnNames, err := this.FindOnes("SHOW TABLES")
 	if err != nil {
-		logs.Errorf("DB.TableNames():%s", err.Error())
 		return nil, err
 	}
 

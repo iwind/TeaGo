@@ -261,8 +261,8 @@ func init() {
 	if stringutil.Contains(fieldNames, "state") {
 		daoString += `
 // 启用条目
-func (this *${daoName}) Enable${model}(${pkName} ${pkNameType}) error {
-	_, err := this.Query().
+func (this *${daoName}) Enable${model}(tx *dbs.Tx, ${pkName} ${pkNameType}) error {
+	_, err := this.Query(tx).
 		Pk(${pkName}).
 		Set("state", ${model}StateEnabled).
 		Update()
@@ -270,8 +270,8 @@ func (this *${daoName}) Enable${model}(${pkName} ${pkNameType}) error {
 }
 
 // 禁用条目
-func (this *${daoName}) Disable${model}(${pkName} ${pkNameType}) error {
-	_, err := this.Query().
+func (this *${daoName}) Disable${model}(tx *dbs.Tx, ${pkName} ${pkNameType}) error {
+	_, err := this.Query(tx).
 		Pk(${pkName}).
 		Set("state", ${model}StateDisabled).
 		Update()
@@ -279,8 +279,8 @@ func (this *${daoName}) Disable${model}(${pkName} ${pkNameType}) error {
 }
 
 // 查找启用中的条目
-func (this *${daoName}) FindEnabled${model}(${pkName} ${pkNameType}) (*${model}, error) {
-	result, err := this.Query().
+func (this *${daoName}) FindEnabled${model}(tx *dbs.Tx, ${pkName} ${pkNameType}) (*${model}, error) {
+	result, err := this.Query(tx).
 		Pk(${pkName}).
 		Attr("state", ${model}StateEnabled).
 		Find()
@@ -294,8 +294,8 @@ func (this *${daoName}) FindEnabled${model}(${pkName} ${pkNameType}) (*${model},
 
 	if stringutil.Contains(fieldNames, "name") && table.FindFieldWithName("name").ValueTypeName() == "string" {
 		daoString += `// 根据主键查找名称
-func (this *${daoName}) Find${model}Name(${pkName} ${pkNameType}) (string, error) {
-	return this.Query().
+func (this *${daoName}) Find${model}Name(tx *dbs.Tx, ${pkName} ${pkNameType}) (string, error) {
+	return this.Query(tx).
 		Pk(${pkName}).
 		Result("name").
 		FindStringCol("")

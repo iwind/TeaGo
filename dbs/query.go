@@ -71,6 +71,7 @@ var paramRegexp = regexp.MustCompile(`:(\w+)`)
 
 type Query struct {
 	db  *DB
+	tx  *Tx
 	dao *DAOObject
 
 	model  *Model
@@ -186,6 +187,12 @@ func (this *Query) init(model interface{}) *Query {
 // 设置数据库实例
 func (this *Query) DB(db *DB) *Query {
 	this.db = db
+	return this
+}
+
+// 设置事务
+func (this *Query) Tx(tx *Tx) *Query {
+	this.tx = tx
 	return this
 }
 
@@ -864,9 +871,9 @@ func (this *Query) FindOnes() (results []maps.Map, columnNames []string, err err
 
 	var stmt *Stmt
 	if this.canReuse {
-		stmt, err = this.db.PrepareOnce(sql)
+		stmt, err = this.preparer().PrepareOnce(sql)
 	} else {
-		stmt, err = this.db.Prepare(sql)
+		stmt, err = this.preparer().Prepare(sql)
 		defer func() {
 			_ = stmt.Close()
 		}()
@@ -1150,9 +1157,9 @@ func (this *Query) Exec() (*Result, error) {
 
 	var stmt *Stmt
 	if this.canReuse {
-		stmt, err = this.db.PrepareOnce(sql)
+		stmt, err = this.preparer().PrepareOnce(sql)
 	} else {
-		stmt, err = this.db.Prepare(sql)
+		stmt, err = this.preparer().Prepare(sql)
 		defer func() {
 			_ = stmt.Close()
 		}()
@@ -1182,9 +1189,9 @@ func (this *Query) Replace() (rowsAffected int64, lastInsertId int64, err error)
 
 	var stmt *Stmt
 	if this.canReuse {
-		stmt, err = this.db.PrepareOnce(sql)
+		stmt, err = this.preparer().PrepareOnce(sql)
 	} else {
-		stmt, err = this.db.Prepare(sql)
+		stmt, err = this.preparer().Prepare(sql)
 		defer func() {
 			_ = stmt.Close()
 		}()
@@ -1223,9 +1230,9 @@ func (this *Query) Insert() (lastInsertId int64, err error) {
 
 	var stmt *Stmt
 	if this.canReuse {
-		stmt, err = this.db.PrepareOnce(sql)
+		stmt, err = this.preparer().PrepareOnce(sql)
 	} else {
-		stmt, err = this.db.Prepare(sql)
+		stmt, err = this.preparer().Prepare(sql)
 		defer func() {
 			_ = stmt.Close()
 		}()
@@ -1263,9 +1270,9 @@ func (this *Query) Update() (rowsAffected int64, err error) {
 
 	var stmt *Stmt
 	if this.canReuse {
-		stmt, err = this.db.PrepareOnce(sql)
+		stmt, err = this.preparer().PrepareOnce(sql)
 	} else {
-		stmt, err = this.db.Prepare(sql)
+		stmt, err = this.preparer().Prepare(sql)
 		defer func() {
 			_ = stmt.Close()
 		}()
@@ -1317,9 +1324,9 @@ func (this *Query) InsertOrUpdate(insertingValues maps.Map, updatingValues maps.
 
 	var stmt *Stmt
 	if this.canReuse {
-		stmt, err = this.db.PrepareOnce(sql)
+		stmt, err = this.preparer().PrepareOnce(sql)
 	} else {
-		stmt, err = this.db.Prepare(sql)
+		stmt, err = this.preparer().Prepare(sql)
 		defer func() {
 			_ = stmt.Close()
 		}()
@@ -1353,9 +1360,9 @@ func (this *Query) Delete() (rowsAffected int64, err error) {
 	}
 	var stmt *Stmt
 	if this.canReuse {
-		stmt, err = this.db.PrepareOnce(sql)
+		stmt, err = this.preparer().PrepareOnce(sql)
 	} else {
-		stmt, err = this.db.Prepare(sql)
+		stmt, err = this.preparer().Prepare(sql)
 		defer func() {
 			_ = stmt.Close()
 		}()
@@ -1540,4 +1547,12 @@ func (this *Query) copyModelValue(valueType reflect.Type, data maps.Map) interfa
 		value.Field(index).Set(reflect.ValueOf(this.model.convertValue(fieldValue, this.model.Kinds[index])))
 	}
 	return pointerValue.Interface()
+}
+
+// 获取Preparer
+func (this *Query) preparer() SQLPreparer {
+	if this.tx != nil {
+		return this.tx
+	}
+	return this.db
 }
