@@ -236,12 +236,36 @@ func (this *DB) Name() string {
 	return base[:index]
 }
 
+// 开始一个事务
 func (this *DB) Begin() (*Tx, error) {
 	tx, err := this.sqlDB.Begin()
 	if err != nil {
 		return nil, err
 	}
 	return NewTx(tx), nil
+}
+
+// 在函数中执行一个事务
+func (this *DB) RunTx(callback func(tx *Tx) error) error {
+	tx, err := this.Begin()
+	if err != nil {
+		return err
+	}
+	if callback != nil {
+		err = callback(tx)
+	}
+
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	return nil
 }
 
 func (this *DB) Close() error {
