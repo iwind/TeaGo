@@ -187,25 +187,25 @@ func (this *DAOObject) Save(tx *Tx, operatorPtr interface{}) (err error) {
 		var fieldName = field.Name
 
 		// 支持created_at & createdAt & updated_at & updatedAt
-		if !hasPk && fieldName == "created_at" {
+		if !hasPk && fieldName == "created_at" && fieldValue.Interface() == nil {
 			var unixTime = time.Now().Unix()
 			query.Set("created_at", unixTime)
 			fieldValue.Set(reflect.ValueOf(unixTime).Convert(fieldValue.Type()))
 			continue
 		}
-		if !hasPk && fieldName == "createdAt" {
+		if !hasPk && fieldName == "createdAt" && fieldValue.Interface() == nil {
 			var unixTime = time.Now().Unix()
 			query.Set("createdAt", unixTime)
 			fieldValue.Set(reflect.ValueOf(unixTime).Convert(fieldValue.Type()))
 			continue
 		}
-		if hasPk && fieldName == "updated_at" {
+		if hasPk && fieldName == "updated_at" && fieldValue.Interface() == nil {
 			var unixTime = time.Now().Unix()
 			query.Set("updated_at", unixTime)
 			fieldValue.Set(reflect.ValueOf(unixTime).Convert(fieldValue.Type()))
 			continue
 		}
-		if hasPk && fieldName == "updatedAt" {
+		if hasPk && fieldName == "updatedAt" && fieldValue.Interface() == nil {
 			var unixTime = time.Now().Unix()
 			query.Set("updatedAt", unixTime)
 			fieldValue.Set(reflect.ValueOf(unixTime).Convert(fieldValue.Type()))

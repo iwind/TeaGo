@@ -439,6 +439,17 @@ func (this *Query) Like(field string, expr string) *Query {
 	return this
 }
 
+// JSON包含
+func (this *Query) JSONContains(attr string, value interface{}) *Query {
+	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
+	this.namedParams[param] = value
+	this.namedParamIndex++
+
+	this.Where("JSON_CONTAINS(" + this.wrapKeyword(attr) + ", :" + param + ")")
+
+	return this
+}
+
 // 是否开启SQL Cache
 // 只有在SELECT时才有作用
 func (this *Query) SQLCache(sqlCache int) *Query {
@@ -875,7 +886,9 @@ func (this *Query) FindOnes() (results []maps.Map, columnNames []string, err err
 	} else {
 		stmt, err = this.preparer().Prepare(sql)
 		defer func() {
-			_ = stmt.Close()
+			if stmt != nil {
+				_ = stmt.Close()
+			}
 		}()
 	}
 	if err != nil {
@@ -1161,7 +1174,9 @@ func (this *Query) Exec() (*Result, error) {
 	} else {
 		stmt, err = this.preparer().Prepare(sql)
 		defer func() {
-			_ = stmt.Close()
+			if stmt != nil {
+				_ = stmt.Close()
+			}
 		}()
 	}
 	if err != nil {
@@ -1193,7 +1208,9 @@ func (this *Query) Replace() (rowsAffected int64, lastInsertId int64, err error)
 	} else {
 		stmt, err = this.preparer().Prepare(sql)
 		defer func() {
-			_ = stmt.Close()
+			if stmt != nil {
+				_ = stmt.Close()
+			}
 		}()
 	}
 	if err != nil {
@@ -1234,7 +1251,9 @@ func (this *Query) Insert() (lastInsertId int64, err error) {
 	} else {
 		stmt, err = this.preparer().Prepare(sql)
 		defer func() {
-			_ = stmt.Close()
+			if stmt != nil {
+				_ = stmt.Close()
+			}
 		}()
 	}
 	if err != nil {
@@ -1274,7 +1293,9 @@ func (this *Query) Update() (rowsAffected int64, err error) {
 	} else {
 		stmt, err = this.preparer().Prepare(sql)
 		defer func() {
-			_ = stmt.Close()
+			if stmt != nil {
+				_ = stmt.Close()
+			}
 		}()
 	}
 	if err != nil {
@@ -1328,7 +1349,9 @@ func (this *Query) InsertOrUpdate(insertingValues maps.Map, updatingValues maps.
 	} else {
 		stmt, err = this.preparer().Prepare(sql)
 		defer func() {
-			_ = stmt.Close()
+			if stmt != nil {
+				_ = stmt.Close()
+			}
 		}()
 	}
 	if err != nil {
@@ -1364,7 +1387,9 @@ func (this *Query) Delete() (rowsAffected int64, err error) {
 	} else {
 		stmt, err = this.preparer().Prepare(sql)
 		defer func() {
-			_ = stmt.Close()
+			if stmt != nil {
+				_ = stmt.Close()
+			}
 		}()
 	}
 	if err != nil {
