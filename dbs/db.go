@@ -34,11 +34,12 @@ var dbCacheMutex = &sync.Mutex{}
 func Default() (*DB, error) {
 	loadConfig()
 
-	if len(dbConfig.Default.DB) > 0 {
-		return Instance(dbConfig.Default.DB)
+	defaultDB := dbConfig.Default.DB
+	if len(defaultDB) == 0 {
+		// 默认为当前的系统环境
+		defaultDB = Tea.Env
 	}
-
-	return nil, errors.New("[DB]there is no db configurations")
+	return Instance(defaultDB)
 }
 
 // 根据ID获取数据库实例
