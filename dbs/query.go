@@ -1317,6 +1317,43 @@ func (this *Query) Update() (rowsAffected int64, err error) {
 	return rowsAffected, err
 }
 
+// 执行UPDATE
+func (this *Query) UpdateQuickly() error {
+	if this.savingFields.Len() == 0 {
+		return errors.New("[Query.Update()]updating fields should be set")
+	}
+
+	this.action = QueryActionUpdate
+	sql, err := this.AsSQL()
+	if err != nil {
+		return err
+	}
+
+	var stmt *Stmt
+	if this.canReuse {
+		stmt, err = this.preparer().PrepareOnce(sql)
+	} else {
+		stmt, err = this.preparer().Prepare(sql)
+		defer func() {
+			if stmt != nil {
+				_ = stmt.Close()
+			}
+		}()
+	}
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(this.params...)
+	if err != nil {
+		return err
+	}
+
+	// 事件通知
+	err = this.dao.NotifyUpdate()
+	return err
+}
+
 // 插入或更改
 // 依据要插入的数据中的unique键来决定是插入数据还是替换数据
 func (this *Query) InsertOrUpdate(insertingValues maps.Map, updatingValues maps.Map) (rowsAffected int64, lastInsertId int64, err error) {
@@ -1371,7 +1408,68 @@ func (this *Query) InsertOrUpdate(insertingValues maps.Map, updatingValues maps.
 	if err != nil {
 		return rows, 0, err
 	}
+
+	if lastId > 0 {
+		err = this.dao.NotifyInsert()
+	} else {
+		err = this.dao.NotifyUpdate()
+	}
+
 	return rows, lastId, err
+}
+
+// 插入或更改
+// 依据要插入的数据中的unique键来决定是插入数据还是替换数据
+func (this *Query) InsertOrUpdateQuickly(insertingValues maps.Map, updatingValues maps.Map) error {
+	if insertingValues == nil || len(insertingValues) == 0 {
+		return errors.New("[Query.InsertOrUpdate()]inserting values should be set")
+	}
+	if updatingValues == nil || len(updatingValues) == 0 {
+		return errors.New("[Query.InsertOrUpdate()]updating values should be set")
+	}
+
+	// insert的值
+	for field, value := range insertingValues {
+		this.savingFields.Put(field, this.wrapValue(value))
+	}
+
+	// replace的值
+	for field, value := range updatingValues {
+		this.replacingFields.Put(field, this.wrapValue(value))
+	}
+
+	this.action = QueryActionInsertOrUpdate
+	sql, err := this.AsSQL()
+	if err != nil {
+		return err
+	}
+
+	var stmt *Stmt
+	if this.canReuse {
+		stmt, err = this.preparer().PrepareOnce(sql)
+	} else {
+		stmt, err = this.preparer().Prepare(sql)
+		defer func() {
+			if stmt != nil {
+				_ = stmt.Close()
+			}
+		}()
+	}
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(this.params...)
+	if err != nil {
+		return err
+	}
+
+	err = this.dao.NotifyUpdate()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // 执行DELETE

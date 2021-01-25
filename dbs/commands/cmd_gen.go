@@ -339,6 +339,7 @@ func (this *${daoName}) Find${model}Name(tx *dbs.Tx, ${pkName} ${pkNameType}) (s
 	testString := `package ` + subPackage + `
 import (
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/iwind/TeaGo/bootstrap"
 )
 `
 	formatted, err = format.Source([]byte(testString))
