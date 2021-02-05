@@ -782,7 +782,7 @@ func (this *Query) AsSQL() (string, error) {
 		for _, group := range this.groups {
 			groupStrings = append(groupStrings, this.wrapKeyword(group.Field)+" "+this.orderCode(group.Order))
 		}
-		sql += "\n GROUP BY " + strings.Join(groupStrings, " AND ")
+		sql += "\n GROUP BY " + strings.Join(groupStrings, ", ")
 	}
 
 	// having
