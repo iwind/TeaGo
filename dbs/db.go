@@ -270,6 +270,16 @@ func (this *DB) RunTx(callback func(tx *Tx) error) error {
 }
 
 func (this *DB) Close() error {
+	// 关闭语句
+	this.dbStmtMux.Lock()
+	for _, stmt := range this.dbStatements {
+		if stmt != nil {
+			_ = stmt.Close()
+		}
+	}
+	this.dbStmtMux.Unlock()
+
+	// 关闭连接
 	err := this.sqlDB.Close()
 
 	/**dbCacheMutex.Lock()
