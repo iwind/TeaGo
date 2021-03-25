@@ -47,7 +47,7 @@ func NewUserDAO() *UserDAO {
 }
 
 func (dao *UserDAO) FindUsers() ([]maps.Map, []string, error) {
-	return dao.Query().
+	return dao.Query(nil).
 		Where("id>=:minId").
 		Param("minId", 1).
 		Limit(10).
@@ -60,7 +60,7 @@ func (dao *UserDAO) FindUsers() ([]maps.Map, []string, error) {
 }
 
 func (dao *UserDAO) FindUser(userId int) (*User, error) {
-	var value, err = dao.Find(userId)
+	var value, err = dao.Find(nil, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (dao *UserDAO) CreateUser(name string, gender int) (int64, error) {
 	user.Gender = gender
 	user.State = 1
 
-	dao.Save(user)
+	dao.Save(nil, user)
 
 	return int64(user.Id), nil
 }
@@ -81,7 +81,7 @@ func (dao *UserDAO) CreateUser(name string, gender int) (int64, error) {
 func TestDAOQuery(t *testing.T) {
 	var dao = NewUserDAO()
 
-	t.Logf("%p, %p, %p, %p", NewUserDAO(), NewUserDAO(), dao.Query(), dao.Query())
+	t.Logf("%p, %p, %p, %p", NewUserDAO(), NewUserDAO(), dao.Query(nil), dao.Query(nil))
 
 	var ones, _, err = dao.FindUsers()
 	if err != nil {
@@ -100,14 +100,14 @@ func TestDAOQuery(t *testing.T) {
 func TestDAOFind(t *testing.T) {
 	var dao = NewUserDAO()
 	t.Log(dao.FindUser(1024))
-	t.Log(dao.Find(1025))
-	t.Log(dao.Exist(1026))
-	t.Log(dao.Exist(10086))
+	t.Log(dao.Find(nil, 1025))
+	t.Log(dao.Exist(nil, 1026))
+	t.Log(dao.Exist(nil, 10086))
 }
 
 func TestDaoDelete(t *testing.T) {
 	var dao = NewUserDAO()
-	t.Log(dao.Delete(8273))
+	t.Log(dao.Delete(nil, 8273))
 }
 
 func TestDaoSave(t *testing.T) {
@@ -125,7 +125,7 @@ func TestDaoSave(t *testing.T) {
 		user.IsShop = false
 		//user.CountViews = SQL("count_views+1")
 
-		err := dao.Save(user)
+		err := dao.Save(nil, user)
 		if err != nil {
 			log.Fatal(err)
 		}
