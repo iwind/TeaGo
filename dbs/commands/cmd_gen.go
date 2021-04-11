@@ -121,7 +121,7 @@ func (this *GenModelCommand) Run() {
 	// Model
 	modelString := `package ` + subPackage + `
 
-// ` + strings.Replace(table.Comment, "\n", " ", -1) + `
+// ` + model + " " + strings.Replace(table.Comment, "\n", " ", -1) + `
 type ` + model + ` struct {`
 	modelString += "\n"
 	var primaryKey = ""
@@ -260,7 +260,7 @@ func init() {
 	// state
 	if stringutil.Contains(fieldNames, "state") {
 		daoString += `
-// 启用条目
+// Enable${model} 启用条目
 func (this *${daoName}) Enable${model}(tx *dbs.Tx, ${pkName} ${pkNameType}) error {
 	_, err := this.Query(tx).
 		Pk(${pkName}).
@@ -269,7 +269,7 @@ func (this *${daoName}) Enable${model}(tx *dbs.Tx, ${pkName} ${pkNameType}) erro
 	return err
 }
 
-// 禁用条目
+// Disable${model} 禁用条目
 func (this *${daoName}) Disable${model}(tx *dbs.Tx, ${pkName} ${pkNameType}) error {
 	_, err := this.Query(tx).
 		Pk(${pkName}).
@@ -278,7 +278,7 @@ func (this *${daoName}) Disable${model}(tx *dbs.Tx, ${pkName} ${pkNameType}) err
 	return err
 }
 
-// 查找启用中的条目
+// FindEnabled${model} 查找启用中的条目
 func (this *${daoName}) FindEnabled${model}(tx *dbs.Tx, ${pkName} ${pkNameType}) (*${model}, error) {
 	result, err := this.Query(tx).
 		Pk(${pkName}).
@@ -293,7 +293,7 @@ func (this *${daoName}) FindEnabled${model}(tx *dbs.Tx, ${pkName} ${pkNameType})
 	}
 
 	if stringutil.Contains(fieldNames, "name") && table.FindFieldWithName("name").ValueTypeName() == "string" {
-		daoString += `// 根据主键查找名称
+		daoString += `// Find${model}Name 根据主键查找名称
 func (this *${daoName}) Find${model}Name(tx *dbs.Tx, ${pkName} ${pkNameType}) (string, error) {
 	return this.Query(tx).
 		Pk(${pkName}).
