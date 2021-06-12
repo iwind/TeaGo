@@ -1,7 +1,6 @@
 package rands
 
 import (
-	"github.com/iwind/TeaGo/logs"
 	"runtime"
 	"testing"
 )
@@ -12,12 +11,12 @@ func TestRand_Distribute_1(t *testing.T) {
 		v := Int(0, 9)
 		_, ok := m[v]
 		if ok {
-			m[v] ++
+			m[v]++
 		} else {
 			m[v] = 1
 		}
 	}
-	logs.PrintAsJSON(m, t)
+	t.Log(m)
 }
 
 func TestRand_Distribute_2(t *testing.T) {
@@ -26,12 +25,12 @@ func TestRand_Distribute_2(t *testing.T) {
 		v := Int(15, 5)
 		_, ok := m[v]
 		if ok {
-			m[v] ++
+			m[v]++
 		} else {
 			m[v] = 1
 		}
 	}
-	logs.PrintAsJSON(m, t)
+	t.Log(m)
 }
 
 func BenchmarkRandBetween(b *testing.B) {
