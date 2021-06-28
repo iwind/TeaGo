@@ -1,7 +1,6 @@
 package timeutil
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -10,92 +9,121 @@ import (
 // Format 文档 http://php.net/manual/en/function.date.php
 // 目前没有支持的 S, L, o, B, v, e, I
 func Format(format string, now ...time.Time) string {
-	var t1 time.Time
-	if len(now) > 0 {
-		t1 = now[0]
-	} else {
-		t1 = time.Now()
+	if len(now) == 0 {
+		return Format(format, time.Now())
 	}
 
+	var t = now[0]
 	buffer := strings.Builder{}
 
 	for _, runeItem := range format {
 		switch runeItem {
 		case 'Y': // 年份，比如：2016
-			buffer.WriteString(t1.Format("2006"))
+			buffer.WriteString(strconv.Itoa(t.Year()))
 		case 'y': // 年份后两位，比如：16
-			buffer.WriteString(t1.Format("06"))
+			buffer.WriteString(t.Format("06"))
 		case 'm': // 01-12
-			buffer.WriteString(fmt.Sprintf("%02d", int(t1.Month())))
+			var m = int(t.Month())
+			if m < 10 {
+				buffer.WriteString("0" + strconv.Itoa(m))
+			} else {
+				buffer.WriteString(strconv.Itoa(m))
+			}
 		case 'n': // 1-12
-			buffer.WriteString(strconv.Itoa(int(t1.Month())))
+			buffer.WriteString(strconv.Itoa(int(t.Month())))
 		case 'd': // 01-31
-			buffer.WriteString(fmt.Sprintf("%02d", t1.Day()))
+			var d = t.Day()
+			if d < 10 {
+				buffer.WriteString("0" + strconv.Itoa(d))
+			} else {
+				buffer.WriteString(strconv.Itoa(d))
+			}
 		case 'z': // 0 -365
-			buffer.WriteString(strconv.Itoa(t1.YearDay() - 1))
+			buffer.WriteString(strconv.Itoa(t.YearDay() - 1))
 		case 'j': // 1-31
-			buffer.WriteString(strconv.Itoa(t1.Day()))
+			buffer.WriteString(strconv.Itoa(t.Day()))
 		case 'H': // 00-23
-			buffer.WriteString(fmt.Sprintf("%02d", t1.Hour()))
+			var h = t.Hour()
+			if h == 0 {
+				buffer.WriteString("00")
+			} else if h < 10 {
+				buffer.WriteString("0" + strconv.Itoa(h))
+			} else {
+				buffer.WriteString(strconv.Itoa(h))
+			}
 		case 'G': // 0-23
-			buffer.WriteString(strconv.Itoa(t1.Hour()))
+			buffer.WriteString(strconv.Itoa(t.Hour()))
 		case 'g': // 小时：1-12
-			buffer.WriteString(t1.Format("3"))
+			buffer.WriteString(t.Format("3"))
 		case 'h': // 小时：01-12
-			buffer.WriteString(t1.Format("03"))
+			buffer.WriteString(t.Format("03"))
 		case 'i': // 00-59
-			buffer.WriteString(fmt.Sprintf("%02d", t1.Minute()))
+			var m = t.Minute()
+			if m == 0 {
+				buffer.WriteString("00")
+			} else if m < 10 {
+				buffer.WriteString("0" + strconv.Itoa(m))
+			} else {
+				buffer.WriteString(strconv.Itoa(m))
+			}
 		case 's': // 00-59
-			buffer.WriteString(fmt.Sprintf("%02d", t1.Second()))
+			var s = t.Second()
+			if s == 0 {
+				buffer.WriteString("00")
+			} else if s < 10 {
+				buffer.WriteString("0" + strconv.Itoa(s))
+			} else {
+				buffer.WriteString(strconv.Itoa(s))
+			}
 		case 'A': // AM or PM
-			buffer.WriteString(t1.Format("PM"))
+			buffer.WriteString(t.Format("PM"))
 		case 'a': // am or pm
-			buffer.WriteString(t1.Format("pm"))
+			buffer.WriteString(t.Format("pm"))
 		case 'u': // 微秒：654321
-			buffer.WriteString(strconv.Itoa(t1.Nanosecond() / 1000))
+			buffer.WriteString(strconv.Itoa(t.Nanosecond() / 1000))
 		case 'v': // 毫秒：654
-			buffer.WriteString(strconv.Itoa(t1.Nanosecond() / 1000000))
+			buffer.WriteString(strconv.Itoa(t.Nanosecond() / 1000000))
 		case 'w': // weekday, 0, 1, 2, ...
-			buffer.WriteString(strconv.Itoa(int(t1.Weekday())))
+			buffer.WriteString(strconv.Itoa(int(t.Weekday())))
 		case 'W': // ISO-8601 week，一年中第N周
-			_, week := t1.ISOWeek()
+			_, week := t.ISOWeek()
 			buffer.WriteString(strconv.Itoa(week))
 		case 'N': // 1, 2, ...7
-			weekday := t1.Weekday()
+			weekday := t.Weekday()
 			if weekday == 0 {
 				buffer.WriteString("7")
 			} else {
 				buffer.WriteString(strconv.Itoa(int(weekday)))
 			}
 		case 'D': // Mon ... Sun
-			buffer.WriteString(t1.Format("Mon"))
+			buffer.WriteString(t.Format("Mon"))
 		case 'l': // Monday ... Sunday
-			buffer.WriteString(t1.Format("Monday"))
+			buffer.WriteString(t.Format("Monday"))
 		case 't': // 一个月中的天数
-			t2 := time.Date(t1.Year(), t1.Month(), 32, 0, 0, 0, 0, time.Local)
+			t2 := time.Date(t.Year(), t.Month(), 32, 0, 0, 0, 0, time.Local)
 			daysInMonth := 32 - t2.Day()
 
 			buffer.WriteString(strconv.Itoa(daysInMonth))
 		case 'F': // January
-			buffer.WriteString(t1.Format("January"))
+			buffer.WriteString(t.Format("January"))
 		case 'M': // Jan
-			buffer.WriteString(t1.Format("Jan"))
+			buffer.WriteString(t.Format("Jan"))
 		case 'O': // 格林威治时间差（GMT），比如：+0800
-			buffer.WriteString(t1.Format("-0700"))
+			buffer.WriteString(t.Format("-0700"))
 		case 'P': // 格林威治时间差（GMT），比如：+08:00
-			buffer.WriteString(t1.Format("-07:00"))
+			buffer.WriteString(t.Format("-07:00"))
 		case 'T': // 时区名，比如CST
-			zone, _ := t1.Zone()
+			zone, _ := t.Zone()
 			buffer.WriteString(zone)
 		case 'Z': // 时区offset，比如28800
-			_, offset := t1.Zone()
+			_, offset := t.Zone()
 			buffer.WriteString(strconv.Itoa(offset))
 		case 'c': // ISO 8601，类似于：2004-02-12T15:19:21+00:00
-			buffer.WriteString(t1.Format("2006-01-02T15:04:05Z07:00"))
+			buffer.WriteString(t.Format("2006-01-02T15:04:05Z07:00"))
 		case 'r': // RFC 2822，类似于：Thu, 21 Dec 2000 16:01:07 +0200
-			buffer.WriteString(t1.Format("Mon, 2 Jan 2006 15:04:05 -0700"))
+			buffer.WriteString(t.Format("Mon, 2 Jan 2006 15:04:05 -0700"))
 		case 'U': // 时间戳
-			buffer.WriteString(fmt.Sprintf("%d", t1.Unix()))
+			buffer.WriteString(strconv.FormatInt(t.Unix(), 10))
 		default:
 			buffer.WriteRune(runeItem)
 		}
