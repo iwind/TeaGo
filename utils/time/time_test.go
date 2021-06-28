@@ -6,6 +6,7 @@ import (
 )
 
 func TestFormat(t *testing.T) {
+	t.Log(Format("Y"))
 	t.Log(Format("c", time.Now().Add(-1 * time.Hour)))
 	t.Log(Format("r"))
 	t.Log(Format("U"))
@@ -18,4 +19,10 @@ func TestFormat(t *testing.T) {
 	t.Log(Format("g, h"))
 	t.Log(Format("u, v"))
 	t.Log(Format("O, P"))
+}
+
+func BenchmarkFormat(b *testing.B) {
+	for i := 0; i < b.N; i ++ {
+		Format("Y")
+	}
 }
