@@ -1,8 +1,10 @@
 package types
 
 import (
+	"fmt"
 	"math"
 	"reflect"
+	"runtime"
 	"testing"
 )
 
@@ -13,6 +15,7 @@ func TestConvert(t *testing.T) {
 	t.Log(Float32("123.456"))
 	t.Log(Compare("abc", "123"), Compare(123, "12.3"))
 	t.Log(Byte(123), Byte(255))
+	t.Log(String(1), String(int64(1024)), String(true), String("Hello, World"), String([]string{"Hello"}))
 
 	result, err := Slice([]string{"1", "2", "3"}, reflect.TypeOf([]int64{}))
 	if err != nil {
@@ -101,5 +104,21 @@ func TestIsMap(t *testing.T) {
 func assert(t *testing.T, b bool) {
 	if !b {
 		t.Fail()
+	}
+}
+
+func BenchmarkInt_String(b *testing.B) {
+	runtime.GOMAXPROCS(1)
+
+	for i := 0; i < b.N; i++ {
+		_ = String(1024)
+	}
+}
+
+func BenchmarkInt_Sprintf(b *testing.B) {
+	runtime.GOMAXPROCS(1)
+
+	for i := 0; i < b.N; i++ {
+		_ = fmt.Sprintf("%d", 1024)
 	}
 }
