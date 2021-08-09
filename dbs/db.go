@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-const MaxStatementsCount = 5120
+const MaxStatementsCount = 4096
 
 type DB struct {
 	id     string
