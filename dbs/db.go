@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-const MaxStatementsCount = 10000
+const MaxStatementsCount = 5120
 
 type DB struct {
 	id     string
@@ -320,6 +320,20 @@ func (this *DB) PrepareOnce(query string) (*Stmt, error) {
 
 			// 清除一个小时之前的
 			if stmt.AccessAt() < nowTime-3600 {
+				_ = stmt.Close()
+				delete(this.dbStatements, key)
+				max--
+			}
+		}
+
+		// 如果仍然多
+		if len(this.dbStatements) >= MaxStatementsCount-128 {
+			for key, stmt := range this.dbStatements {
+				if max <= 0 {
+					break
+				}
+
+				// 清除一个小时之前的
 				_ = stmt.Close()
 				delete(this.dbStatements, key)
 				max--

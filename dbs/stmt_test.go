@@ -43,11 +43,11 @@ func TestDB_PrepareOnce(t *testing.T) {
 		t.Fatal(err)
 	}**/
 
-	for i := 0; i < 20000; i++ {
+	for i := 0; i < 100_000; i++ {
 		stmt, err := db.PrepareOnce("SELECT " + strconv.Itoa(i))
 		if err != nil {
 			t.Fatal(err)
 		}
-		stmt.accessAt = time.Now().Unix() - 3600 - 1
+		stmt.accessAt = time.Now().Unix()
 	}
 }
