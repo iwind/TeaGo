@@ -25,7 +25,7 @@ func TestConvert(t *testing.T) {
 	}
 }
 
-func TestInt8(t *testing.T) {
+func TestIntN(t *testing.T) {
 	assert(t, Int8("1") == 1)
 	assert(t, Int8("1024") == math.MaxInt8)
 	assert(t, Int8("-1024") == math.MinInt8)
@@ -40,6 +40,18 @@ func TestInt8(t *testing.T) {
 	assert(t, Int32(-1024) == -1024)
 	assert(t, Int32(123456789101112) == math.MaxInt32)
 	t.Log("maxInt32:", math.MaxInt32)
+
+	{
+
+		type A int32
+		var a A = 1234
+		assert(t, Int32(a) == 1234)
+	}
+	{
+		type A float32
+		var a A = 123.456
+		assert(t, Int32(a) == 123)
+	}
 
 	assert(t, Int64("1") == 1)
 	assert(t, Int64(1024) == 1024)
@@ -56,6 +68,7 @@ func TestInt8(t *testing.T) {
 	t.Log("maxUint16:", math.MaxUint16)
 
 	assert(t, Uint64(123) == 123)
+
 }
 
 func TestIsSlice(t *testing.T) {

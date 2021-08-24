@@ -61,6 +61,18 @@ func Int(value interface{}) int {
 		}
 	case []byte:
 		return Int(string(x))
+	default:
+		var v = reflect.ValueOf(value)
+		unsigned, isFloat, ok := IsNumberKind(v.Kind())
+		if ok {
+			if isFloat {
+				return Int(v.Float())
+			} else if unsigned {
+				return Int(v.Uint())
+			} else {
+				return Int(v.Int())
+			}
+		}
 	}
 	return 0
 }
@@ -161,6 +173,18 @@ func Int8(value interface{}) int8 {
 		}
 	case []byte:
 		return Int8(string(x))
+	default:
+		var v = reflect.ValueOf(value)
+		unsigned, isFloat, ok := IsNumberKind(v.Kind())
+		if ok {
+			if isFloat {
+				return Int8(v.Float())
+			} else if unsigned {
+				return Int8(v.Uint())
+			} else {
+				return Int8(v.Int())
+			}
+		}
 	}
 	return 0
 }
@@ -255,6 +279,18 @@ func Int16(value interface{}) int16 {
 		}
 	case []byte:
 		return Int16(string(x))
+	default:
+		var v = reflect.ValueOf(value)
+		unsigned, isFloat, ok := IsNumberKind(v.Kind())
+		if ok {
+			if isFloat {
+				return Int16(v.Float())
+			} else if unsigned {
+				return Int16(v.Uint())
+			} else {
+				return Int16(v.Int())
+			}
+		}
 	}
 	return 0
 }
@@ -337,6 +373,18 @@ func Int32(value interface{}) int32 {
 		}
 	case []byte:
 		return Int32(string(x))
+	default:
+		var v = reflect.ValueOf(value)
+		unsigned, isFloat, ok := IsNumberKind(v.Kind())
+		if ok {
+			if isFloat {
+				return Int32(v.Float())
+			} else if unsigned {
+				return Int32(v.Uint())
+			} else {
+				return Int32(v.Int())
+			}
+		}
 	}
 	return 0
 }
@@ -401,6 +449,18 @@ func Int64(value interface{}) int64 {
 		}
 	case []byte:
 		return Int64(string(x))
+	default:
+		var v = reflect.ValueOf(value)
+		unsigned, isFloat, ok := IsNumberKind(v.Kind())
+		if ok {
+			if isFloat {
+				return Int64(v.Float())
+			} else if unsigned {
+				return Int64(v.Uint())
+			} else {
+				return v.Int()
+			}
+		}
 	}
 	return 0
 }
@@ -474,6 +534,18 @@ func Uint(value interface{}) uint {
 		}
 	case []byte:
 		return Uint(string(x))
+	default:
+		var v = reflect.ValueOf(value)
+		unsigned, isFloat, ok := IsNumberKind(v.Kind())
+		if ok {
+			if isFloat {
+				return Uint(v.Float())
+			} else if unsigned {
+				return Uint(v.Uint())
+			} else {
+				return Uint(v.Int())
+			}
+		}
 	}
 	return 0
 }
@@ -577,6 +649,18 @@ func Uint8(value interface{}) uint8 {
 		}
 	case []byte:
 		return Uint8(string(x))
+	default:
+		var v = reflect.ValueOf(value)
+		unsigned, isFloat, ok := IsNumberKind(v.Kind())
+		if ok {
+			if isFloat {
+				return Uint8(v.Float())
+			} else if unsigned {
+				return Uint8(v.Uint())
+			} else {
+				return Uint8(v.Int())
+			}
+		}
 	}
 	return 0
 }
@@ -671,6 +755,18 @@ func Uint16(value interface{}) uint16 {
 		}
 	case []byte:
 		return Uint16(string(x))
+	default:
+		var v = reflect.ValueOf(value)
+		unsigned, isFloat, ok := IsNumberKind(v.Kind())
+		if ok {
+			if isFloat {
+				return Uint16(v.Float())
+			} else if unsigned {
+				return Uint16(v.Uint())
+			} else {
+				return Uint16(v.Int())
+			}
+		}
 	}
 	return 0
 }
@@ -756,6 +852,18 @@ func Uint32(value interface{}) uint32 {
 		}
 	case []byte:
 		return Uint32(string(x))
+	default:
+		var v = reflect.ValueOf(value)
+		unsigned, isFloat, ok := IsNumberKind(v.Kind())
+		if ok {
+			if isFloat {
+				return Uint32(v.Float())
+			} else if unsigned {
+				return Uint32(v.Uint())
+			} else {
+				return Uint32(v.Int())
+			}
+		}
 	}
 	return 0
 }
@@ -832,6 +940,18 @@ func Uint64(value interface{}) uint64 {
 		}
 	case []byte:
 		return Uint64(string(x))
+	default:
+		var v = reflect.ValueOf(value)
+		unsigned, isFloat, ok := IsNumberKind(v.Kind())
+		if ok {
+			if isFloat {
+				return Uint64(v.Float())
+			} else if unsigned {
+				return v.Uint()
+			} else {
+				return Uint64(v.Int())
+			}
+		}
 	}
 	return 0
 }
@@ -879,6 +999,18 @@ func Float64(value interface{}) float64 {
 		}
 	case []byte:
 		return Float64(string(x))
+	default:
+		var v = reflect.ValueOf(value)
+		unsigned, isFloat, ok := IsNumberKind(v.Kind())
+		if ok {
+			if isFloat {
+				return v.Float()
+			} else if unsigned {
+				return Float64(v.Uint())
+			} else {
+				return Float64(v.Int())
+			}
+		}
 	}
 	return 0
 }
@@ -932,6 +1064,18 @@ func Float32(value interface{}) float32 {
 		}
 	case []byte:
 		return Float32(string(x))
+	default:
+		var v = reflect.ValueOf(value)
+		unsigned, isFloat, ok := IsNumberKind(v.Kind())
+		if ok {
+			if isFloat {
+				return Float32(v.Float())
+			} else if unsigned {
+				return Float32(v.Uint())
+			} else {
+				return Float32(v.Int())
+			}
+		}
 	}
 	return 0
 }
@@ -1018,6 +1162,25 @@ func IsNumber(value interface{}) bool {
 		return true
 	}
 	return false
+}
+
+// IsNumberKind 判断是否为数字类型
+func IsNumberKind(kind reflect.Kind) (unsigned bool, isFloat bool, ok bool) {
+	switch kind {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		unsigned = false
+		ok = true
+		return
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		unsigned = true
+		ok = true
+		return
+	case reflect.Float32, reflect.Float64:
+		isFloat = true
+		ok = true
+		return
+	}
+	return
 }
 
 // IsInteger 判断是否为整形数字
