@@ -1522,6 +1522,7 @@ func (this *Query) wrapAttr(value interface{}) (placeholder string, isArray bool
 		return value1.prepareForQuery(this), false
 	case *Query:
 		value1.isSub = true
+		value1.sqlCache = QuerySqlCacheDefault // 子查询不支持SQL_CACHE
 		sql, err := value1.AsSQL()
 		if err != nil {
 			logs.Errorf("%s", err.Error())
