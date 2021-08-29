@@ -3,9 +3,12 @@ package dbs
 import (
 	"encoding/json"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/iwind/TeaGo/assert"
 	"github.com/iwind/TeaGo/logs"
+	"github.com/iwind/TeaGo/types"
 	"github.com/iwind/TeaGo/utils/time"
 	"reflect"
+	"regexp"
 	"testing"
 	"time"
 )
@@ -56,8 +59,14 @@ func TestQuerySlice(t *testing.T) {
 }
 
 func TestQuery_AsSQL(t *testing.T) {
+	before := time.Now()
+	defer func() {
+		t.Log(time.Since(before).Seconds()*1000, "ms")
+	}()
+
 	var query = NewQuery(nil)
 	query.Table("pp_users")
+	query.DB(&DB{})
 	query.action = QueryActionFind
 
 	query.Where("name=:name AND age=:age").
@@ -86,6 +95,23 @@ func TestQuery_AsSQL(t *testing.T) {
 	t.Logf("Params:%#v\n", query.params)
 
 	t.Log(sql)
+
+	_ = sql
+}
+
+func TestQuery_AsSQL_Many(t *testing.T) {
+	for i := 0; i < 20; i++ {
+		var query = NewQuery(nil)
+		query.Table("pp_users_" + types.String(i))
+		query.DB(&DB{})
+		query.action = QueryActionFind
+
+		query.Where("name=:name AND age=:age").
+			Where("created_at>0")
+		query.Param("name", "liu").
+			Param("age", 20)
+		_, _ = query.AsSQL()
+	}
 }
 
 func TestQuery_FindOnes(t *testing.T) {
@@ -454,15 +480,152 @@ func TestFuncLpad(t *testing.T) {
 	}
 }
 
+func TestIsKeyword(t *testing.T) {
+	var a = assert.NewAssertion(t)
+	var query = NewQuery(nil)
+	a.IsTrue(query.isKeyword("ABCabc123_"))
+	a.IsTrue(query.isKeyword("ABC"))
+	a.IsTrue(query.isKeyword("abc"))
+	a.IsTrue(query.isKeyword("123"))
+	a.IsTrue(query.isKeyword("_"))
+	a.IsFalse(query.isKeyword("ABC "))
+	a.IsFalse(query.isKeyword("中文"))
+	a.IsFalse(query.isKeyword("  "))
+}
+
+// old 5500 ns/op -> new 3700
+func BenchmarkQuery_AsSQL(b *testing.B) {
+	for i := 0; i < 90_000; i++ {
+		sqlCacheMap["sql"+types.String(i)] = map[string]interface{}{}
+	}
+
+	for i := 0; i < b.N; i++ {
+		var query = NewQuery(nil)
+		query.Table("pp_user")
+		query.DB(&DB{})
+		query.action = QueryActionFind
+		query.Attr("name", "lily")
+		query.Attr("age", 20)
+		query.Attr("id", 123)
+		//query.Offset(0)
+		//query.Limit(10)
+		_, _ = query.AsSQL()
+	}
+}
+
+func BenchmarkQuery_AsSQL2(b *testing.B) {
+	for i := 0; i < 90_000; i++ {
+		sqlCacheMap["sql"+types.String(i)] = map[string]interface{}{}
+	}
+
+	for i := 0; i < b.N; i++ {
+		var query = NewQuery(nil)
+		query.Table("pp_users_" + types.String(i%1000))
+		query.DB(&DB{})
+		query.action = QueryActionFind
+
+		query.Where("name=:name AND age=:age").
+			Where("created_at>0")
+		query.Param("name", "liu").
+			Param("age", 20)
+
+		query.Attr("state", 1).State(2)
+		query.Gt("number", 0)
+		query.Gte("number", 1)
+		query.Lt("number", 100)
+		query.Lte("number", 99)
+		query.Neq("number", 50)
+
+		query.Limit(10)
+		//query.Debug(false)
+
+		//t.Logf("Attrs:%#v\n", query.attrs)
+		//t.Logf("NamedParams:%#v\n", query.namedParams)
+
+		sql, err := query.AsSQL()
+		_ = sql
+		_ = err
+	}
+}
+
+func BenchmarkQuery_wrapAttr(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		var query = NewQuery(nil)
+		query.Table("pp_users")
+		query.DB(&DB{})
+		_, _ = query.wrapAttr("123")
+	}
+}
+
+func BenchmarkQuery_isKeyword(b *testing.B) {
+	var keywordRegexp = regexp.MustCompile(`^\w+$`)
+	var query = NewQuery(nil)
+
+	for i := 0; i < b.N; i++ {
+		query.isKeyword("abcABC123")
+		//keywordRegexp.MatchString("abcABC123")
+	}
+
+	_ = keywordRegexp
+}
+
+func BenchmarkQuery_FindOne(b *testing.B) {
+	{
+		var query = setupUserQuery()
+		query.Debug(false)
+
+		query.Result("id", "name", "gender", "state")
+		query.Where("id=100")
+		query.SQLCache(QuerySqlCacheOn)
+
+		_, _, err := query.FindOne()
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+
+	for i := 0; i < b.N; i++ {
+		var query = setupUserQuery()
+		query.Debug(false)
+
+		query.Result("id", "name", "gender", "state")
+		query.Where("id=100")
+		query.SQLCache(QuerySqlCacheOn)
+
+		_, _, err := query.FindOne()
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+var testDBInstance *DB
+
 func setupUserQuery() *Query {
-	db, err := Instance("dev")
-	if err != nil {
-		logs.Errorf(err.Error())
+	if testDBInstance == nil {
+		db, err := NewInstanceFromConfig(&DBConfig{
+			Driver: "mysql",
+			Dsn:    "root:123456@tcp(127.0.0.1:3306)/db_test?charset=utf8mb4&timeout=30s",
+			Prefix: "",
+			Models: struct {
+				Package string `yaml:"package"`
+			}{},
+			Connections: struct {
+				Pool         int           `yaml:"pool"`
+				Max          int           `yaml:"max"`
+				Life         string        `yaml:"life"`
+				LifeDuration time.Duration `yaml:",omitempty"`
+			}{Pool: 100, Max: 1000},
+		})
+		if err != nil {
+			logs.Errorf(err.Error())
+		}
+		testDBInstance = db
 	}
 
 	var query = NewQuery(new(TestUser))
 	query.Table("pp_users")
-	query.DB(db)
+	query.DB(testDBInstance)
 	return query
 }
 

@@ -9,9 +9,9 @@ import (
 	"github.com/iwind/TeaGo/types"
 	"github.com/iwind/TeaGo/utils/string"
 	"reflect"
-	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 const (
@@ -62,12 +62,12 @@ const (
 	QueryForGroupBy = "GROUP BY"
 )
 
-// 错误信息
+// ErrNotFound 错误信息
 var ErrNotFound = errors.New("record not found")
 
-// 共享变量
-var keywordRegexp = regexp.MustCompile(`^\w+$`)
-var paramRegexp = regexp.MustCompile(`:(\w+)`)
+// SQL缓存
+var sqlCacheMap = map[string]map[string]interface{}{} // sql => { params:[]string{} sql:string }
+var sqlCacheLocker = sync.RWMutex{}
 
 type Query struct {
 	db  *DB
@@ -155,6 +155,8 @@ func (this *Query) init(model interface{}) *Query {
 
 	this.canReuse = true
 
+	this.sqlCache = QuerySqlCacheOn
+
 	this.action = QueryActionFind
 	this.pkName = "id"
 	this.noPk = true
@@ -163,16 +165,7 @@ func (this *Query) init(model interface{}) *Query {
 	this.offset = -1
 	this.debug = false
 
-	this.params = []interface{}{}
 	this.attrs = maps.NewOrderedMap()
-	this.wheres = []string{}
-	this.havings = []string{}
-	this.orders = []QueryOrder{}
-	this.groups = []QueryGroup{}
-	this.results = []string{}
-	this.joins = []QueryJoin{}
-	this.partitions = []string{}
-	this.useIndexes = []*QueryUseIndex{}
 	this.savingFields = maps.NewOrderedMap()
 	this.replacingFields = maps.NewOrderedMap()
 
@@ -184,57 +177,57 @@ func (this *Query) init(model interface{}) *Query {
 	return this
 }
 
-// 设置数据库实例
+// DB 设置数据库实例
 func (this *Query) DB(db *DB) *Query {
 	this.db = db
 	return this
 }
 
-// 设置事务
+// Tx 设置事务
 func (this *Query) Tx(tx *Tx) *Query {
 	this.tx = tx
 	return this
 }
 
-// 设置DAO
+// DAO 设置DAO
 func (this *Query) DAO(dao *DAOObject) *Query {
 	this.dao = dao
 	return this
 }
 
-// 设置表名
+// Table 设置表名
 func (this *Query) Table(table string) *Query {
 	this.table = table
 	return this
 }
 
-// 是否可以重用，对于根据参数变化而变化的查询，需要设置为false
+// Reuse 是否可以重用，对于根据参数变化而变化的查询，需要设置为false
 func (this *Query) Reuse(canReuse bool) *Query {
 	this.canReuse = canReuse
 	return this
 }
 
-// 设置状态查询
+// State 设置状态查询
 // 相当于：Attr("state", state)
 func (this *Query) State(state interface{}) *Query {
 	return this.Attr("state", state)
 }
 
-// 设置是否返回主键
+// NoPk 设置是否返回主键
 // 默认find或findAll查询中返回主键，以便后续可以用此主键值操作对象
 func (this *Query) NoPk(noPk bool) *Query {
 	this.noPk = noPk
 	return this
 }
 
-// 设置主键名
+// PkName 设置主键名
 // @TODO 支持联合主键
 func (this *Query) PkName(pkName string) *Query {
 	this.pkName = pkName
 	return this
 }
 
-// 设置查询的字段
+// Attr 设置查询的字段
 func (this *Query) Attr(name string, value interface{}) *Query {
 	placeholder, isSlice := this.wrapAttr(value)
 	if isSlice {
@@ -246,24 +239,24 @@ func (this *Query) Attr(name string, value interface{}) *Query {
 	return this
 }
 
-// 设置偏移量
+// Offset 设置偏移量
 func (this *Query) Offset(offset int64) *Query {
 	this.offset = offset
 	return this
 }
 
-// 设置Limit条件，同limit()
+// Size 设置Limit条件，同limit()
 func (this *Query) Size(size int64) *Query {
 	return this.Limit(size)
 }
 
-// 设置Limit条件，同size()
+// Limit 设置Limit条件，同size()
 func (this *Query) Limit(size int64) *Query {
 	this.limit = size
 	return this
 }
 
-// 设置查询要返回的字段
+// Result 设置查询要返回的字段
 // 字段名中支持星号(*)通配符
 func (this *Query) Result(fields ...interface{}) *Query {
 	for _, field := range fields {
@@ -283,19 +276,19 @@ func (this *Query) Result(fields ...interface{}) *Query {
 	return this
 }
 
-// 设置返回主键字段值
+// ResultPk 设置返回主键字段值
 func (this *Query) ResultPk() *Query {
 	return this.Result(this.pkName)
 }
 
-// 设置是否开启调试模式
+// Debug 设置是否开启调试模式
 // 如果开启调试模式，会打印SQL语句
 func (this *Query) Debug(debug bool) *Query {
 	this.debug = debug
 	return this
 }
 
-// 添加排序条件
+// Order 添加排序条件
 func (this *Query) Order(field interface{}, orderType int) *Query {
 	this.orders = append(this.orders, QueryOrder{
 		Field: field,
@@ -304,7 +297,7 @@ func (this *Query) Order(field interface{}, orderType int) *Query {
 	return this
 }
 
-// 添加正序排序
+// Asc 添加正序排序
 func (this *Query) Asc(fields ...string) *Query {
 	for _, field := range fields {
 		this.Order(field, QueryOrderAsc)
@@ -312,13 +305,13 @@ func (this *Query) Asc(fields ...string) *Query {
 	return this
 }
 
-// 按照主键倒排序
+// AscPk 按照主键倒排序
 func (this *Query) AscPk() *Query {
 	this.Order(this.pkName, QueryOrderAsc)
 	return this
 }
 
-// 添加倒序排序
+// Desc 添加倒序排序
 func (this *Query) Desc(fields ...string) *Query {
 	for _, field := range fields {
 		this.Order(field, QueryOrderDesc)
@@ -326,13 +319,13 @@ func (this *Query) Desc(fields ...string) *Query {
 	return this
 }
 
-// 按照主键倒排序
+// DescPk 按照主键倒排序
 func (this *Query) DescPk() *Query {
 	this.Order(this.pkName, QueryOrderDesc)
 	return this
 }
 
-// 设置单个联合查询条件
+// Join 设置单个联合查询条件
 func (this *Query) Join(dao interface{}, joinType int, on string) *Query {
 	this.joins = append(this.joins, QueryJoin{
 		DAO:  dao.(DAOWrapper).Object(),
@@ -342,18 +335,18 @@ func (this *Query) Join(dao interface{}, joinType int, on string) *Query {
 	return this
 }
 
-// 判断是否有联合查询条件
+// HasJoins 判断是否有联合查询条件
 func (this *Query) HasJoins() bool {
 	return len(this.joins) > 0
 }
 
-// 设置Having条件
+// Having 设置Having条件
 func (this *Query) Having(cond string) *Query {
 	this.havings = append(this.havings, cond)
 	return this
 }
 
-// 设置where条件
+// Where 设置where条件
 // @TODO 支持Query、SQL
 func (this *Query) Where(wheres ...string) *Query {
 	this.wheres = append(this.wheres, wheres...)
@@ -361,7 +354,7 @@ func (this *Query) Where(wheres ...string) *Query {
 	return this
 }
 
-// 设置大于条件
+// Gt 设置大于条件
 func (this *Query) Gt(attr string, value interface{}) *Query {
 	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
 	this.namedParams[param] = value
@@ -372,7 +365,7 @@ func (this *Query) Gt(attr string, value interface{}) *Query {
 	return this
 }
 
-// 设置大于等于条件
+// Gte 设置大于等于条件
 func (this *Query) Gte(attr string, value interface{}) *Query {
 	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
 	this.namedParams[param] = value
@@ -383,7 +376,7 @@ func (this *Query) Gte(attr string, value interface{}) *Query {
 	return this
 }
 
-// 设置小于条件
+// Lt 设置小于条件
 func (this *Query) Lt(attr string, value interface{}) *Query {
 	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
 	this.namedParams[param] = value
@@ -394,7 +387,7 @@ func (this *Query) Lt(attr string, value interface{}) *Query {
 	return this
 }
 
-// 设置小于等于条件
+// Lte 设置小于等于条件
 func (this *Query) Lte(attr string, value interface{}) *Query {
 	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
 	this.namedParams[param] = value
@@ -405,7 +398,7 @@ func (this *Query) Lte(attr string, value interface{}) *Query {
 	return this
 }
 
-// 设置不等于条件
+// Neq 设置不等于条件
 func (this *Query) Neq(attr string, value interface{}) *Query {
 	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
 	this.namedParams[param] = value
@@ -416,7 +409,7 @@ func (this *Query) Neq(attr string, value interface{}) *Query {
 	return this
 }
 
-// 设置Group查询条件
+// Group 设置Group查询条件
 func (this *Query) Group(field string, order ...int) *Query {
 	realOrder := QueryOrderDefault
 	if len(order) > 0 {
@@ -431,7 +424,7 @@ func (this *Query) Group(field string, order ...int) *Query {
 	return this
 }
 
-// 设置like查询条件
+// Like 设置like查询条件
 // 对表达式自动加上百分号， % ... %
 func (this *Query) Like(field string, expr string) *Query {
 	wrappedValue, _ := this.wrapAttr("%" + expr + "%")
@@ -439,7 +432,7 @@ func (this *Query) Like(field string, expr string) *Query {
 	return this
 }
 
-// JSON包含
+// JSONContains JSON包含
 func (this *Query) JSONContains(attr string, value interface{}) *Query {
 	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
 	this.namedParams[param] = value
@@ -450,20 +443,20 @@ func (this *Query) JSONContains(attr string, value interface{}) *Query {
 	return this
 }
 
-// 是否开启SQL Cache
+// SQLCache 是否开启SQL Cache
 // 只有在SELECT时才有作用
 func (this *Query) SQLCache(sqlCache int) *Query {
 	this.sqlCache = sqlCache
 	return this
 }
 
-// 行锁定
+// Lock 行锁定
 func (this *Query) Lock(lock string) *Query {
 	this.lock = lock
 	return this
 }
 
-// 使用索引
+// UseIndex 使用索引
 func (this *Query) UseIndex(index ...string) *Query {
 	userIndex := &QueryUseIndex{
 		Keyword: "USE",
@@ -474,7 +467,7 @@ func (this *Query) UseIndex(index ...string) *Query {
 	return this
 }
 
-// 屏蔽索引
+// IgnoreIndex 屏蔽索引
 func (this *Query) IgnoreIndex(index ...string) *Query {
 	userIndex := &QueryUseIndex{
 		Keyword: "IGNORE",
@@ -485,7 +478,7 @@ func (this *Query) IgnoreIndex(index ...string) *Query {
 	return this
 }
 
-// 强制使用索引
+// ForceIndex 强制使用索引
 func (this *Query) ForceIndex(index ...string) *Query {
 	userIndex := &QueryUseIndex{
 		Keyword: "FORCE",
@@ -496,7 +489,7 @@ func (this *Query) ForceIndex(index ...string) *Query {
 	return this
 }
 
-// 针对的操作
+// For 针对的操作
 // 和 UserIndex, IgnoreIndex, ForceIndex 配合使用
 func (this *Query) For(clause string) *Query {
 	if len(this.useIndexes) == 0 {
@@ -508,7 +501,7 @@ func (this *Query) For(clause string) *Query {
 	return this
 }
 
-// 指定分区
+// Partitions 指定分区
 func (this *Query) Partitions(partitions ...string) *Query {
 	this.partitions = append(this.partitions, partitions...)
 	return this
@@ -522,7 +515,7 @@ func (this *Query) partitionsSQL() string {
 	return ""
 }
 
-// 设置要查询的主键值
+// Pk 设置要查询的主键值
 func (this *Query) Pk(pks ...interface{}) *Query {
 	var realPks = []interface{}{}
 	for _, pk := range pks {
@@ -542,7 +535,7 @@ func (this *Query) Pk(pks ...interface{}) *Query {
 	return this
 }
 
-// 设置between条件
+// Between 设置between条件
 func (this *Query) Between(field string, min interface{}, max interface{}) *Query {
 	minValue, _ := this.wrapAttr(min)
 	maxValue, _ := this.wrapAttr(max)
@@ -550,7 +543,7 @@ func (this *Query) Between(field string, min interface{}, max interface{}) *Quer
 	return this
 }
 
-// 设置一组查询的字段
+// Attrs 设置一组查询的字段
 func (this *Query) Attrs(attrs maps.Map) *Query {
 	for key, value := range attrs {
 		this.Attr(types.String(key), value)
@@ -558,25 +551,25 @@ func (this *Query) Attrs(attrs maps.Map) *Query {
 	return this
 }
 
-// 增加某个字段的数值
+// Increase 增加某个字段的数值
 func (this *Query) Increase(field string, count int) *Query {
 	this.savingFields.Put(field, this.wrapKeyword(field)+"+"+this.wrapValue(count))
 	return this
 }
 
-// 减少某个字段的数值
+// Decrease 减少某个字段的数值
 func (this *Query) Decrease(field string, count int) *Query {
 	this.savingFields.Put(field, this.wrapKeyword(field)+"-"+this.wrapValue(count))
 	return this
 }
 
-// 设置字段值，以便用于删除和修改操作
+// Set 设置字段值，以便用于删除和修改操作
 func (this *Query) Set(field string, value interface{}) *Query {
 	this.savingFields.Put(field, this.wrapValue(value))
 	return this
 }
 
-// 设置一组字段值，以便用于删除和修改操作
+// Sets 设置一组字段值，以便用于删除和修改操作
 // @TODO 需要对keys进行排序
 func (this *Query) Sets(values map[string]interface{}) *Query {
 	for field, value := range values {
@@ -585,39 +578,39 @@ func (this *Query) Sets(values map[string]interface{}) *Query {
 	return this
 }
 
-// 设定查询语句中的参数值
+// Param 设定查询语句中的参数值
 // 只有指定where和sql后，才能使用该方法
 func (this *Query) Param(name string, value interface{}) *Query {
 	this.namedParams[name] = value
 	return this
 }
 
-// 指定SQL语句
+// SQL 指定SQL语句
 func (this *Query) SQL(sql string) *Query {
 	this.sql = sql
 	return this
 }
 
-// 指定筛选程序
+// Filter 指定筛选程序
 func (this *Query) Filter(filterFn func(one maps.Map) bool) *Query {
 	this.filterFn = filterFn
 	return this
 }
 
-// 指定映射程序
+// Map 指定映射程序
 func (this *Query) Map(mapFn func(one maps.Map) maps.Map) *Query {
 	this.mapFn = mapFn
 	return this
 }
 
-// 设置返回的Slice指针
+// Slice 设置返回的Slice指针
 // 在FindAll()方法中生效
 func (this *Query) Slice(slicePtr interface{}) *Query {
 	this.slicePtr = slicePtr
 	return this
 }
 
-// 将查询转换为SQL语句
+// AsSQL 将查询转换为SQL语句
 func (this *Query) AsSQL() (string, error) {
 	// SQL
 	var sql = this.sql
@@ -817,10 +810,10 @@ func (this *Query) AsSQL() (string, error) {
 			if this.offset > -1 {
 				offsetValue, _ := this.wrapAttr(this.offset)
 				limitValue, _ := this.wrapAttr(this.limit)
-				sql += fmt.Sprintf("\n LIMIT %s,%s", offsetValue, limitValue)
+				sql += "\n LIMIT " + types.String(offsetValue) + ", " + types.String(limitValue)
 			} else {
 				limitValue, _ := this.wrapAttr(this.limit)
-				sql += fmt.Sprintf("\n LIMIT %s", limitValue)
+				sql += "\n LIMIT " + types.String(limitValue)
 			}
 		}
 	}
@@ -848,19 +841,8 @@ func (this *Query) AsSQL() (string, error) {
 	// 处理:NamedParam
 	var resultSQL = sql
 	if !this.isSub {
-		var matchedParams = paramRegexp.FindAllStringSubmatch(sql, -1)
 		this.params = []interface{}{}
-		if matchedParams != nil && len(matchedParams) > 0 {
-			for _, param := range matchedParams {
-				value, ok := this.namedParams[param[1]]
-				if ok {
-					this.params = append(this.params, value)
-				} else {
-					this.params = append(this.params, nil)
-				}
-			}
-			resultSQL = paramRegexp.ReplaceAllString(resultSQL, "?")
-		}
+		resultSQL = this.parsePlaceholders(sql)
 	}
 
 	// debug
@@ -872,7 +854,7 @@ func (this *Query) AsSQL() (string, error) {
 	return resultSQL, nil
 }
 
-// 查找一组数据，返回map数据
+// FindOnes 查找一组数据，返回map数据
 func (this *Query) FindOnes() (results []maps.Map, columnNames []string, err error) {
 	this.action = QueryActionFind
 	sql, err := this.AsSQL()
@@ -913,7 +895,7 @@ func (this *Query) FindOnes() (results []maps.Map, columnNames []string, err err
 	return
 }
 
-// 查找一行数据
+// FindOne 查找一行数据
 func (this *Query) FindOne() (results maps.Map, columnNames []string, err error) {
 	this.limit = 1
 	if this.offset < 0 {
@@ -931,7 +913,7 @@ func (this *Query) FindOne() (results maps.Map, columnNames []string, err error)
 	return ones[0], columnNames, nil
 }
 
-// 查询一组数据， 并返回模型数据
+// FindAll 查询一组数据， 并返回模型数据
 func (this *Query) FindAll() ([]interface{}, error) {
 	var ones, _, err = this.FindOnes()
 	if err != nil {
@@ -957,7 +939,7 @@ func (this *Query) FindAll() ([]interface{}, error) {
 	return results, nil
 }
 
-// 查询单条数据，返回模型对象
+// Find 查询单条数据，返回模型对象
 func (this *Query) Find() (interface{}, error) {
 	this.Limit(1)
 	var results, err = this.FindAll()
@@ -972,7 +954,7 @@ func (this *Query) Find() (interface{}, error) {
 	return results[0], nil
 }
 
-// 查询单个字段值
+// FindCol 查询单个字段值
 func (this *Query) FindCol(defaultValue interface{}) (interface{}, error) {
 	this.noPk = true
 	var one, columnNames, err = this.FindOne()
@@ -992,31 +974,31 @@ func (this *Query) FindCol(defaultValue interface{}) (interface{}, error) {
 	return value, nil
 }
 
-// 查询单个字段值并返回字符串
+// FindStringCol 查询单个字段值并返回字符串
 func (this *Query) FindStringCol(defaultValue string) (string, error) {
 	col, err := this.FindCol(defaultValue)
 	return types.String(col), err
 }
 
-// 查询某个字段值并返回整型
+// FindIntCol 查询某个字段值并返回整型
 func (this *Query) FindIntCol(defaultValue int) (int, error) {
 	col, err := this.FindCol(defaultValue)
 	return types.Int(col), err
 }
 
-// 查询某个字段值并返回64位整型
+// FindInt64Col 查询某个字段值并返回64位整型
 func (this *Query) FindInt64Col(defaultValue int64) (int64, error) {
 	col, err := this.FindCol(defaultValue)
 	return types.Int64(col), err
 }
 
-// 查询某个字段值并返回浮点型
+// FindFloat64Col 查询某个字段值并返回浮点型
 func (this *Query) FindFloat64Col(defaultValue float64) (float64, error) {
 	col, err := this.FindCol(defaultValue)
 	return types.Float64(col), err
 }
 
-// 判断记录是否存在
+// Exist 判断记录是否存在
 func (this *Query) Exist() (bool, error) {
 	var one, _, err = this.ResultPk().FindOne()
 	if err != nil {
@@ -1025,18 +1007,18 @@ func (this *Query) Exist() (bool, error) {
 	return len(one) > 0, nil
 }
 
-// 执行COUNT查询
+// Count 执行COUNT查询
 func (this *Query) Count() (int64, error) {
 	return this.CountAttr("*")
 }
 
-// 执行Count查询并返回int
+// CountInt 执行Count查询并返回int
 func (this *Query) CountInt() (int, error) {
 	count, err := this.Count()
 	return int(count), err
 }
 
-// 对某个字段进行COUNT查询
+// CountAttr 对某个字段进行COUNT查询
 func (this *Query) CountAttr(attr string) (int64, error) {
 	this.action = QueryActionFind
 	this.subAction = QuerySubActionCount
@@ -1051,7 +1033,7 @@ func (this *Query) CountAttr(attr string) (int64, error) {
 	return types.Int64(value), err
 }
 
-// 执行SUM查询
+// Sum 执行SUM查询
 func (this *Query) Sum(attr string, defaultValue float64) (float64, error) {
 	this.action = QueryActionFind
 	this.subAction = QuerySubActionSum
@@ -1069,7 +1051,7 @@ func (this *Query) Sum(attr string, defaultValue float64) (float64, error) {
 	return types.Float64(value), err
 }
 
-// 执行SUM查询，并返回Int
+// SumInt 执行SUM查询，并返回Int
 func (this *Query) SumInt(attr string, defaultValue int) (int, error) {
 	this.action = QueryActionFind
 	this.subAction = QuerySubActionSum
@@ -1087,7 +1069,7 @@ func (this *Query) SumInt(attr string, defaultValue int) (int, error) {
 	return types.Int(value), err
 }
 
-// 执行SUM查询，并返回Int64
+// SumInt64 执行SUM查询，并返回Int64
 func (this *Query) SumInt64(attr string, defaultValue int64) (int64, error) {
 	this.action = QueryActionFind
 	this.subAction = QuerySubActionSum
@@ -1105,7 +1087,7 @@ func (this *Query) SumInt64(attr string, defaultValue int64) (int64, error) {
 	return types.Int64(value), err
 }
 
-// 执行MIN查询
+// Min 执行MIN查询
 func (this *Query) Min(attr string, defaultValue float64) (float64, error) {
 	this.action = QueryActionFind
 	this.subAction = QuerySubActionMin
@@ -1123,7 +1105,7 @@ func (this *Query) Min(attr string, defaultValue float64) (float64, error) {
 	return types.Float64(value), err
 }
 
-// 执行MAX查询
+// Max 执行MAX查询
 func (this *Query) Max(attr string, defaultValue float64) (float64, error) {
 	this.action = QueryActionFind
 	this.subAction = QuerySubActionMax
@@ -1141,7 +1123,7 @@ func (this *Query) Max(attr string, defaultValue float64) (float64, error) {
 	return types.Float64(value), err
 }
 
-// 执行AVG查询
+// Avg 执行AVG查询
 func (this *Query) Avg(attr string, defaultValue float64) (float64, error) {
 	this.action = QueryActionFind
 	this.subAction = QuerySubActionAvg
@@ -1159,7 +1141,7 @@ func (this *Query) Avg(attr string, defaultValue float64) (float64, error) {
 	return types.Float64(value), err
 }
 
-// 执行查询
+// Exec 执行查询
 func (this *Query) Exec() (*Result, error) {
 	this.action = QueryActionExec
 
@@ -1190,7 +1172,7 @@ func (this *Query) Exec() (*Result, error) {
 	return NewResult(result), nil
 }
 
-// 执行REPLACE
+// Replace 执行REPLACE
 func (this *Query) Replace() (rowsAffected int64, lastInsertId int64, err error) {
 	if this.savingFields.Len() == 0 {
 		return 0, 0, errors.New("[Query.Replace()]Replacing fields should be set")
@@ -1233,7 +1215,7 @@ func (this *Query) Replace() (rowsAffected int64, lastInsertId int64, err error)
 	return rows, lastId, err
 }
 
-// 执行INSERT
+// Insert 执行INSERT
 func (this *Query) Insert() (lastInsertId int64, err error) {
 	if this.savingFields.Len() == 0 {
 		return 0, errors.New("[Query.Insert()]inserting fields should be set")
@@ -1275,7 +1257,7 @@ func (this *Query) Insert() (lastInsertId int64, err error) {
 	return lastInsertId, err
 }
 
-// 执行UPDATE
+// Update 执行UPDATE
 func (this *Query) Update() (rowsAffected int64, err error) {
 	if this.savingFields.Len() == 0 {
 		return 0, errors.New("[Query.Update()]updating fields should be set")
@@ -1317,7 +1299,7 @@ func (this *Query) Update() (rowsAffected int64, err error) {
 	return rowsAffected, err
 }
 
-// 执行UPDATE
+// UpdateQuickly 执行UPDATE
 func (this *Query) UpdateQuickly() error {
 	if this.savingFields.Len() == 0 {
 		return errors.New("[Query.Update()]updating fields should be set")
@@ -1354,7 +1336,7 @@ func (this *Query) UpdateQuickly() error {
 	return err
 }
 
-// 插入或更改
+// InsertOrUpdate 插入或更改
 // 依据要插入的数据中的unique键来决定是插入数据还是替换数据
 func (this *Query) InsertOrUpdate(insertingValues maps.Map, updatingValues maps.Map) (rowsAffected int64, lastInsertId int64, err error) {
 	if insertingValues == nil || len(insertingValues) == 0 {
@@ -1418,7 +1400,7 @@ func (this *Query) InsertOrUpdate(insertingValues maps.Map, updatingValues maps.
 	return rows, lastId, err
 }
 
-// 插入或更改
+// InsertOrUpdateQuickly 插入或更改
 // 依据要插入的数据中的unique键来决定是插入数据还是替换数据
 func (this *Query) InsertOrUpdateQuickly(insertingValues maps.Map, updatingValues maps.Map) error {
 	if insertingValues == nil || len(insertingValues) == 0 {
@@ -1472,7 +1454,7 @@ func (this *Query) InsertOrUpdateQuickly(insertingValues maps.Map, updatingValue
 	return nil
 }
 
-// 执行DELETE
+// Delete 执行DELETE
 func (this *Query) Delete() (rowsAffected int64, err error) {
 	this.action = QueryActionDelete
 	sql, err := this.AsSQL()
@@ -1533,27 +1515,27 @@ func (this *Query) stringValue(value interface{}) interface{} {
 
 // 包装值
 func (this *Query) wrapAttr(value interface{}) (placeholder string, isArray bool) {
-	switch value := value.(type) {
+	switch value1 := value.(type) {
 	case SQL:
-		return string(value), false
+		return string(value1), false
 	case *DBFunc:
-		return value.prepareForQuery(this), false
+		return value1.prepareForQuery(this), false
 	case *Query:
-		value.isSub = true
-		sql, err := value.AsSQL()
+		value1.isSub = true
+		sql, err := value1.AsSQL()
 		if err != nil {
 			logs.Errorf("%s", err.Error())
 			return
 		}
 
-		for paramName, paramValue := range value.namedParams {
+		for paramName, paramValue := range value1.namedParams {
 			this.namedParams[paramName] = paramValue
 			this.namedParamIndex++
 		}
 
 		return "IN (" + sql + ")", true
 	case *lists.List:
-		return this.wrapAttr(value.Slice)
+		return this.wrapAttr(value1.Slice)
 	}
 
 	var valueType = reflect.TypeOf(value)
@@ -1605,7 +1587,7 @@ func (this *Query) wrapKeyword(keyword string) string {
 		logs.Errorf("[Query.wrapKeyword()]query.db should be not nil")
 		return "\"" + keyword + "\""
 	}
-	if !keywordRegexp.MatchString(keyword) {
+	if !this.isKeyword(keyword) {
 		return keyword
 	}
 	switch this.db.Driver() {
@@ -1632,7 +1614,7 @@ func (this *Query) wrapTable(keyword string) string {
 		logs.Errorf("[Query.wrapKeyword()]query.db should be not nil")
 		return "\"" + keyword + "\""
 	}
-	if !keywordRegexp.MatchString(keyword) {
+	if !this.isKeyword(keyword) {
 		return keyword
 	}
 	switch this.db.Driver() {
@@ -1678,4 +1660,113 @@ func (this *Query) preparer() SQLPreparer {
 		return this.tx
 	}
 	return this.db
+}
+
+// 判断某个字符串是否为关键词
+func (this *Query) isKeyword(s string) bool {
+	for _, r := range s {
+		if r == '_' || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+// 分析语句中的占位
+func (this *Query) parsePlaceholders(sql string) string {
+	if len(sql) < 1024 {
+		sqlCacheLocker.RLock()
+		cache, ok := sqlCacheMap[sql]
+		if ok {
+			for _, param := range cache["params"].([]string) {
+				value, ok2 := this.namedParams[param]
+				if ok2 {
+					this.params = append(this.params, value)
+				} else {
+					this.params = append(this.params, nil)
+				}
+			}
+
+			sqlCacheLocker.RUnlock()
+			return cache["sql"].(string)
+		}
+		sqlCacheLocker.RUnlock()
+	}
+
+	var word = []rune{}
+	var isStarted = false
+	var result = []rune{}
+	var paramNames = []string{}
+	for _, r := range sql {
+		if isStarted {
+			if r == '_' || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+				word = append(word, r)
+				continue
+			} else {
+				if len(word) > 0 {
+					// word结束了
+					paramNames = append(paramNames, string(word))
+					value, ok := this.namedParams[string(word)]
+					if ok {
+						this.params = append(this.params, value)
+					} else {
+						this.params = append(this.params, nil)
+					}
+					result = append(result, '?')
+				} else {
+					result = append(result, ':') // 还原
+				}
+
+				isStarted = false
+				word = nil
+			}
+		}
+		if r == ':' {
+			isStarted = true
+		} else {
+			result = append(result, r)
+		}
+	}
+
+	// 最后一个word
+	if isStarted {
+		if len(word) > 0 {
+			paramNames = append(paramNames, string(word))
+			value, ok := this.namedParams[string(word)]
+			if ok {
+				this.params = append(this.params, value)
+			} else {
+				this.params = append(this.params, nil)
+			}
+			result = append(result, '?')
+		} else {
+			result = append(result, ':') // 还原
+		}
+	}
+
+	if len(sql) < 1024 {
+		sqlCacheLocker.Lock()
+
+		// 防止过载
+		if len(sqlCacheMap) > 100_000 {
+			var l = len(sqlCacheMap) / 3
+			for k := range sqlCacheMap {
+				if l >= 0 {
+					delete(sqlCacheMap, k)
+				} else {
+					break
+				}
+				l--
+			}
+		}
+
+		sqlCacheMap[sql] = map[string]interface{}{
+			"sql":    string(result),
+			"params": paramNames,
+		}
+		sqlCacheLocker.Unlock()
+	}
+
+	return string(result)
 }
