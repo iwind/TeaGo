@@ -155,7 +155,7 @@ func (this *Query) init(model interface{}) *Query {
 
 	this.canReuse = true
 
-	this.sqlCache = QuerySqlCacheOn
+	this.sqlCache = QuerySqlCacheDefault
 
 	this.action = QueryActionFind
 	this.pkName = "id"
