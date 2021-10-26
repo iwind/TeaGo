@@ -84,9 +84,16 @@ func (this *ActionObject) render(dir string) error {
 
 	watchingFiles := map[string]int64{}
 
+	var originFilename = filename
 	_, err = os.Stat(filename + ".html")
 	if err != nil {
-		return err
+		// 查找 *_plus.
+		var plusFilename = filename + "_plus"
+		_, err2 := os.Stat(plusFilename + ".html")
+		if err2 != nil {
+			return err
+		}
+		filename = plusFilename
 	}
 
 	bodyBytes, err := ioutil.ReadFile(filename + ".html")
@@ -206,7 +213,7 @@ func (this *ActionObject) render(dir string) error {
 		template:      newTemplate,
 		watchingFiles: watchingFiles,
 	}
-	templateCaches.Store(filename, cache)
+	templateCaches.Store(originFilename, cache)
 
 	if this.writer != nil {
 		return newTemplate.ExecuteTemplate(this.writer, filename, data)
@@ -219,7 +226,13 @@ func loadChildTemplate(watchingFiles *map[string]int64, tpl *Template, dir strin
 	viewPath := pathRelative(dir, filename, childTemplateName)
 	childBytes, err := ioutil.ReadFile(viewPath)
 	if err != nil {
-		return err
+		var plusViewPath = regexp.MustCompile(`\.html$`).ReplaceAllString(viewPath, "_plus.html")
+		plusChildBytes, err2 := ioutil.ReadFile(plusViewPath)
+		if err2 != nil {
+			return err
+		}
+		viewPath = plusViewPath
+		childBytes = plusChildBytes
 	}
 	body := string(childBytes)
 	body = formatHTML(body)
@@ -270,12 +283,13 @@ func pathRelative(dir string, filename string, path string) string {
 		return filepath.Dir(filename) + "/@" + childName + ".html"
 	} else if childDir == ".." {
 		return filepath.Dir(filepath.Dir(filename)) + "/@" + childName + ".html"
+	} else if childDir == "../.." || childDir == "..\\.." {
+		return filepath.Dir(filepath.Dir(filepath.Dir(filename))) + "/@" + childName + ".html"
 	} else if strings.HasPrefix(childDir, "/") {
 		return dir + childDir + "/@" + childName + ".html"
 	} else {
 		return dir + "/" + childDir + "/@" + childName + ".html"
 	}
-	return path + ".html"
 }
 
 func createTeaFuncMap(tpl *Template, funcMap template.FuncMap, module string, dir string, filename string, data map[string]interface{}) template.FuncMap {
@@ -357,11 +371,27 @@ window.TEA = {
 				jsFile := filename + ".js"
 				if Tea.Env == Tea.EnvProd {
 					stat, err := os.Stat(jsFile)
+					if err != nil {
+						stat2, err2 := os.Stat(filename + "_plus.js")
+						if err2 == nil {
+							err = nil
+							stat = stat2
+							jsFile = filename + "_plus.js"
+						}
+					}
 					if err == nil {
 						pieces = append(pieces, "<script type=\"text/javascript\" src=\"/_/"+strings.TrimPrefix(jsFile, Tea.ViewsDir()+"/")+"?v="+stringutil.ConvertID(stat.ModTime().Unix())+"\"></script>")
 					}
 				} else {
 					stat, err := os.Stat(jsFile)
+					if err != nil {
+						stat2, err2 := os.Stat(filename + "_plus.js")
+						if err2 == nil {
+							err = nil
+							stat = stat2
+							jsFile = filename + "_plus.js"
+						}
+					}
 					if err == nil {
 						pieces = append(pieces, "<script type=\"text/javascript\" src=\"/_/"+strings.TrimPrefix(jsFile, Tea.ViewsDir()+"/")+"?v="+stringutil.ConvertID(stat.ModTime().Unix())+"\"></script>")
 					} else {
@@ -374,11 +404,27 @@ window.TEA = {
 				cssFile := filename + ".css"
 				if Tea.Env == Tea.EnvProd {
 					stat, err := os.Stat(cssFile)
+					if err != nil {
+						stat2, err2 := os.Stat(filename + "_plus.css")
+						if err2 == nil {
+							err = nil
+							stat = stat2
+							cssFile = filename + "_plus.css"
+						}
+					}
 					if err == nil {
 						pieces = append(pieces, "<link rel=\"stylesheet\" type=\"text/css\" href=\"/_/"+strings.TrimPrefix(cssFile, Tea.ViewsDir()+"/")+"?v="+stringutil.ConvertID(stat.ModTime().Unix())+"\" media=\"all\"/>")
 					}
 				} else {
 					stat, err := os.Stat(cssFile)
+					if err != nil {
+						stat2, err2 := os.Stat(filename + "_plus.css")
+						if err2 == nil {
+							err = nil
+							stat = stat2
+							cssFile = filename + "_plus.css"
+						}
+					}
 					if err == nil {
 						pieces = append(pieces, "<link rel=\"stylesheet\" type=\"text/css\" href=\"/_/"+strings.TrimPrefix(cssFile, Tea.ViewsDir()+"/")+"?v="+stringutil.ConvertID(stat.ModTime().Unix())+"\" media=\"all\"/>")
 					} else {

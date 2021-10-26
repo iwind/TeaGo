@@ -207,7 +207,7 @@ func (this *Query) Reuse(canReuse bool) *Query {
 	return this
 }
 
-// State 设置状态查询
+// State 设置状态查询快捷函数
 // 相当于：Attr("state", state)
 func (this *Query) State(state interface{}) *Query {
 	return this.Attr("state", state)
