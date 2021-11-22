@@ -1,12 +1,14 @@
 package dbs
 
-import "sync"
+import (
+	"sync"
+)
 
 var readyCallbacks = []func(){}
 var readyDoneCallbacks = []func(){}
 var readyLocker = sync.Mutex{}
 
-// 添加Ready的回调函数
+// OnReady 添加Ready的回调函数
 func OnReady(f func()) {
 	readyLocker.Lock()
 	if f != nil {
@@ -15,7 +17,7 @@ func OnReady(f func()) {
 	readyLocker.Unlock()
 }
 
-// 添加Ready完成的回调函数
+// OnReadyDone 添加Ready完成的回调函数
 func OnReadyDone(f func()) {
 	readyLocker.Lock()
 	if f != nil {
@@ -24,7 +26,7 @@ func OnReadyDone(f func()) {
 	readyLocker.Unlock()
 }
 
-// 调用Ready回调
+// NotifyReady 调用Ready回调
 func NotifyReady() {
 	readyLocker.Lock()
 	for _, f := range readyCallbacks {

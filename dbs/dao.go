@@ -34,7 +34,7 @@ type DAOWrapper interface {
 	Object() *DAOObject
 }
 
-// 初始化
+// Init 初始化
 func (this *DAOObject) Init() error {
 	// 主键field映射为attr
 	if len(this.PkName) == 0 {

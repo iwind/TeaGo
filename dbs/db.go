@@ -32,7 +32,7 @@ var dbConfig = &Config{}
 var dbCachedFactory = map[string]*DB{} // ID => DB Instance
 var dbCacheMutex = &sync.Mutex{}
 
-// 默认的数据库实例
+// Default 默认的数据库实例
 func Default() (*DB, error) {
 	loadConfig()
 
@@ -44,7 +44,7 @@ func Default() (*DB, error) {
 	return Instance(defaultDB)
 }
 
-// 根据ID获取数据库实例
+// Instance 根据ID获取数据库实例
 // 如果上下文中已经获得了一个实例，则返回此实例
 func Instance(dbId string) (*DB, error) {
 	dbCacheMutex.Lock()
@@ -70,7 +70,7 @@ func Instance(dbId string) (*DB, error) {
 	return db, err
 }
 
-// 根据ID获取一个新的数据库实例
+// NewInstance 根据ID获取一个新的数据库实例
 // 不会从上下文的缓存中读取
 func NewInstance(dbId string) (*DB, error) {
 	loadConfig()
@@ -84,7 +84,7 @@ func NewInstance(dbId string) (*DB, error) {
 	return db, err
 }
 
-// 从配置中构造实例
+// NewInstanceFromConfig 从配置中构造实例
 func NewInstanceFromConfig(config *DBConfig) (*DB, error) {
 	sqlDb, err := sql.Open(config.Driver, config.Dsn)
 	if err != nil {
@@ -239,7 +239,7 @@ func (this *DB) Name() string {
 	return base[:index]
 }
 
-// 开始一个事务
+// Begin 开始一个事务
 func (this *DB) Begin() (*Tx, error) {
 	tx, err := this.sqlDB.Begin()
 	if err != nil {
@@ -248,7 +248,7 @@ func (this *DB) Begin() (*Tx, error) {
 	return NewTx(tx), nil
 }
 
-// 在函数中执行一个事务
+// RunTx 在函数中执行一个事务
 func (this *DB) RunTx(callback func(tx *Tx) error) error {
 	tx, err := this.Begin()
 	if err != nil {
@@ -382,7 +382,9 @@ func (this *DB) FindCol(colIndex int, query string, args ...interface{}) (interf
 		return nil, err
 	}
 
-	defer stmt.Close()
+	defer func() {
+		stmt.Close()
+	}()
 
 	rows, err := stmt.Query(args...)
 	if err != nil {
@@ -427,7 +429,7 @@ func (this *DB) FindCol(colIndex int, query string, args ...interface{}) (interf
 	return nil, nil
 }
 
-// 取得所有表格名
+// TableNames 取得所有表格名
 func (this *DB) TableNames() ([]string, error) {
 	ones, columnNames, err := this.FindOnes("SHOW TABLES")
 	if err != nil {
@@ -442,7 +444,7 @@ func (this *DB) TableNames() ([]string, error) {
 	return results, nil
 }
 
-// 获取数据表，并包含基本信息
+// FindTable 获取数据表，并包含基本信息
 func (this *DB) FindTable(tableName string) (*Table, error) {
 	one, err := this.FindOne("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE table_schema=? AND table_name=?", this.Name(), tableName)
 	if err != nil {
@@ -544,7 +546,7 @@ func (this *DB) FindTable(tableName string) (*Table, error) {
 	return table, nil
 }
 
-// 获取数据表，并包含分区，索引信息
+// FindFullTable 获取数据表，并包含分区，索引信息
 func (this *DB) FindFullTable(tableName string) (*Table, error) {
 	one, err := this.FindOne("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE table_schema=? AND table_name=?", this.Name(), tableName)
 	if err != nil {
@@ -758,7 +760,7 @@ func (this *DB) FindFullTable(tableName string) (*Table, error) {
 	return table, nil
 }
 
-// 查找所有函数
+// FindFunctions 查找所有函数
 func (this *DB) FindFunctions() ([]*Function, error) {
 	ones, _, err := this.FindOnes("SHOW FUNCTION STATUS WHERE Db='" + this.Name() + "'")
 	if err != nil {
@@ -807,7 +809,7 @@ func (this *DB) FindFunctions() ([]*Function, error) {
 	return functions, nil
 }
 
-// 取得表前缀
+// TablePrefix 取得表前缀
 func (this *DB) TablePrefix() string {
 	var config, err = this.Config()
 	if err != nil {
@@ -819,7 +821,7 @@ func (this *DB) TablePrefix() string {
 	return dbConfig.Default.Prefix
 }
 
-// 取得原始的数据库连接句柄
+// Raw 取得原始的数据库连接句柄
 func (this *DB) Raw() *sql.DB {
 	return this.sqlDB
 }
