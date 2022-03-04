@@ -1,6 +1,6 @@
 module github.com/iwind/TeaGo
 
-go 1.14
+go 1.15
 
 require (
 	github.com/go-redis/redis/v8 v8.0.0-beta.7
@@ -9,5 +9,4 @@ require (
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/onsi/ginkgo v1.14.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
-	gopkg.in/yaml.v2 v2.3.0
 )
