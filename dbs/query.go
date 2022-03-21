@@ -1643,14 +1643,30 @@ func (this *Query) copyModelValue(valueType reflect.Type, data maps.Map) interfa
 	var pointerValue = reflect.New(valueType)
 	var value = reflect.Indirect(pointerValue)
 	for index, fieldName := range this.model.Fields {
-		var fieldValue, ok = data[fieldName]
+		var fieldData, ok = data[fieldName]
 		if !ok {
 			continue
 		}
-		if fieldValue == nil {
+		if fieldData == nil {
 			continue
 		}
-		value.Field(index).Set(reflect.ValueOf(this.model.convertValue(fieldValue, this.model.Kinds[index])))
+		var fieldValue = value.Field(index)
+		switch fieldValue.Kind() {
+		case reflect.Slice:
+			var convertedData = this.model.convertValue(fieldData, this.model.Kinds[index])
+			if convertedData != nil {
+				stringValue, isString := convertedData.(string)
+				if isString {
+					fieldValue.Set(reflect.ValueOf([]byte(stringValue)))
+				}
+				bytesValue, isBytes := convertedData.([]byte)
+				if isBytes {
+					fieldValue.Set(reflect.ValueOf(bytesValue))
+				}
+			}
+		default:
+			fieldValue.Set(reflect.ValueOf(this.model.convertValue(fieldData, this.model.Kinds[index])))
+		}
 	}
 	return pointerValue.Interface()
 }

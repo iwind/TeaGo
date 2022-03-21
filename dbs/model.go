@@ -49,7 +49,8 @@ func NewModel(modelPointer interface{}) *Model {
 			kind != reflect.Uint64 &&
 			kind != reflect.String &&
 			kind != reflect.Float32 &&
-			kind != reflect.Float64 {
+			kind != reflect.Float64 &&
+			kind != reflect.Slice {
 			continue
 		}
 
@@ -100,6 +101,15 @@ func (this *Model) convertValue(value interface{}, toKind reflect.Kind) interfac
 		return types.Float32(value)
 	case reflect.Float64:
 		return types.Float64(value)
+	case reflect.Slice:
+		if value == nil {
+			return nil
+		}
+		_, isBytes := value.([]byte)
+		if isBytes {
+			return value
+		}
+		return []byte(types.String(value))
 	}
 	return nil
 }

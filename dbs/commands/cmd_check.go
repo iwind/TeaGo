@@ -107,7 +107,7 @@ func (this *CheckModelCommand) Run() {
 			modelFiles[modelName], _ = file.AbsPath()
 
 			// 所有字段
-			reg = regexp.MustCompile("(\\w+)\\s+(\\w+)\\s*`field:\"(\\w+)\"`")
+			reg = regexp.MustCompile("(\\w+)\\s+(\\w+|\\[]byte)\\s*`field:\"(\\w+)\"`")
 			matches := reg.FindAllStringSubmatch(content, -1)
 			fields := map[string]*dbs.Field{}
 			for _, match := range matches {

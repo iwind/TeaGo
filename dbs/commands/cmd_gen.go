@@ -336,7 +336,7 @@ func (this *${daoName}) Find${model}Name(tx *dbs.Tx, ${pkName} ${pkNameType}) (s
 	}
 
 	// test
-	testString := `package ` + subPackage + `
+	testString := `package ` + subPackage + `_test
 import (
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/iwind/TeaGo/bootstrap"

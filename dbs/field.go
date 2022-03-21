@@ -32,6 +32,8 @@ const (
 	ValueTypeBool
 	ValueTypeNumber
 	ValueTypeString
+	ValueTypeBytes
+	ValueTypeJSON
 	ValueTypeTime // @TODO 暂未实现
 )
 
@@ -170,6 +172,12 @@ func (this *Field) parseDataKind() {
 			this.DefaultValue = types.Float64(this.DefaultValueString)
 		}
 		this.ValueType = ValueTypeNumber
+	case "tinyblob", "blob", "mediumblob", "longblob":
+		this.DataKind = reflect.String
+		this.ValueType = ValueTypeBytes
+	case "json":
+		this.DataKind = reflect.String
+		this.ValueType = ValueTypeJSON
 
 		// date & time
 
@@ -185,6 +193,8 @@ func (this *Field) ValueTypeName() string {
 	switch this.ValueType {
 	case ValueTypeBool:
 		dataType = "bool"
+	case ValueTypeBytes, ValueTypeJSON:
+		dataType = "[]byte"
 	default:
 		dataType = this.DataKind.String()
 	}
