@@ -980,6 +980,12 @@ func (this *Query) FindStringCol(defaultValue string) (string, error) {
 	return types.String(col), err
 }
 
+// FindBytesCol 查询单个字段值并返回字节Slice
+func (this *Query) FindBytesCol() ([]byte, error) {
+	col, err := this.FindCol("")
+	return []byte(types.String(col)), err
+}
+
 // FindIntCol 查询某个字段值并返回整型
 func (this *Query) FindIntCol(defaultValue int) (int, error) {
 	col, err := this.FindCol(defaultValue)
@@ -1565,6 +1571,9 @@ func (this *Query) wrapAttr(value interface{}) (placeholder string, isArray bool
 
 // 包装值
 func (this *Query) wrapValue(value interface{}) (placeholder string) {
+	if value == nil {
+		value = ""
+	}
 	var valueType = reflect.TypeOf(value)
 	var valueTypeName = valueType.Name()
 
