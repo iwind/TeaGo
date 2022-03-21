@@ -1589,7 +1589,7 @@ func (this *Query) wrapValue(value interface{}) (placeholder string) {
 
 	switch v := value.(type) {
 	case SQL:
-		value = string(v)
+		return string(v)
 	case JSON:
 		value = v.String()
 	case []byte:
