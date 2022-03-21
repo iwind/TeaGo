@@ -2,7 +2,6 @@ package dbs
 
 import (
 	"errors"
-	"fmt"
 	"github.com/iwind/TeaGo/lists"
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/maps"
@@ -1504,19 +1503,21 @@ func (this *Query) stringValue(value interface{}) interface{} {
 		return nil
 	}
 
-	var valueType = reflect.ValueOf(value)
-	if valueType.Kind() == reflect.Bool {
-		if value.(bool) {
+	switch v := value.(type) {
+	case bool:
+		if v {
 			return 1
 		}
 		return 0
+	case []byte:
+		return string(v)
+	case JSON:
+		return string(v)
+
+		// TODO 基础数据直接返回
 	}
 
-	if valueType.Kind() == reflect.Slice {
-		return string(value.([]byte))
-	}
-
-	return fmt.Sprintf("%v", value)
+	return types.String(value)
 }
 
 // 包装值
@@ -1543,8 +1544,19 @@ func (this *Query) wrapAttr(value interface{}) (placeholder string, isArray bool
 		return "IN (" + sql + ")", true
 	case *lists.List:
 		return this.wrapAttr(value1.Slice)
+	case JSON:
+		var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
+		this.namedParams[param] = string(value1)
+		this.namedParamIndex++
+		return ":" + param, false
+	case int, uint, int8, uint8, int16, uint16, int32, uint32, int64, uint64, float32, float64, string:
+		var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
+		this.namedParams[param] = value1
+		this.namedParamIndex++
+		return ":" + param, false
 	}
 
+	// slice
 	var valueType = reflect.TypeOf(value)
 	if valueType.Kind() == reflect.Slice {
 		var params = []string{}
@@ -1574,14 +1586,16 @@ func (this *Query) wrapValue(value interface{}) (placeholder string) {
 	if value == nil {
 		value = ""
 	}
-	var valueType = reflect.TypeOf(value)
-	var valueTypeName = valueType.Name()
 
-	if valueTypeName == "SQL" {
-		return string(value.(SQL))
-	}
-
-	if valueType.Kind() == reflect.Slice {
+	switch v := value.(type) {
+	case SQL:
+		value = string(v)
+	case JSON:
+		value = v.String()
+	case []byte:
+		value = string(v)
+	case int, uint, int8, uint8, int16, uint16, int32, uint32, int64, uint64, float32, float64, string:
+	default:
 		value = this.stringValue(value)
 	}
 

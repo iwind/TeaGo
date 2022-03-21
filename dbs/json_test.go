@@ -59,3 +59,23 @@ func TestJSON_IsNotNull(t *testing.T) {
 	t.Log(dbs.JSON("null").IsNotNull() == false)
 	t.Log(dbs.JSON("1").IsNotNull())
 }
+
+func TestJSON_IsBytes(t *testing.T) {
+	var v interface{} = dbs.JSON("123")
+	_, ok := v.([]byte)
+	// should be false
+	t.Log(ok)
+}
+
+func TestJSON_ConvertBytes(t *testing.T) {
+	var v = []byte(dbs.JSON("123"))
+	t.Log(v)
+	t.Log(string(v) == "123")
+}
+
+func TestJSON_Bytes(t *testing.T) {
+	var v = dbs.JSON("123")
+	t.Log(v)
+	t.Log(string(v) == "123")
+	t.Log(v.Bytes())
+}

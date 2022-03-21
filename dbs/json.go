@@ -27,3 +27,7 @@ func (this JSON) Len() int {
 func (this JSON) String() string {
 	return string(this)
 }
+
+func (this JSON) Bytes() []byte {
+	return this
+}

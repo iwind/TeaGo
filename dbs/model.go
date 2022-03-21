@@ -50,7 +50,7 @@ func NewModel(modelPointer interface{}) *Model {
 			kind != reflect.String &&
 			kind != reflect.Float32 &&
 			kind != reflect.Float64 &&
-			kind != reflect.Slice {
+			kind != reflect.Slice /** []byte & JSON **/ {
 			continue
 		}
 
@@ -109,6 +109,12 @@ func (this *Model) convertValue(value interface{}, toKind reflect.Kind) interfac
 		if isBytes {
 			return value
 		}
+
+		jsonValue, isJSON := value.(JSON)
+		if isJSON {
+			return []byte(jsonValue)
+		}
+
 		return []byte(types.String(value))
 	}
 	return nil

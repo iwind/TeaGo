@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/iwind/TeaGo/maps"
-	"reflect"
 	"sync"
 	"time"
 )
@@ -75,9 +74,9 @@ func (this *Stmt) FindOnes(args ...interface{}) (results []maps.Map, columnNames
 			var value = *pointer.(*interface{})
 
 			if value != nil {
-				var valueType = reflect.TypeOf(value).Kind()
-				if valueType == reflect.Slice {
-					value = string(value.([]byte))
+				v, isBytes := value.([]byte)
+				if isBytes {
+					value = string(v)
 				}
 			}
 
@@ -138,9 +137,9 @@ func (this *Stmt) FindCol(colIndex int, args ...interface{}) (interface{}, error
 		var value = *pointer.(*interface{})
 
 		if value != nil {
-			var valueType = reflect.TypeOf(value).Kind()
-			if valueType == reflect.Slice {
-				value = string(value.([]byte))
+			v, isBytes := value.([]byte)
+			if isBytes {
+				value = string(v)
 			}
 		}
 		return value, nil

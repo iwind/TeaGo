@@ -10,7 +10,6 @@ import (
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -418,9 +417,9 @@ func (this *DB) FindCol(colIndex int, query string, args ...interface{}) (interf
 		var value = *pointer.(*interface{})
 
 		if value != nil {
-			var valueType = reflect.TypeOf(value).Kind()
-			if valueType == reflect.Slice {
-				value = string(value.([]byte))
+			bytes, ok := value.([]byte)
+			if ok {
+				value = string(bytes)
 			}
 		}
 		return value, nil

@@ -86,12 +86,12 @@ func (this *DAOObject) Init() error {
 	return nil
 }
 
-// 取得封装的对象
+// Object 取得封装的对象
 func (this *DAOObject) Object() *DAOObject {
 	return this
 }
 
-// 构造查询
+// Query 构造查询
 func (this *DAOObject) Query(tx *Tx) *Query {
 	var db *DB
 	var err error
@@ -112,22 +112,22 @@ func (this *DAOObject) Query(tx *Tx) *Query {
 		DAO(this)
 }
 
-// 查找
+// Find 查找
 func (this *DAOObject) Find(tx *Tx, pk interface{}) (modelPtr interface{}, err error) {
 	return this.Query(tx).Pk(pk).Find()
 }
 
-// 检查是否存在
+// Exist 检查是否存在
 func (this *DAOObject) Exist(tx *Tx, pk interface{}) (bool bool, err error) {
 	return this.Query(tx).Pk(pk).Exist()
 }
 
-// 删除
+// Delete 删除
 func (this *DAOObject) Delete(tx *Tx, pk interface{}) (rowsAffected int64, err error) {
 	return this.Query(tx).Pk(pk).Delete()
 }
 
-// 保存
+// Save 保存
 func (this *DAOObject) Save(tx *Tx, operatorPtr interface{}) (err error) {
 	var modelValue = reflect.Indirect(reflect.ValueOf(operatorPtr))
 	var hasPk = false
@@ -238,7 +238,7 @@ func (this *DAOObject) Save(tx *Tx, operatorPtr interface{}) (err error) {
 	return err
 }
 
-// 保存并返回整型ID
+// SaveInt64 保存并返回整型ID
 func (this *DAOObject) SaveInt64(tx *Tx, operatorPtr interface{}) (pkValue int64, err error) {
 	err = this.Save(tx, operatorPtr)
 	if err != nil {
@@ -249,12 +249,12 @@ func (this *DAOObject) SaveInt64(tx *Tx, operatorPtr interface{}) (pkValue int64
 	return types.Int64(pkValueObj), nil
 }
 
-// 添加Insert回调
+// OnInsert 添加Insert回调
 func (this *DAOObject) OnInsert(callback func() error) {
 	this.insertCallbacks = append(this.insertCallbacks, callback)
 }
 
-// 触发Insert回调
+// NotifyInsert 触发Insert回调
 func (this *DAOObject) NotifyInsert() error {
 	for _, c := range this.insertCallbacks {
 		err := c()
@@ -265,12 +265,12 @@ func (this *DAOObject) NotifyInsert() error {
 	return nil
 }
 
-// 添加Delete回调
+// OnDelete 添加Delete回调
 func (this *DAOObject) OnDelete(callback func() error) {
 	this.deleteCallbacks = append(this.deleteCallbacks, callback)
 }
 
-// 触发Delete回调
+// NotifyDelete 触发Delete回调
 func (this *DAOObject) NotifyDelete() error {
 	for _, c := range this.deleteCallbacks {
 		err := c()
@@ -281,12 +281,12 @@ func (this *DAOObject) NotifyDelete() error {
 	return nil
 }
 
-// 添加Update回调
+// OnUpdate 添加Update回调
 func (this *DAOObject) OnUpdate(callback func() error) {
 	this.updateCallbacks = append(this.updateCallbacks, callback)
 }
 
-// 触发Update回调
+// NotifyUpdate 触发Update回调
 func (this *DAOObject) NotifyUpdate() error {
 	for _, c := range this.updateCallbacks {
 		err := c()
@@ -300,7 +300,7 @@ func (this *DAOObject) NotifyUpdate() error {
 var daoMapping = sync.Map{}
 var daoMappingLocker = &sync.Mutex{}
 
-// 初始化DAO
+// NewDAO 初始化DAO
 func NewDAO(daoPointer interface{}) interface{} {
 	daoMappingLocker.Lock()
 	defer daoMappingLocker.Unlock()
