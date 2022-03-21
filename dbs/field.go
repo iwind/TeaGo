@@ -193,8 +193,10 @@ func (this *Field) ValueTypeName() string {
 	switch this.ValueType {
 	case ValueTypeBool:
 		dataType = "bool"
-	case ValueTypeBytes, ValueTypeJSON:
+	case ValueTypeBytes:
 		dataType = "[]byte"
+	case ValueTypeJSON:
+		dataType = "dbs.JSON"
 	default:
 		dataType = this.DataKind.String()
 	}

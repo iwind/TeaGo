@@ -119,7 +119,16 @@ func (this *GenModelCommand) Run() {
 	}
 
 	// Model
-	modelString := `package ` + subPackage + `
+	var modelString = `package ` + subPackage
+	for _, field := range table.Fields {
+		if field.ValueType == dbs.ValueTypeJSON {
+			modelString += `
+
+import "github.com/iwind/TeaGo/dbs"`
+			break
+		}
+	}
+	modelString += `
 
 // ` + model + " " + strings.Replace(table.Comment, "\n", " ", -1) + `
 type ` + model + ` struct {`
