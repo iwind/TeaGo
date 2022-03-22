@@ -985,6 +985,12 @@ func (this *Query) FindBytesCol() ([]byte, error) {
 	return []byte(types.String(col)), err
 }
 
+// FindJSONCol 查询单个字段值并返回JSON slice
+func (this *Query) FindJSONCol() ([]byte, error) {
+	col, err := this.FindCol("")
+	return JSON(types.String(col)), err
+}
+
 // FindIntCol 查询某个字段值并返回整型
 func (this *Query) FindIntCol(defaultValue int) (int, error) {
 	col, err := this.FindCol(defaultValue)

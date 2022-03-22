@@ -10,6 +10,10 @@ func (this JSON) UnmarshalTo(ptr interface{}) error {
 	return json.Unmarshal(this, ptr)
 }
 
+func (this JSON) IsNull() bool {
+	return !this.IsNotNull()
+}
+
 func (this JSON) IsNotNull() bool {
 	if len(this) == 0 {
 		return false
