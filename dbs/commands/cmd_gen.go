@@ -8,6 +8,7 @@ import (
 	"github.com/iwind/TeaGo/cmd"
 	"github.com/iwind/TeaGo/dbs"
 	"github.com/iwind/TeaGo/files"
+	"github.com/iwind/TeaGo/lists"
 	"github.com/iwind/TeaGo/utils/string"
 	"go/format"
 	"os"
@@ -145,9 +146,21 @@ type ` + model + ` struct {`
 		}
 	}
 
+	var specialBoolFields = []string{}
+	var globalConfig = dbs.GlobalConfig()
+	if globalConfig.Fields != nil {
+		specialBoolFields, _ = globalConfig.Fields["bool"]
+	}
+
 	for _, field := range table.Fields {
 		var attr = this.convertFieldNameStyle(field.Name)
 		var dataType = field.ValueTypeName()
+
+		// bool类型
+		if lists.ContainsString(specialBoolFields, field.Name) {
+			dataType = "bool"
+		}
+
 		modelString += "\t" + attr + " " + dataType + " `field:\"" + field.Name + "\"` // " + field.Comment + "\n"
 	}
 

@@ -31,6 +31,10 @@ var dbConfig = &Config{}
 var dbCachedFactory = map[string]*DB{} // ID => DB Instance
 var dbCacheMutex = &sync.Mutex{}
 
+func GlobalConfig() *Config {
+	return dbConfig
+}
+
 // Default 默认的数据库实例
 func Default() (*DB, error) {
 	loadConfig()

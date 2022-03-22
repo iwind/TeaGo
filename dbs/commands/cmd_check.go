@@ -5,6 +5,7 @@ import (
 	"github.com/iwind/TeaGo/cmd"
 	"github.com/iwind/TeaGo/dbs"
 	"github.com/iwind/TeaGo/files"
+	"github.com/iwind/TeaGo/lists"
 	"os"
 	"regexp"
 	"strings"
@@ -54,10 +55,16 @@ func (this *CheckModelCommand) Run() {
 
 	this.Output("<code>checking ...</code>\n~~~\n")
 
-	tables := []*dbs.Table{}                     // Model name => *Table
-	models := map[string]map[string]*dbs.Field{} // Model name => { fields:... }
-	modelFiles := map[string]string{}            // Model name => File name
-	countIssues := 0
+	var tables = []*dbs.Table{}                     // Model name => *Table
+	var models = map[string]map[string]*dbs.Field{} // Model name => { fields:... }
+	var modelFiles = map[string]string{}            // Model name => File name
+	var countIssues = 0
+
+	var specialBoolFields = []string{}
+	var globalConfig = dbs.GlobalConfig()
+	if globalConfig.Fields != nil {
+		specialBoolFields, _ = globalConfig.Fields["bool"]
+	}
 
 	dir.Range(func(file *files.File) {
 		if !file.IsFile() {
@@ -111,11 +118,11 @@ func (this *CheckModelCommand) Run() {
 			matches := reg.FindAllStringSubmatch(content, -1)
 			fields := map[string]*dbs.Field{}
 			for _, match := range matches {
-				mappingName := match[1]
-				dataTypeString := match[2]
-				fieldName := match[3]
+				var mappingName = match[1]
+				var dataTypeString = match[2]
+				var fieldName = match[3]
 
-				field := new(dbs.Field)
+				var field = new(dbs.Field)
 				field.Name = fieldName
 				field.MappingName = mappingName
 				field.MappingKindName = dataTypeString
@@ -136,16 +143,23 @@ func (this *CheckModelCommand) Run() {
 		} else {
 			// 新增字段或修改字段
 			for _, field := range table.Fields {
+				var newTypeName = field.ValueTypeName()
+
+				// bool类型
+				if lists.ContainsString(specialBoolFields, field.Name) {
+					newTypeName = "bool"
+				}
+
 				oldField, found := oldFields[field.Name]
 				if !found {
-					this.Output("<code>+[" + modelName + "] field: " + this.convertFieldNameStyle(field.Name) + " " + field.ValueTypeName() + " `field:\"" + field.Name + "\"` // " + field.Comment + "</code>\n")
+					this.Output("<code>+[" + modelName + "] field: " + this.convertFieldNameStyle(field.Name) + " " + newTypeName + " `field:\"" + field.Name + "\"` // " + field.Comment + "</code>\n")
 					this.Output("<code>+[" + modelName + "Operator] field: " + this.convertFieldNameStyle(field.Name) + " interface{} // " + field.Comment + "</code>\n")
 					this.outputFile(modelFiles[modelName])
 					countIssues++
 				} else {
 					// 对比
-					if field.ValueTypeName() != oldField.MappingKindName {
-						this.Output("<code>*[" + modelName + "] field: " + oldField.MappingName + " " + field.ValueTypeName() + " `field:\"" + field.Name + "\"` // " + field.Comment + "</code>\n")
+					if newTypeName != oldField.MappingKindName {
+						this.Output("<code>*[" + modelName + "] field: " + oldField.MappingName + " " + newTypeName + " `field:\"" + field.Name + "\"` // " + field.Comment + "</code>\n")
 						this.outputFile(modelFiles[modelName])
 						countIssues++
 					}

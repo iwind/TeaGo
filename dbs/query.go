@@ -979,6 +979,12 @@ func (this *Query) FindStringCol(defaultValue string) (string, error) {
 	return types.String(col), err
 }
 
+// FindBoolCol 查询单个字段值并返回bool值
+func (this *Query) FindBoolCol() (bool, error) {
+	col, err := this.FindCol("0")
+	return types.String(col) == "1", err
+}
+
 // FindBytesCol 查询单个字段值并返回字节Slice
 func (this *Query) FindBytesCol() ([]byte, error) {
 	col, err := this.FindCol("")

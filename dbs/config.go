@@ -8,7 +8,8 @@ type Config struct {
 		Prefix string `yaml:"prefix"`
 	} `yaml:"default"`
 
-	DBs map[string]*DBConfig `yaml:"dbs"`
+	DBs    map[string]*DBConfig `yaml:"dbs"`
+	Fields map[string][]string  `yaml:"fields"`
 }
 
 type DBConfig struct {
