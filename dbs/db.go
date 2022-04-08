@@ -106,6 +106,7 @@ func NewInstanceFromConfig(config *DBConfig) (*DB, error) {
 	if config.Connections.LifeDuration > 0 {
 		sqlDb.SetConnMaxLifetime(config.Connections.LifeDuration)
 	}
+	sqlDb.SetConnMaxIdleTime(2 * time.Minute)
 
 	var db = &DB{
 		stmtManager: NewStmtManager(),
@@ -118,6 +119,13 @@ func NewInstanceFromConfig(config *DBConfig) (*DB, error) {
 
 	db.config = config
 	db.sqlDB = sqlDb
+
+	// setup stmt manager
+	var maxStmtCount = db.queryMaxPreparedStmtCount()
+	if maxStmtCount > 0 {
+		db.stmtManager.SetMaxCount(maxStmtCount / 16)
+	}
+
 	return db, nil
 }
 
@@ -189,11 +197,20 @@ func (this *DB) init() error {
 	if config.Connections.LifeDuration > 0 {
 		sqlDb.SetConnMaxLifetime(config.Connections.LifeDuration)
 	}
+	sqlDb.SetConnMaxIdleTime(2 * time.Minute)
 
 	this.sqlDB = sqlDb
+
+	// setup stmt manager
 	if this.stmtManager == nil {
 		this.stmtManager = NewStmtManager()
 	}
+
+	var maxStmtCount = this.queryMaxPreparedStmtCount()
+	if maxStmtCount > 0 {
+		this.stmtManager.SetMaxCount(maxStmtCount / 16)
+	}
+
 	return nil
 }
 
@@ -796,4 +813,17 @@ func (this *DB) TablePrefix() string {
 // Raw 取得原始的数据库连接句柄
 func (this *DB) Raw() *sql.DB {
 	return this.sqlDB
+}
+
+func (this *DB) queryMaxPreparedStmtCount() int {
+	// query global variable
+	var row = this.sqlDB.QueryRow("SELECT @@max_prepared_stmt_count")
+	if row != nil {
+		var count int
+		err := row.Scan(&count)
+		if err == nil && count > 0 {
+			return count
+		}
+	}
+	return 0
 }

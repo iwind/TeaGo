@@ -12,8 +12,6 @@ import (
 	"time"
 )
 
-const MaxStmtCount = 4096
-
 func IsPrepareError(err error) bool {
 	if err == nil {
 		return false
@@ -44,18 +42,27 @@ func unixTime() int64 {
 type StmtManager struct {
 	stmtMap map[string]*Stmt   // query => *Stmt
 	subMap  map[int64][]string // id => [cache keys]
-	locker  sync.RWMutex
+
+	maxCount int
+	locker   sync.RWMutex
 
 	isClosed bool
 }
 
 func NewStmtManager() *StmtManager {
 	var manager = &StmtManager{
-		stmtMap: map[string]*Stmt{},
-		subMap:  map[int64][]string{},
+		stmtMap:  map[string]*Stmt{},
+		subMap:   map[int64][]string{},
+		maxCount: 1024,
 	}
 
 	return manager
+}
+
+func (this *StmtManager) SetMaxCount(count int) {
+	if count > 0 {
+		this.maxCount = count
+	}
 }
 
 // Prepare statement
@@ -135,11 +142,11 @@ func (this *StmtManager) PrepareOnce(preparer sqlPreparer, querySQL string, pare
 	}
 
 	// should we purge old statements?
-	if len(this.stmtMap) >= MaxStmtCount {
+	if len(this.stmtMap) >= this.maxCount {
 		this.purge()
 
 		// still full
-		if len(this.stmtMap) >= MaxStmtCount {
+		if len(this.stmtMap) >= this.maxCount {
 			return stmt, false, nil
 		}
 	}
