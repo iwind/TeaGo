@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"testing"
+	"time"
 )
 
 func TestDBName(t *testing.T) {
@@ -72,3 +73,32 @@ func TestDBTableNames(t *testing.T) {
 	log.Println(db.TableNames())
 }
 
+func TestDB_FindPreparedOnes(t *testing.T) {
+	db, err := NewInstanceFromConfig(&DBConfig{
+		Driver: "mysql",
+		Dsn:    "root:123456@tcp(127.0.0.1:3306)/db_edge?charset=utf8mb4&timeout=30s",
+		Prefix: "edge",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var count = 10000
+	var before = time.Now()
+	for i := 0; i < count; i++ {
+		_, _, err := db.FindPreparedOnes("SELECT 1")
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Log("FindPreparedOnes():", time.Since(before).Seconds()*1000, "ms")
+
+	before = time.Now()
+	for i := 0; i < count; i++ {
+		_, _, err := db.FindOnes("SELECT 1")
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Log("FindOnes:", time.Since(before).Seconds()*1000, "ms")
+}

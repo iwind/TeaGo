@@ -319,6 +319,21 @@ func (this *DB) FindOnes(query string, args ...interface{}) (results []maps.Map,
 	return stmt.FindOnes(args...)
 }
 
+func (this *DB) FindPreparedOnes(query string, args ...interface{}) (results []maps.Map, columnNames []string, err error) {
+	stmt, cached, err := this.PrepareOnce(query)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if !cached {
+		defer func() {
+			_ = stmt.Close()
+		}()
+	}
+
+	return stmt.FindOnes(args...)
+}
+
 func (this *DB) FindOne(query string, args ...interface{}) (maps.Map, error) {
 	results, _, err := this.FindOnes(query, args...)
 	if err != nil {
