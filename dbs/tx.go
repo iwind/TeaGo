@@ -3,38 +3,40 @@ package dbs
 import (
 	"database/sql"
 	"github.com/iwind/TeaGo/logs"
-	"sync"
+	"sync/atomic"
 )
 
-type Tx struct {
-	raw *sql.Tx
+var globalTxId int64 = 1
 
-	stmtMap map[string]*Stmt // query => stmt
-	locker  *sync.Mutex
+type Tx struct {
+	db    *DB
+	sqlTx *sql.Tx
+	id    int64
 
 	isDone bool
 }
 
-func NewTx(raw *sql.Tx) *Tx {
+func NewTx(db *DB, raw *sql.Tx) *Tx {
 	return &Tx{
-		raw:     raw,
-		stmtMap: map[string]*Stmt{},
-		locker:  &sync.Mutex{},
+		db:    db,
+		sqlTx: raw,
+		id:    atomic.AddInt64(&globalTxId, 1),
 	}
 }
 
 func (this *Tx) Exec(query string, params ...interface{}) (sql.Result, error) {
-	return this.raw.Exec(query, params...)
+	return this.sqlTx.Exec(query, params...)
 }
 
 func (this *Tx) Prepare(query string) (*Stmt, error) {
-	return BuildStmt(this.raw.Prepare(query))
+	return this.db.stmtManager.Prepare(this.sqlTx, query)
+}
+
+func (this *Tx) PrepareOnce(query string) (*Stmt, bool, error) {
+	return this.db.stmtManager.PrepareOnce(this.sqlTx, query, this.id)
 }
 
 func (this *Tx) Commit() error {
-	this.locker.Lock()
-	defer this.locker.Unlock()
-
 	if this.isDone {
 		return nil
 	}
@@ -46,13 +48,10 @@ func (this *Tx) Commit() error {
 			logs.Println("[DB]tx close error: " + err.Error())
 		}
 	}()
-	return this.raw.Commit()
+	return this.sqlTx.Commit()
 }
 
 func (this *Tx) Rollback() error {
-	this.locker.Lock()
-	defer this.locker.Unlock()
-
 	if this.isDone {
 		return nil
 	}
@@ -64,42 +63,14 @@ func (this *Tx) Rollback() error {
 			logs.Println("[DB]tx close error: " + err.Error())
 		}
 	}()
-	return this.raw.Rollback()
-}
-
-func (this *Tx) PrepareOnce(query string) (*Stmt, error) {
-	this.locker.Lock()
-	defer this.locker.Unlock()
-
-	var stmt, ok = this.stmtMap[query]
-	if ok {
-		return stmt, nil
-	}
-
-	sqlStmt, err := this.raw.Prepare(query)
-	if err != nil {
-		return BuildStmt(sqlStmt, err)
-	}
-
-	stmt, _ = BuildStmt(sqlStmt, nil)
-
-	this.stmtMap[query] = stmt
-	return stmt, nil
+	return this.sqlTx.Rollback()
 }
 
 func (this *Tx) Raw() *sql.Tx {
-	return this.raw
+	return this.sqlTx
 }
 
 func (this *Tx) close() error {
-	// 这里不需要locker，因为在调用它的函数里已经使用locker
-
-	for _, stmt := range this.stmtMap {
-		err := stmt.Close()
-		if err != nil {
-			return err
-		}
-	}
-	this.stmtMap = map[string]*Stmt{}
+	this.db.stmtManager.CloseId(this.id)
 	return nil
 }

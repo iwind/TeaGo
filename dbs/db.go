@@ -10,20 +10,18 @@ import (
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
 )
-
-const MaxStatementsCount = 4096
 
 type DB struct {
 	id     string
 	config *DBConfig
 	sqlDB  *sql.DB
 
-	dbStatements map[string]*Stmt // query => stmt
-	dbStmtMux    *sync.Mutex
+	stmtManager *StmtManager
 }
 
 var dbInitOnce = sync.Once{}
@@ -61,7 +59,7 @@ func Instance(dbId string) (*DB, error) {
 	loadConfig()
 
 	var db = &DB{
-		dbStmtMux: &sync.Mutex{},
+		stmtManager: NewStmtManager(),
 	}
 	db.id = dbId
 	err := db.init()
@@ -79,7 +77,7 @@ func NewInstance(dbId string) (*DB, error) {
 	loadConfig()
 
 	var db = &DB{
-		dbStmtMux: &sync.Mutex{},
+		stmtManager: NewStmtManager(),
 	}
 	db.id = dbId
 	err := db.init()
@@ -109,12 +107,17 @@ func NewInstanceFromConfig(config *DBConfig) (*DB, error) {
 		sqlDb.SetConnMaxLifetime(config.Connections.LifeDuration)
 	}
 
-	db := &DB{
-		dbStmtMux: &sync.Mutex{},
+	var db = &DB{
+		stmtManager: NewStmtManager(),
 	}
+
+	// close when finalize
+	runtime.SetFinalizer(db, func(db *DB) {
+		_ = db.Close()
+	})
+
 	db.config = config
 	db.sqlDB = sqlDb
-	db.dbStatements = map[string]*Stmt{}
 	return db, nil
 }
 
@@ -188,7 +191,9 @@ func (this *DB) init() error {
 	}
 
 	this.sqlDB = sqlDb
-	this.dbStatements = map[string]*Stmt{}
+	if this.stmtManager == nil {
+		this.stmtManager = NewStmtManager()
+	}
 	return nil
 }
 
@@ -248,7 +253,12 @@ func (this *DB) Begin() (*Tx, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewTx(tx), nil
+	return NewTx(this, tx), nil
+}
+
+// StmtManager Get StmtManager
+func (this *DB) StmtManager() *StmtManager {
+	return this.stmtManager
 }
 
 // RunTx 在函数中执行一个事务
@@ -276,22 +286,12 @@ func (this *DB) RunTx(callback func(tx *Tx) error) error {
 
 func (this *DB) Close() error {
 	// 关闭语句
-	this.dbStmtMux.Lock()
-	for _, stmt := range this.dbStatements {
-		if stmt != nil {
-			_ = stmt.Close()
-		}
-	}
-	this.dbStmtMux.Unlock()
+	err1 := this.stmtManager.Close()
 
 	// 关闭连接
 	err := this.sqlDB.Close()
 
-	/**dbCacheMutex.Lock()
-	delete(dbCachedFactory, db.id)
-	dbCacheMutex.Unlock()**/
-
-	return err
+	return anyError(err, err1)
 }
 
 func (db *DB) Exec(query string, params ...interface{}) (sql.Result, error) {
@@ -299,61 +299,11 @@ func (db *DB) Exec(query string, params ...interface{}) (sql.Result, error) {
 }
 
 func (this *DB) Prepare(query string) (*Stmt, error) {
-	return BuildStmt(this.sqlDB.Prepare(query))
+	return this.stmtManager.Prepare(this.sqlDB, query)
 }
 
-func (this *DB) PrepareOnce(query string) (*Stmt, error) {
-	this.dbStmtMux.Lock()
-	defer this.dbStmtMux.Unlock()
-
-	var stmt, ok = this.dbStatements[query]
-	if ok {
-		stmt.accessAt = time.Now().Unix()
-		return stmt, nil
-	}
-
-	// 清除多余的Stmt
-	if len(this.dbStatements) >= MaxStatementsCount-128 { // 128是余量
-		max := MaxStatementsCount / 20
-		nowTime := time.Now().Unix()
-		for key, stmt := range this.dbStatements {
-			if max <= 0 {
-				break
-			}
-
-			// 清除一个小时之前的
-			if stmt.AccessAt() < nowTime-3600 {
-				_ = stmt.Close()
-				delete(this.dbStatements, key)
-				max--
-			}
-		}
-
-		// 如果仍然多
-		if len(this.dbStatements) >= MaxStatementsCount-128 {
-			for key, stmt := range this.dbStatements {
-				if max <= 0 {
-					break
-				}
-
-				// 清除一个小时之前的
-				_ = stmt.Close()
-				delete(this.dbStatements, key)
-				max--
-			}
-		}
-	}
-
-	// 构造新的语句
-	sqlStmt, err := this.sqlDB.Prepare(query)
-	if err != nil {
-		return nil, err
-	}
-	stmt, _ = BuildStmt(sqlStmt, nil)
-
-	this.dbStatements[query] = stmt
-
-	return stmt, nil
+func (this *DB) PrepareOnce(query string) (*Stmt, bool, error) {
+	return this.stmtManager.PrepareOnce(this.sqlDB, query, 0)
 }
 
 func (this *DB) FindOnes(query string, args ...interface{}) (results []maps.Map, columnNames []string, err error) {
@@ -362,7 +312,9 @@ func (this *DB) FindOnes(query string, args ...interface{}) (results []maps.Map,
 		return nil, nil, err
 	}
 
-	defer stmt.Close()
+	defer func() {
+		_ = stmt.Close()
+	}()
 
 	return stmt.FindOnes(args...)
 }
@@ -386,7 +338,7 @@ func (this *DB) FindCol(colIndex int, query string, args ...interface{}) (interf
 	}
 
 	defer func() {
-		stmt.Close()
+		_ = stmt.Close()
 	}()
 
 	rows, err := stmt.Query(args...)
@@ -394,7 +346,9 @@ func (this *DB) FindCol(colIndex int, query string, args ...interface{}) (interf
 		return nil, err
 	}
 
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+	}()
 
 	columnNames, err := rows.Columns()
 	if err != nil {

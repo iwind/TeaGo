@@ -4,26 +4,21 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/iwind/TeaGo/maps"
-	"sync"
 	"time"
 )
 
-// SQL语句
+// Stmt SQL语句
 type Stmt struct {
 	accessAt int64
 	sqlStmt  *sql.Stmt
-	locker   *sync.Mutex
 }
 
-// 构造
-func BuildStmt(stmt *sql.Stmt, err error) (*Stmt, error) {
-	if err != nil {
-		return nil, err
-	}
+// NewStmt 构造
+func NewStmt(stmt *sql.Stmt) *Stmt {
 	return &Stmt{
 		sqlStmt:  stmt,
 		accessAt: time.Now().Unix(),
-	}, err
+	}
 }
 
 func (this *Stmt) Query(args ...interface{}) (*sql.Rows, error) {
@@ -156,20 +151,17 @@ func (this *Stmt) Exec(args ...interface{}) (sql.Result, error) {
 	return this.sqlStmt.Exec(args...)
 }
 
-// 关闭
+// Close 关闭
 func (this *Stmt) Close() error {
-	if this.sqlStmt == nil {
-		return nil
-	}
 	return this.sqlStmt.Close()
 }
 
-// 获取原始的语句
+// Raw 获取原始的语句
 func (this *Stmt) Raw() *sql.Stmt {
 	return this.sqlStmt
 }
 
-// 获得访问时间
+// AccessAt 获得访问时间
 // 用来对比是否可以释放
 func (this *Stmt) AccessAt() int64 {
 	return this.accessAt

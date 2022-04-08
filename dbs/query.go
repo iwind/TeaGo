@@ -862,19 +862,21 @@ func (this *Query) FindOnes() (results []maps.Map, columnNames []string, err err
 	}
 
 	var stmt *Stmt
+	var cached bool
 	if this.canReuse {
-		stmt, err = this.preparer().PrepareOnce(sql)
+		stmt, cached, err = this.preparer().PrepareOnce(sql)
 	} else {
 		stmt, err = this.preparer().Prepare(sql)
-		defer func() {
-			if stmt != nil {
-				_ = stmt.Close()
-			}
-		}()
 	}
 	if err != nil {
 		return nil, nil, err
 	}
+	if !cached {
+		defer func() {
+			_ = stmt.Close()
+		}()
+	}
+
 	ones, columnNames, err := stmt.FindOnes(this.params...)
 
 	// 执行 filterFn 和 mapFn
@@ -1168,18 +1170,19 @@ func (this *Query) Exec() (*Result, error) {
 	}
 
 	var stmt *Stmt
+	var cached bool
 	if this.canReuse {
-		stmt, err = this.preparer().PrepareOnce(sql)
+		stmt, cached, err = this.preparer().PrepareOnce(sql)
 	} else {
 		stmt, err = this.preparer().Prepare(sql)
-		defer func() {
-			if stmt != nil {
-				_ = stmt.Close()
-			}
-		}()
 	}
 	if err != nil {
 		return nil, err
+	}
+	if !cached {
+		defer func() {
+			_ = stmt.Close()
+		}()
 	}
 
 	result, err := stmt.Exec(this.params...)
@@ -1202,18 +1205,19 @@ func (this *Query) Replace() (rowsAffected int64, lastInsertId int64, err error)
 	}
 
 	var stmt *Stmt
+	var cached bool
 	if this.canReuse {
-		stmt, err = this.preparer().PrepareOnce(sql)
+		stmt, cached, err = this.preparer().PrepareOnce(sql)
 	} else {
 		stmt, err = this.preparer().Prepare(sql)
-		defer func() {
-			if stmt != nil {
-				_ = stmt.Close()
-			}
-		}()
 	}
 	if err != nil {
 		return 0, 0, err
+	}
+	if !cached {
+		defer func() {
+			_ = stmt.Close()
+		}()
 	}
 
 	result, err := stmt.Exec(this.params...)
@@ -1245,18 +1249,19 @@ func (this *Query) Insert() (lastInsertId int64, err error) {
 	}
 
 	var stmt *Stmt
+	var cached bool
 	if this.canReuse {
-		stmt, err = this.preparer().PrepareOnce(sql)
+		stmt, cached, err = this.preparer().PrepareOnce(sql)
 	} else {
 		stmt, err = this.preparer().Prepare(sql)
-		defer func() {
-			if stmt != nil {
-				_ = stmt.Close()
-			}
-		}()
 	}
 	if err != nil {
 		return 0, err
+	}
+	if !cached {
+		defer func() {
+			_ = stmt.Close()
+		}()
 	}
 
 	result, err := stmt.Exec(this.params...)
@@ -1287,18 +1292,19 @@ func (this *Query) Update() (rowsAffected int64, err error) {
 	}
 
 	var stmt *Stmt
+	var cached bool
 	if this.canReuse {
-		stmt, err = this.preparer().PrepareOnce(sql)
+		stmt, cached, err = this.preparer().PrepareOnce(sql)
 	} else {
 		stmt, err = this.preparer().Prepare(sql)
-		defer func() {
-			if stmt != nil {
-				_ = stmt.Close()
-			}
-		}()
 	}
 	if err != nil {
 		return 0, err
+	}
+	if !cached {
+		defer func() {
+			_ = stmt.Close()
+		}()
 	}
 
 	result, err := stmt.Exec(this.params...)
@@ -1329,18 +1335,19 @@ func (this *Query) UpdateQuickly() error {
 	}
 
 	var stmt *Stmt
+	var cached bool
 	if this.canReuse {
-		stmt, err = this.preparer().PrepareOnce(sql)
+		stmt, cached, err = this.preparer().PrepareOnce(sql)
 	} else {
 		stmt, err = this.preparer().Prepare(sql)
-		defer func() {
-			if stmt != nil {
-				_ = stmt.Close()
-			}
-		}()
 	}
 	if err != nil {
 		return err
+	}
+	if !cached {
+		defer func() {
+			_ = stmt.Close()
+		}()
 	}
 
 	_, err = stmt.Exec(this.params...)
@@ -1380,18 +1387,19 @@ func (this *Query) InsertOrUpdate(insertingValues maps.Map, updatingValues maps.
 	}
 
 	var stmt *Stmt
+	var cached bool
 	if this.canReuse {
-		stmt, err = this.preparer().PrepareOnce(sql)
+		stmt, cached, err = this.preparer().PrepareOnce(sql)
 	} else {
 		stmt, err = this.preparer().Prepare(sql)
-		defer func() {
-			if stmt != nil {
-				_ = stmt.Close()
-			}
-		}()
 	}
 	if err != nil {
 		return 0, 0, err
+	}
+	if !cached {
+		defer func() {
+			_ = stmt.Close()
+		}()
 	}
 
 	result, err := stmt.Exec(this.params...)
@@ -1444,18 +1452,19 @@ func (this *Query) InsertOrUpdateQuickly(insertingValues maps.Map, updatingValue
 	}
 
 	var stmt *Stmt
+	var cached bool
 	if this.canReuse {
-		stmt, err = this.preparer().PrepareOnce(sql)
+		stmt, cached, err = this.preparer().PrepareOnce(sql)
 	} else {
 		stmt, err = this.preparer().Prepare(sql)
-		defer func() {
-			if stmt != nil {
-				_ = stmt.Close()
-			}
-		}()
 	}
 	if err != nil {
 		return err
+	}
+	if !cached {
+		defer func() {
+			_ = stmt.Close()
+		}()
 	}
 
 	_, err = stmt.Exec(this.params...)
@@ -1479,19 +1488,21 @@ func (this *Query) Delete() (rowsAffected int64, err error) {
 		return 0, err
 	}
 	var stmt *Stmt
+	var cached bool
 	if this.canReuse {
-		stmt, err = this.preparer().PrepareOnce(sql)
+		stmt, cached, err = this.preparer().PrepareOnce(sql)
 	} else {
 		stmt, err = this.preparer().Prepare(sql)
-		defer func() {
-			if stmt != nil {
-				_ = stmt.Close()
-			}
-		}()
 	}
 	if err != nil {
 		return 0, err
 	}
+	if !cached {
+		defer func() {
+			_ = stmt.Close()
+		}()
+	}
+
 	result, err := stmt.Exec(this.params...)
 	if err != nil {
 		return 0, err
