@@ -2,9 +2,7 @@ package dbs
 
 import (
 	"database/sql"
-	"errors"
 	"github.com/iwind/TeaGo/maps"
-	"time"
 )
 
 // Stmt SQL语句
@@ -17,23 +15,17 @@ type Stmt struct {
 func NewStmt(stmt *sql.Stmt) *Stmt {
 	return &Stmt{
 		sqlStmt:  stmt,
-		accessAt: time.Now().Unix(),
+		accessAt: unixTime(),
 	}
 }
 
 func (this *Stmt) Query(args ...interface{}) (*sql.Rows, error) {
-	if this.sqlStmt == nil {
-		return nil, errors.New("stmt not be prepared")
-	}
-	this.accessAt = time.Now().Unix()
+	this.accessAt = unixTime()
 	return this.sqlStmt.Query(args...)
 }
 
 func (this *Stmt) FindOnes(args ...interface{}) (results []maps.Map, columnNames []string, err error) {
-	if this.sqlStmt == nil {
-		return nil, nil, errors.New("stmt not be prepared")
-	}
-	this.accessAt = time.Now().Unix()
+	this.accessAt = unixTime()
 	rows, err := this.sqlStmt.Query(args...)
 	if err != nil {
 		return nil, nil, err
@@ -144,10 +136,7 @@ func (this *Stmt) FindCol(colIndex int, args ...interface{}) (interface{}, error
 }
 
 func (this *Stmt) Exec(args ...interface{}) (sql.Result, error) {
-	if this.sqlStmt == nil {
-		return nil, errors.New("stmt not be prepared")
-	}
-	this.accessAt = time.Now().Unix()
+	this.accessAt = unixTime()
 	return this.sqlStmt.Exec(args...)
 }
 
