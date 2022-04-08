@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/go-sql-driver/mysql"
+	"github.com/iwind/TeaGo/logs"
 	"strconv"
 	"sync"
 	"time"
@@ -63,6 +64,10 @@ func (this *StmtManager) Prepare(preparer sqlPreparer, querySQL string) (*Stmt, 
 		return nil, errors.New("prepare failed: connection is closed")
 	}
 
+	if ShowPreparedStatements {
+		logs.Println("[DB]prepare " + querySQL)
+	}
+
 	sqlStmt, err := preparer.Prepare(querySQL)
 	if err != nil {
 		if IsPrepareError(err) {
@@ -100,6 +105,10 @@ func (this *StmtManager) PrepareOnce(preparer sqlPreparer, querySQL string, pare
 		return stmt, true, nil
 	}
 	this.locker.RUnlock()
+
+	if ShowPreparedStatements {
+		logs.Println("[DB]prepare " + querySQL)
+	}
 
 	sqlStmt, err := preparer.Prepare(querySQL)
 	if err != nil {
