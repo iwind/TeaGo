@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"encoding/json"
 	"github.com/iwind/TeaGo/Tea"
 	"github.com/iwind/TeaGo/files"
 	"github.com/iwind/TeaGo/gohtml"
@@ -8,7 +9,6 @@ import (
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/maps"
 	"github.com/iwind/TeaGo/utils/string"
-	json "github.com/json-iterator/go"
 	"io/ioutil"
 	"net/url"
 	"os"
