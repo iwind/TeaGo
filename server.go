@@ -52,17 +52,17 @@ var beforeStartOnce = sync.Once{}
 var beforeStopFunctions = []func(server *Server){}
 var beforeStopOnce = sync.Once{}
 
-// 在服务启动之前执行一个函数
+// BeforeStart 在服务启动之前执行一个函数
 func BeforeStart(fn func(server *Server)) {
 	beforeStartFunctions = append(beforeStartFunctions, fn)
 }
 
-// 在服务停止之前执行一个函数
+// BeforeStop 在服务停止之前执行一个函数
 func BeforeStop(fn func(server *Server)) {
 	beforeStopFunctions = append(beforeStopFunctions, fn)
 }
 
-// Web服务
+// Server Web服务
 type Server struct {
 	singleInstance bool
 
@@ -92,7 +92,7 @@ type Server struct {
 	readTimeout         time.Duration
 }
 
-// 路由配置
+// ServerRoutePattern 路由配置
 type ServerRoutePattern struct {
 	module  string
 	reg     regexp.Regexp
@@ -101,13 +101,13 @@ type ServerRoutePattern struct {
 	runFunc func(writer http.ResponseWriter, request *http.Request)
 }
 
-// 静态资源目录
+// ServerStaticDir 静态资源目录
 type ServerStaticDir struct {
 	prefix string
 	dir    string
 }
 
-// 构建一个新的Server
+// NewServer 构建一个新的Server
 func NewServer(singleInstance ...bool) *Server {
 	var server = &Server{
 		accessLog: true,
@@ -146,7 +146,7 @@ func (this *Server) init() {
 	}
 }
 
-// 启动服务
+// Start 启动服务
 func (this *Server) Start() {
 	if !this.config.Http.On && !this.config.Https.On && len(this.config.Http.Listen) == 0 && len(this.config.Https.Listen) == 0 {
 		this.StartOn("0.0.0.0:8888")
@@ -155,7 +155,7 @@ func (this *Server) Start() {
 	}
 }
 
-// 在某个地址上启动服务
+// StartOn 在某个地址上启动服务
 func (this *Server) StartOn(address string) {
 	var serverMux = http.NewServeMux()
 
@@ -482,7 +482,7 @@ func (this *Server) router(pattern string, method string, actionPtr interface{})
 	method = strings.ToUpper(method)
 
 	// 是否包含匹配参数 :paramName(pattern)
-	reg, err := regexp.Compile(":(?:(\\w+)(\\s*(\\([^)]+\\))?))")
+	reg, err := regexp.Compile(`:(\w+)(\s*(\([^)]+\))?)`)
 	if err != nil {
 		logs.Errorf("%s", err.Error())
 		return
@@ -628,31 +628,31 @@ func (this *Server) buildHandle(actionPtr interface{}) func(writer http.Response
 	}
 }
 
-// 设置模块定义开始
+// Module 设置模块定义开始
 func (this *Server) Module(module string) *Server {
 	this.lastModule = module
 	return this
 }
 
-// 设置模块定义结束
+// EndModule 设置模块定义结束
 func (this *Server) EndModule() *Server {
 	this.lastModule = ""
 	return this
 }
 
-// 设置URL前缀
+// Prefix 设置URL前缀
 func (this *Server) Prefix(prefix string) *Server {
 	this.lastPrefix = prefix
 	return this
 }
 
-// 结束前缀定义
+// EndPrefix 结束前缀定义
 func (this *Server) EndPrefix() *Server {
 	this.lastPrefix = ""
 	return this
 }
 
-// 设置变量
+// Data 设置变量
 func (this *Server) Data(name string, value interface{}) *Server {
 	if this.lastData == nil {
 		this.lastData = actions.Data{}
@@ -661,13 +661,13 @@ func (this *Server) Data(name string, value interface{}) *Server {
 	return this
 }
 
-// 结束设置变量
+// EndData 结束设置变量
 func (this *Server) EndData() *Server {
 	this.lastData = nil
 	return this
 }
 
-// 定义助手
+// Helper 定义助手
 func (this *Server) Helper(helper interface{}) *Server {
 	if helper == nil {
 		logs.Error(errors.New("you try to add a nil helper"))
@@ -694,13 +694,13 @@ func (this *Server) Helper(helper interface{}) *Server {
 	return this
 }
 
-// 结束助手定义
+// EndHelpers 结束助手定义
 func (this *Server) EndHelpers() *Server {
 	this.lastHelpers = []interface{}{}
 	return this
 }
 
-// 结束所有定义
+// EndAll 结束所有定义
 func (this *Server) EndAll() *Server {
 	this.EndPrefix()
 	this.EndModule()
@@ -709,66 +709,66 @@ func (this *Server) EndAll() *Server {
 	return this
 }
 
-// 设置 GET 方法路由映射
+// Get 设置 GET 方法路由映射
 func (this *Server) Get(path string, actionPtr interface{}) *Server {
 	this.router(path, "get", actionPtr)
 	return this
 }
 
-// 设置 POST 方法路由映射
+// Post 设置 POST 方法路由映射
 func (this *Server) Post(path string, actionPtr interface{}) *Server {
 	this.router(path, "post", actionPtr)
 	return this
 }
 
-// 设置 GET 和 POST 方法路由映射
+// GetPost 设置 GET 和 POST 方法路由映射
 func (this *Server) GetPost(path string, actionPtr interface{}) *Server {
 	return this.Any([]string{"get", "post"}, path, actionPtr)
 }
 
-// 设置 HEAD 方法路由映射
+// Head 设置 HEAD 方法路由映射
 func (this *Server) Head(path string, actionPtr interface{}) *Server {
 	this.router(path, "head", actionPtr)
 	return this
 }
 
-// 设置 DELETE 方法路由映射
+// Delete 设置 DELETE 方法路由映射
 func (this *Server) Delete(path string, actionPtr interface{}) *Server {
 	this.router(path, "delete", actionPtr)
 	return this
 }
 
-// 设置 PURGE 方法路由映射
+// Purge 设置 PURGE 方法路由映射
 func (this *Server) Purge(path string, actionPtr interface{}) *Server {
 	this.router(path, "purge", actionPtr)
 	return this
 }
 
-// 设置 PUT 方法路由映射
+// Put 设置 PUT 方法路由映射
 func (this *Server) Put(path string, actionPtr interface{}) *Server {
 	this.router(path, "put", actionPtr)
 	return this
 }
 
-// 设置 OPTIONS 方法路由映射
+// Options 设置 OPTIONS 方法路由映射
 func (this *Server) Options(path string, actionPtr interface{}) *Server {
 	this.router(path, "options", actionPtr)
 	return this
 }
 
-// 设置 TRACE 方法路由映射
+// Trace 设置 TRACE 方法路由映射
 func (this *Server) Trace(path string, actionPtr interface{}) *Server {
 	this.router(path, "trace", actionPtr)
 	return this
 }
 
-// 设置 CONNECT 方法路由映射
+// Connect 设置 CONNECT 方法路由映射
 func (this *Server) Connect(path string, actionPtr interface{}) *Server {
 	this.router(path, "connect", actionPtr)
 	return this
 }
 
-// 设置一组方法路由映射
+// Any 设置一组方法路由映射
 func (this *Server) Any(methods []string, path string, actionPtr interface{}) *Server {
 	for _, method := range methods {
 		this.router(path, method, actionPtr)
@@ -776,13 +776,13 @@ func (this *Server) Any(methods []string, path string, actionPtr interface{}) *S
 	return this
 }
 
-// 将所有方法映射到路由
+// All 将所有方法映射到路由
 func (this *Server) All(path string, actionPtr interface{}) *Server {
 	this.router(path, "*", actionPtr)
 	return this
 }
 
-// 添加静态目录
+// Static 添加静态目录
 func (this *Server) Static(prefix string, dir string) *Server {
 	this.staticDirs = append(this.staticDirs, ServerStaticDir{
 		prefix: prefix,
@@ -791,20 +791,20 @@ func (this *Server) Static(prefix string, dir string) *Server {
 	return this
 }
 
-// 连接状态
+// ConnState 连接状态
 func (this *Server) ConnState(connState func(conn net.Conn, state http.ConnState)) *Server {
 	this.connState = connState
 	return this
 }
 
-// 设置SESSION管理器
+// Session 设置SESSION管理器
 func (this *Server) Session(sessionManager interface{}, cookieName string) *Server {
 	this.sessionManager = sessionManager
 	this.sessionCookieName = cookieName
 	return this
 }
 
-// 设置日志writer
+// LogWriter 设置日志writer
 func (this *Server) LogWriter(logWriter LogWriter) *Server {
 	if this.logWriter != nil {
 		this.logWriter.Close()
@@ -815,7 +815,7 @@ func (this *Server) LogWriter(logWriter LogWriter) *Server {
 	return this
 }
 
-// 设置是否打印访问日志
+// AccessLog 设置是否打印访问日志
 func (this *Server) AccessLog(bool bool) *Server {
 	this.accessLog = bool
 	return this

@@ -12,11 +12,12 @@ import (
 	"strconv"
 )
 
-// 服务配置
+// ServerConfig 服务配置
 type ServerConfig struct {
 	Http struct {
-		On     bool     `yaml:"on" json:"on"`
-		Listen []string `yaml:"listen" json:"listen"` // 监听地址，带端口
+		On              bool     `yaml:"on" json:"on"`
+		Listen          []string `yaml:"listen" json:"listen"`                   // 监听地址，带端口
+		RedirectToHTTPS bool     `yaml:"redirectToHTTPS" json:"redirectToHTTPS"` // 自动跳转到HTTPS
 	} `yaml:"http" json:"http"`
 	Https struct {
 		On     bool     `yaml:"on" json:"on"`

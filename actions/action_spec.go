@@ -6,14 +6,14 @@ import (
 	"strings"
 )
 
-// Action相关定义
+// ActionSpec Action相关定义
 type ActionSpec struct {
 	Type reflect.Type
 
 	BeforeFunc *reflect.Value
 	AfterFunc  *reflect.Value
 
-	Funcs map[string]*reflect.Value
+	FuncMap map[string]*reflect.Value
 
 	Module    string
 	PkgPath   string
@@ -24,7 +24,7 @@ type ActionSpec struct {
 	Context *ActionContext
 }
 
-// 创建新定义
+// NewActionSpec 创建新定义
 func NewActionSpec(actionPtr ActionWrapper) *ActionSpec {
 	ptrValue := reflect.ValueOf(actionPtr)
 	valueType := reflect.Indirect(ptrValue).Type()
@@ -32,7 +32,7 @@ func NewActionSpec(actionPtr ActionWrapper) *ActionSpec {
 		Type:      valueType,
 		PkgPath:   valueType.PkgPath(),
 		ClassName: valueType.String(),
-		Funcs:     map[string]*reflect.Value{},
+		FuncMap:   map[string]*reflect.Value{},
 		Context:   NewActionContext(),
 	}
 
@@ -56,14 +56,14 @@ func NewActionSpec(actionPtr ActionWrapper) *ActionSpec {
 		}
 
 		if strings.HasPrefix(method.Name, "Run") {
-			spec.Funcs[method.Name] = &method.Func
+			spec.FuncMap[method.Name] = &method.Func
 		}
 	}
 
 	return spec
 }
 
-// 新建一个Action指针
+// NewPtrValue 新建一个Action指针
 func (this *ActionSpec) NewPtrValue() reflect.Value {
 	actionPtr := reflect.New(this.Type)
 	wrapper, ok := actionPtr.Interface().(ActionWrapper)
@@ -73,7 +73,7 @@ func (this *ActionSpec) NewPtrValue() reflect.Value {
 	return actionPtr
 }
 
-// class名是否包含任一前缀
+// HasClassPrefix class名是否包含任一前缀
 func (this *ActionSpec) HasClassPrefix(prefix ...string) bool {
 	for _, prefix1 := range prefix {
 		if strings.HasPrefix(this.ClassName, prefix1) {

@@ -34,7 +34,7 @@ type ActionWrapper interface {
 	Object() *ActionObject
 }
 
-// 执行某个Action
+// RunAction 执行某个Action
 func RunAction(actionPtr interface{},
 	spec *ActionSpec,
 	request *http.Request,
@@ -197,10 +197,10 @@ func runActionCopy(spec *ActionSpec,
 	}
 
 	// 执行Action
-	var requestRun = "Run" + strings.ToUpper(string(request.Method[0])) + strings.ToLower(string(request.Method[1:]))
-	runFuncValue, found := spec.Funcs[requestRun]
+	var requestRun = "Run" + strings.ToUpper(string(request.Method[0])) + strings.ToLower(request.Method[1:])
+	runFuncValue, found := spec.FuncMap[requestRun]
 	if !found {
-		runFuncValue, found = spec.Funcs["Run"]
+		runFuncValue, found = spec.FuncMap["Run"]
 
 		if !found {
 			logs.Errorf("'Action.Run()' or 'Action." + requestRun + "()' method should be implemented in '" + spec.Type.Name() + "' (at " + spec.Type.PkgPath() + "/" + spec.Type.Name() + ")")
