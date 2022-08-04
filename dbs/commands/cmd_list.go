@@ -1,17 +1,17 @@
 package commands
 
 import (
-	"github.com/iwind/TeaGo/cmd"
-	"github.com/iwind/TeaGo/files"
-	"os"
 	"github.com/iwind/TeaGo/Tea"
+	"github.com/iwind/TeaGo/cmd"
 	"github.com/iwind/TeaGo/dbs"
-	"strings"
-	"regexp"
+	"github.com/iwind/TeaGo/files"
 	"github.com/iwind/TeaGo/lists"
-	"time"
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/utils/time"
+	"os"
+	"regexp"
+	"strings"
+	"time"
 )
 
 type ListModelsCommand struct {
@@ -123,6 +123,6 @@ func (this *ListModelsCommand) Run() {
 			this.Output(model + "\n")
 		}
 	} else {
-		this.Output("not found any models\n")
+		this.Output("can not find any models\n")
 	}
 }

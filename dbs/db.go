@@ -8,7 +8,7 @@ import (
 	"github.com/iwind/TeaGo/maps"
 	"github.com/iwind/TeaGo/types"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -132,10 +132,10 @@ func NewInstanceFromConfig(config *DBConfig) (*DB, error) {
 func loadConfig() {
 	dbInitOnce.Do(func() {
 		var dbConfigFile = Tea.ConfigFile("db.yaml")
-		var fileBytes, err = ioutil.ReadFile(dbConfigFile)
+		var fileBytes, err = os.ReadFile(dbConfigFile)
 		if err != nil {
 			dbConfigFile = Tea.ConfigFile("db.conf")
-			fileBytes, err = ioutil.ReadFile(dbConfigFile)
+			fileBytes, err = os.ReadFile(dbConfigFile)
 			if err != nil {
 				logs.Errorf("[DB]%s", err.Error())
 				return

@@ -8,7 +8,6 @@ import (
 	"github.com/iwind/TeaGo/files"
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/utils/string"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -232,7 +231,7 @@ func (this *FileSessionManager) load() {
 			}
 			sid := regMatches[1]
 
-			data, err := ioutil.ReadFile(filename)
+			data, err := os.ReadFile(filename)
 			if err != nil {
 				logs.Errorf("%s", err.Error())
 				continue

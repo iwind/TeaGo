@@ -9,7 +9,6 @@ import (
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/maps"
 	"github.com/iwind/TeaGo/utils/string"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -96,7 +95,7 @@ func (this *ActionObject) render(dir string) error {
 		filename = plusFilename
 	}
 
-	bodyBytes, err := ioutil.ReadFile(filename + ".html")
+	bodyBytes, err := os.ReadFile(filename + ".html")
 
 	if err != nil {
 		return err
@@ -131,7 +130,7 @@ func (this *ActionObject) render(dir string) error {
 
 			_, err := os.Stat(layoutFile)
 			if err == nil {
-				layoutBytes, err := ioutil.ReadFile(layoutFile)
+				layoutBytes, err := os.ReadFile(layoutFile)
 				if err == nil {
 					layoutBody := string(layoutBytes)
 
@@ -224,10 +223,10 @@ func (this *ActionObject) render(dir string) error {
 
 func loadChildTemplate(watchingFiles *map[string]int64, tpl *Template, dir string, filename string, childTemplateName string) error {
 	viewPath := pathRelative(dir, filename, childTemplateName)
-	childBytes, err := ioutil.ReadFile(viewPath)
+	childBytes, err := os.ReadFile(viewPath)
 	if err != nil {
 		var plusViewPath = regexp.MustCompile(`\.html$`).ReplaceAllString(viewPath, "_plus.html")
-		plusChildBytes, err2 := ioutil.ReadFile(plusViewPath)
+		plusChildBytes, err2 := os.ReadFile(plusViewPath)
 		if err2 != nil {
 			return err
 		}

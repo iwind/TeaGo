@@ -6,7 +6,6 @@ import (
 	"github.com/iwind/TeaGo/utils/string"
 	"gopkg.in/yaml.v3"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -48,7 +47,7 @@ func (this *ServerConfig) Load() {
 		}
 	}
 
-	fileBytes, err := ioutil.ReadFile(configFile)
+	fileBytes, err := os.ReadFile(configFile)
 	if err != nil {
 		logs.Errorf("%s", err.Error())
 		return

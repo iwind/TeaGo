@@ -1,10 +1,9 @@
 package processes
 
 import (
-	"os"
 	"github.com/iwind/TeaGo/Tea"
 	"github.com/iwind/TeaGo/utils/string"
-	"io/ioutil"
+	"os"
 )
 
 func Exec(command string, args ...string) ([]byte, error) {
@@ -36,7 +35,7 @@ func Exec(command string, args ...string) ([]byte, error) {
 	}
 
 	out.Close()
-	outputData, err := ioutil.ReadFile(tmpFile)
+	outputData, err := os.ReadFile(tmpFile)
 	os.Remove(tmpFile)
 
 	if err != nil {

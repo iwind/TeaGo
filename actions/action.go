@@ -29,7 +29,7 @@ type ActionParamError struct {
 	Messages []string `json:"messages"`
 }
 
-// 读取ActionObject对象的接口
+// ActionWrapper 读取ActionObject对象的接口
 type ActionWrapper interface {
 	Object() *ActionObject
 }
@@ -257,7 +257,7 @@ func runActionCopy(spec *ActionSpec,
 			} else {
 				filePtr := actionObject.File(fieldName)
 				if filePtr == nil {
-					var lowerFirstName = strings.ToLower(string(fieldName[0])) + string(fieldName[1:])
+					var lowerFirstName = strings.ToLower(string(fieldName[0])) + fieldName[1:]
 					filePtr = actionObject.File(lowerFirstName)
 				}
 				fieldValue.Set(reflect.ValueOf(filePtr))
@@ -273,7 +273,7 @@ func runActionCopy(spec *ActionSpec,
 			} else {
 				filePtr := actionObject.File(fieldName)
 				if filePtr == nil {
-					var lowerFirstName = strings.ToLower(string(fieldName[0])) + string(fieldName[1:])
+					var lowerFirstName = strings.ToLower(string(fieldName[0])) + fieldName[1:]
 					filePtr = actionObject.File(lowerFirstName)
 				}
 				if filePtr != nil {
@@ -655,7 +655,7 @@ func getActionParamFuzzy(params *Params, name string) (value []string, has bool)
 		return value, true
 	}
 
-	var lowerFirstName = strings.ToLower(string(name[0])) + string(name[1:])
+	var lowerFirstName = strings.ToLower(string(name[0])) + name[1:]
 	return getActionParam(params, lowerFirstName)
 }
 
@@ -713,7 +713,7 @@ func parseTagsFromString(tag string) map[string]string {
 		if i == 0 || i+1 >= len(tag) || tag[i] != ':' || tag[i+1] != '"' {
 			break
 		}
-		name := string(tag[:i])
+		name := tag[:i]
 		tag = tag[i+1:]
 
 		// Scan quoted string to find value.
@@ -727,7 +727,7 @@ func parseTagsFromString(tag string) map[string]string {
 		if i >= len(tag) {
 			break
 		}
-		qvalue := string(tag[:i+1])
+		qvalue := tag[:i+1]
 		tag = tag[i+1:]
 
 		value, err := strconv.Unquote(qvalue)

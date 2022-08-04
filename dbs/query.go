@@ -1011,10 +1011,16 @@ func (this *Query) FindInt64Col(defaultValue int64) (int64, error) {
 	return types.Int64(col), err
 }
 
-// FindFloat64Col 查询某个字段值并返回浮点型
+// FindFloat64Col 查询某个字段值并返回64位浮点型
 func (this *Query) FindFloat64Col(defaultValue float64) (float64, error) {
 	col, err := this.FindCol(defaultValue)
 	return types.Float64(col), err
+}
+
+// FindFloat32Col 查询某个字段值并返回32位浮点型
+func (this *Query) FindFloat32Col(defaultValue float32) (float32, error) {
+	col, err := this.FindCol(defaultValue)
+	return types.Float32(col), err
 }
 
 // Exist 判断记录是否存在
@@ -1140,6 +1146,42 @@ func (this *Query) Max(attr string, defaultValue float64) (float64, error) {
 		return defaultValue, nil
 	}
 	return types.Float64(value), err
+}
+
+// MaxInt64 执行MAX查询
+func (this *Query) MaxInt64(attr string, defaultValue int64) (int64, error) {
+	this.action = QueryActionFind
+	this.subAction = QuerySubActionMax
+	this.NoPk(true)
+
+	this.results = []string{"MAX(" + this.wrapKeyword(attr) + ")"}
+	var value, err = this.FindCol(defaultValue)
+	if err != nil {
+		return 0, err
+	}
+
+	if value == nil {
+		return defaultValue, nil
+	}
+	return types.Int64(value), err
+}
+
+// MaxInt 执行MAX查询
+func (this *Query) MaxInt(attr string, defaultValue int) (int, error) {
+	this.action = QueryActionFind
+	this.subAction = QuerySubActionMax
+	this.NoPk(true)
+
+	this.results = []string{"MAX(" + this.wrapKeyword(attr) + ")"}
+	var value, err = this.FindCol(defaultValue)
+	if err != nil {
+		return 0, err
+	}
+
+	if value == nil {
+		return defaultValue, nil
+	}
+	return types.Int(value), err
 }
 
 // Avg 执行AVG查询

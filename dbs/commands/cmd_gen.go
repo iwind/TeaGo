@@ -115,7 +115,7 @@ func (this *GenModelCommand) Run() {
 		return
 	}
 	if table == nil {
-		this.Println("not found table named '" + tableName + "'")
+		this.Println("can not find table named '" + tableName + "'")
 		return
 	}
 
@@ -173,7 +173,7 @@ type ` + model + ` struct {`
 
 	for _, field := range table.Fields {
 		var attr = this.convertFieldNameStyle(field.Name)
-		modelString += "\t" + attr + " interface{}" + " // " + field.Comment + "\n"
+		modelString += "\t" + attr + " any" + " // " + field.Comment + "\n"
 	}
 
 	modelString += "}"
@@ -304,7 +304,7 @@ func (this *${daoName}) Disable${model}(tx *dbs.Tx, ${pkName} ${pkNameType}) err
 func (this *${daoName}) FindEnabled${model}(tx *dbs.Tx, ${pkName} ${pkNameType}) (*${model}, error) {
 	result, err := this.Query(tx).
 		Pk(${pkName}).
-		Attr("state", ${model}StateEnabled).
+		State(${model}StateEnabled).
 		Find()
 	if result == nil {
 		return nil, err

@@ -6,7 +6,6 @@ import (
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/utils/string"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -118,27 +117,27 @@ func (this *File) AbsPath() (string, error) {
 	return p, nil
 }
 
-// 对文件内容进行Md5处理
+// Md5 对文件内容进行Md5处理
 func (this *File) Md5() (string, error) {
-	data, err := ioutil.ReadFile(this.path)
+	data, err := os.ReadFile(this.path)
 	if err != nil {
 		return "", err
 	}
 	return stringutil.Md5(string(data)), err
 }
 
-// 读取文件内容
+// ReadAll 读取文件内容
 func (this *File) ReadAll() ([]byte, error) {
-	data, err := ioutil.ReadFile(this.path)
+	data, err := os.ReadFile(this.path)
 	if err != nil {
 		return []byte{}, err
 	}
 	return data, err
 }
 
-// 读取文件内容并返回字符串形式
+// ReadAllString 读取文件内容并返回字符串形式
 func (this *File) ReadAllString() (string, error) {
-	data, err := ioutil.ReadFile(this.path)
+	data, err := os.ReadFile(this.path)
 	if err != nil {
 		return "", err
 	}

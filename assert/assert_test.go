@@ -1,6 +1,7 @@
-package assert
+package assert_test
 
 import (
+	"github.com/iwind/TeaGo/assert"
 	"github.com/iwind/TeaGo/maps"
 	"reflect"
 	"testing"
@@ -8,7 +9,7 @@ import (
 )
 
 func TestAssertion(t *testing.T) {
-	a := NewAssertion(t)
+	a := assert.NewAssertion(t)
 	a.
 		IsTrue(false, "not true"). // not true not true not true not true not true not true not true not true not true
 		IsTrue(false, "false").
@@ -28,7 +29,7 @@ func TestAssertion(t *testing.T) {
 }
 
 func TestAssertion_Contains(t *testing.T) {
-	a := NewAssertion(t)
+	a := assert.NewAssertion(t)
 	a.Contains([]string{"a", "b", "c"}, "a")
 	a.Contains([3]string{"a", "b", "c"}, "a")
 	a.Contains(map[string]interface{}{
@@ -39,7 +40,7 @@ func TestAssertion_Contains(t *testing.T) {
 }
 
 func TestAssertion_Panic(t *testing.T) {
-	a := NewAssertion(t)
+	a := assert.NewAssertion(t)
 	a.
 		Panic(func() {
 			panic("this is panic")
@@ -47,7 +48,7 @@ func TestAssertion_Panic(t *testing.T) {
 }
 
 func TestAssertionKind(t *testing.T) {
-	a := NewAssertion(t)
+	a := assert.NewAssertion(t)
 	a.
 		IsKind("1", reflect.Int).
 		IsKind(1, reflect.Int).
@@ -64,13 +65,13 @@ func TestAssertionKind(t *testing.T) {
 }
 
 func TestAssertion_Pass(t *testing.T) {
-	a := NewAssertion(t)
+	a := assert.NewAssertion(t)
 	a.Fail()
 	a.Pass()
 }
 
 func TestAssertion_Compare(t *testing.T) {
-	a := NewAssertion(t)
+	a := assert.NewAssertion(t)
 	a.
 		Gt(123, 10).
 		Lt(123, 10).
@@ -79,14 +80,14 @@ func TestAssertion_Compare(t *testing.T) {
 }
 
 func TestAssertion_NotTimeout(t *testing.T) {
-	a := NewAssertion(t)
+	a := assert.NewAssertion(t)
 	a.NotTimeout(3*time.Second, func() {
 		time.Sleep(4 * time.Millisecond)
 	})
 }
 
 func TestAssertion_Map(t *testing.T) {
-	a := NewAssertion(t)
+	a := assert.NewAssertion(t)
 	m := maps.Map{
 		"name": "lu",
 		"age":  20,
@@ -103,7 +104,7 @@ func TestAssertion_Map(t *testing.T) {
 }
 
 func TestAssertion_LogJSON(t *testing.T) {
-	a := NewAssertion(t)
+	a := assert.NewAssertion(t)
 	a.LogJSON([]string{"a", "b", "c"})
 	a.LogJSON("d")
 }

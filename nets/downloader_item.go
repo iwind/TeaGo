@@ -3,7 +3,6 @@ package nets
 import (
 	"errors"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -143,7 +142,7 @@ func (this *DownloaderItem) Start() {
 	}
 
 	if resp.Body != nil {
-		io.Copy(ioutil.Discard, resp.Body)
+		io.Copy(io.Discard, resp.Body)
 		resp.Body.Close()
 	}
 

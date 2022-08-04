@@ -197,20 +197,20 @@ func (this *ActionObject) WriteString(output ...string) {
 }
 
 // 输出二进制字节
-func (this *ActionObject) Write(bytes []byte) {
+func (this *ActionObject) Write(bytes []byte) (n int, err error) {
 	if this.writer != nil {
-		this.writer.Write(bytes)
+		return this.writer.Write(bytes)
 	} else {
-		this.ResponseWriter.Write(bytes)
+		return this.ResponseWriter.Write(bytes)
 	}
 }
 
 // WriteFormat 输出可以格式化的内容
-func (this *ActionObject) WriteFormat(format string, args ...interface{}) {
+func (this *ActionObject) WriteFormat(format string, args ...interface{}) (n int, err error) {
 	if len(args) > 0 {
 		format = fmt.Sprintf(format, args...)
 	}
-	this.Write([]byte(format))
+	return this.Write([]byte(format))
 }
 
 // WriteJSON 写入JSON
