@@ -6,7 +6,13 @@ import (
 )
 
 func TestFormat(t *testing.T) {
-	t.Log(Format("Y-m-d H:i:s"))
+	t.Log("Y-m-d:", Format("Y-m-d"))
+	t.Log("Ymd:", Format("Ymd"))
+	t.Log("Ym:", Format("Ym"))
+	t.Log("Y-m-d H:i:s", Format("Y-m-d H:i:s"))
+	t.Log("Y/m/d H:i:s", Format("Y/m/d H:i:s"))
+	t.Log("Hi:", Format("Hi"))
+	t.Log("His:", Format("His"))
 	t.Log(Format("Y-m-d H:i:s", time.Date(2020, 10, 10, 0, 0, 0, 0, time.Local)))
 	t.Log(Format("c", time.Now().Add(-1*time.Hour)))
 	t.Log(Format("r"))
@@ -24,6 +30,6 @@ func TestFormat(t *testing.T) {
 
 func BenchmarkFormat(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		Format("YmdHis.U")
+		Format("Y-m-d H:i:s")
 	}
 }

@@ -3,8 +3,15 @@ package timeutil
 import (
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
+
+var stringBuilderPool = &sync.Pool{
+	New: func() any {
+		return &strings.Builder{}
+	},
+}
 
 // Format 文档 http://php.net/manual/en/function.date.php
 // 目前没有支持的 S, L, o, B, v, e, I
@@ -14,7 +21,35 @@ func Format(format string, now ...time.Time) string {
 	}
 
 	var t = now[0]
-	buffer := strings.Builder{}
+
+	// 快速识别的模板
+	switch format {
+	case "Y":
+		return strconv.Itoa(t.Year())
+	case "Y-m-d":
+		return strconv.Itoa(t.Year()) + "-" + leadingZero(int(t.Month())) + "-" + leadingZero(t.Day())
+	case "Y-m-d H:i:s":
+		return strconv.Itoa(t.Year()) + "-" + leadingZero(int(t.Month())) + "-" + leadingZero(t.Day()) + " " + leadingZero(t.Hour()) + ":" + leadingZero(t.Minute()) + ":" + leadingZero(t.Second())
+	case "Y/m/d H:i:s":
+		return strconv.Itoa(t.Year()) + "/" + leadingZero(int(t.Month())) + "/" + leadingZero(t.Day()) + " " + leadingZero(t.Hour()) + ":" + leadingZero(t.Minute()) + ":" + leadingZero(t.Second())
+	case "Ymd":
+		return strconv.Itoa(t.Year()) + leadingZero(int(t.Month())) + leadingZero(t.Day())
+	case "Ym":
+		return strconv.Itoa(t.Year()) + leadingZero(int(t.Month()))
+	case "Hi":
+		return leadingZero(t.Hour()) + leadingZero(t.Minute())
+	case "His":
+		return leadingZero(t.Hour()) + leadingZero(t.Minute()) + leadingZero(t.Second())
+	}
+
+	// 自动构造
+	var buffer = stringBuilderPool.Get().(*strings.Builder)
+	if buffer.Len() > 0 {
+		buffer.Reset()
+	}
+	defer func() {
+		stringBuilderPool.Put(buffer)
+	}()
 
 	for _, runeItem := range format {
 		switch runeItem {
@@ -135,4 +170,15 @@ func Format(format string, now ...time.Time) string {
 // FormatTime 格式化时间戳
 func FormatTime(format string, timestamp int64) string {
 	return Format(format, time.Unix(timestamp, 0))
+}
+
+func leadingZero(i int) string {
+	if i <= 0 {
+		return "00"
+	}
+	var s = strconv.Itoa(i)
+	if i < 10 {
+		return "0" + s
+	}
+	return s
 }
