@@ -569,7 +569,6 @@ func (this *Query) Set(field string, value interface{}) *Query {
 }
 
 // Sets 设置一组字段值，以便用于删除和修改操作
-// @TODO 需要对keys进行排序
 func (this *Query) Sets(values map[string]interface{}) *Query {
 	for field, value := range values {
 		this.savingFields.Put(field, this.wrapValue(value))
@@ -1561,6 +1560,33 @@ func (this *Query) Delete() (rowsAffected int64, err error) {
 	}
 
 	return rows, nil
+}
+
+// DeleteQuickly 删除Delete，但不返回影响的行数
+func (this *Query) DeleteQuickly() error {
+	this.action = QueryActionDelete
+	sql, err := this.AsSQL()
+	if err != nil {
+		return err
+	}
+	var stmt *Stmt
+	var cached bool
+	if this.canReuse {
+		stmt, cached, err = this.preparer().PrepareOnce(sql)
+	} else {
+		stmt, err = this.preparer().Prepare(sql)
+	}
+	if err != nil {
+		return err
+	}
+	if !cached {
+		defer func() {
+			_ = stmt.Close()
+		}()
+	}
+
+	_, err = stmt.Exec(this.params...)
+	return err
 }
 
 func (this *Query) stringValue(value interface{}) interface{} {
