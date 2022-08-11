@@ -146,7 +146,7 @@ func (this *CheckModelCommand) Run() {
 				var newTypeName = field.ValueTypeName()
 
 				// bool类型
-				if lists.ContainsString(specialBoolFields, field.Name) {
+				if lists.ContainsString(specialBoolFields, field.Name) || this.isBoolField(field.Name) {
 					newTypeName = "bool"
 				}
 
@@ -198,4 +198,14 @@ func (this *CheckModelCommand) convertFieldNameStyle(fieldName string) string {
 func (this *CheckModelCommand) outputFile(file string) {
 	goPath := os.Getenv("GOPATH")
 	this.Output("   ", strings.TrimPrefix(file, goPath), "\n")
+}
+
+func (this *CheckModelCommand) isBoolField(fieldName string) bool {
+	for _, prefix := range []string{"is", "can", "has"} {
+		if strings.HasPrefix(fieldName, prefix) && len(fieldName) > len(prefix) && (fieldName[len(prefix)] >= 'A' && fieldName[len(prefix)] <= 'Z') {
+			return true
+		}
+	}
+
+	return false
 }

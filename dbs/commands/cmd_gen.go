@@ -157,7 +157,7 @@ type ` + model + ` struct {`
 		var dataType = field.ValueTypeName()
 
 		// bool类型
-		if lists.ContainsString(specialBoolFields, field.Name) {
+		if lists.ContainsString(specialBoolFields, field.Name) || this.isBoolField(field.Name) {
 			dataType = "bool"
 		}
 
@@ -449,4 +449,14 @@ func (this *GenModelCommand) convertToUnderlineName(modelName string) string {
 	return strings.TrimPrefix(reg.ReplaceAllStringFunc(modelName, func(s string) string {
 		return "_" + strings.ToLower(s)
 	}), "_")
+}
+
+func (this *GenModelCommand) isBoolField(fieldName string) bool {
+	for _, prefix := range []string{"is", "can", "has"} {
+		if strings.HasPrefix(fieldName, prefix) && len(fieldName) > len(prefix) && (fieldName[len(prefix)] >= 'A' && fieldName[len(prefix)] <= 'Z') {
+			return true
+		}
+	}
+
+	return false
 }
