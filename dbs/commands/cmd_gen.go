@@ -452,7 +452,7 @@ func (this *GenModelCommand) convertToUnderlineName(modelName string) string {
 }
 
 func (this *GenModelCommand) isBoolField(fieldName string) bool {
-	for _, prefix := range []string{"is", "can", "has"} {
+	for _, prefix := range []string{"is", "can", "has", "should"} {
 		if strings.HasPrefix(fieldName, prefix) && len(fieldName) > len(prefix) && (fieldName[len(prefix)] >= 'A' && fieldName[len(prefix)] <= 'Z') {
 			return true
 		}
