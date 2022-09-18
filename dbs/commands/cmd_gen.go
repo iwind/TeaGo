@@ -149,7 +149,7 @@ type ` + model + ` struct {`
 	var specialBoolFields = []string{}
 	var globalConfig = dbs.GlobalConfig()
 	if globalConfig.Fields != nil {
-		specialBoolFields, _ = globalConfig.Fields["bool"]
+		specialBoolFields = globalConfig.Fields["bool"]
 	}
 
 	for _, field := range table.Fields {

@@ -63,7 +63,7 @@ func (this *CheckModelCommand) Run() {
 	var specialBoolFields = []string{}
 	var globalConfig = dbs.GlobalConfig()
 	if globalConfig.Fields != nil {
-		specialBoolFields, _ = globalConfig.Fields["bool"]
+		specialBoolFields = globalConfig.Fields["bool"]
 	}
 
 	dir.Range(func(file *files.File) {
@@ -153,7 +153,7 @@ func (this *CheckModelCommand) Run() {
 				oldField, found := oldFields[field.Name]
 				if !found {
 					this.Output("<code>+[" + modelName + "] field: " + this.convertFieldNameStyle(field.Name) + " " + newTypeName + " `field:\"" + field.Name + "\"` // " + field.Comment + "</code>\n")
-					this.Output("<code>+[" + modelName + "Operator] field: " + this.convertFieldNameStyle(field.Name) + " interface{} // " + field.Comment + "</code>\n")
+					this.Output("<code>+[" + modelName + "Operator] field: " + this.convertFieldNameStyle(field.Name) + " any // " + field.Comment + "</code>\n")
 					this.outputFile(modelFiles[modelName])
 					countIssues++
 				} else {

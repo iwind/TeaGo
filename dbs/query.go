@@ -1404,10 +1404,10 @@ func (this *Query) UpdateQuickly() error {
 // InsertOrUpdate 插入或更改
 // 依据要插入的数据中的unique键来决定是插入数据还是替换数据
 func (this *Query) InsertOrUpdate(insertingValues maps.Map, updatingValues maps.Map) (rowsAffected int64, lastInsertId int64, err error) {
-	if insertingValues == nil || len(insertingValues) == 0 {
+	if len(insertingValues) == 0 {
 		return 0, 0, errors.New("[Query.InsertOrUpdate()]inserting values should be set")
 	}
-	if updatingValues == nil || len(updatingValues) == 0 {
+	if len(updatingValues) == 0 {
 		return 0, 0, errors.New("[Query.InsertOrUpdate()]updating values should be set")
 	}
 
@@ -1469,7 +1469,7 @@ func (this *Query) InsertOrUpdate(insertingValues maps.Map, updatingValues maps.
 // InsertOrUpdateQuickly 插入或更改
 // 依据要插入的数据中的unique键来决定是插入数据还是替换数据
 func (this *Query) InsertOrUpdateQuickly(insertingValues maps.Map, updatingValues maps.Map) error {
-	if insertingValues == nil || len(insertingValues) == 0 {
+	if len(insertingValues) == 0 {
 		return errors.New("[Query.InsertOrUpdate()]inserting values should be set")
 	}
 	if updatingValues == nil || len(updatingValues) == 0 {

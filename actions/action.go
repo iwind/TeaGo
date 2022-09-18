@@ -229,7 +229,7 @@ func runActionCopy(spec *ActionSpec,
 	if argType.Kind() != reflect.Struct {
 		logs.Errorf("Action.Run() method should contains only struct argument")
 		if responseWriter != nil {
-			http.Error(responseWriter.(http.ResponseWriter), "500 Internal Error", http.StatusInternalServerError)
+			http.Error(responseWriter, "500 Internal Error", http.StatusInternalServerError)
 		}
 		return
 	}

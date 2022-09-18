@@ -248,6 +248,9 @@ func loadChildTemplate(watchingFiles *map[string]int64, tpl *Template, dir strin
 
 	// 子模板
 	reg, err = stringutil.RegexpCompile("\\{\\$template\\s+\"(.+)\"\\}")
+	if err != nil {
+		return err
+	}
 	matches := reg.FindAllStringSubmatch(body, -1)
 	for _, match := range matches {
 		err = loadChildTemplate(watchingFiles, tpl, dir, filename, match[1])
