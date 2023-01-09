@@ -68,7 +68,13 @@ func TestIntN(t *testing.T) {
 	t.Log("maxUint16:", math.MaxUint16)
 
 	assert(t, Uint64(123) == 123)
+}
 
+func TestString(t *testing.T) {
+	t.Log(String(123))
+	t.Log(String(123456))
+	t.Log(String(123456.123456))
+	t.Log(String(123456890123456))
 }
 
 func TestIsSlice(t *testing.T) {

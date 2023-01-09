@@ -1107,7 +1107,9 @@ func String(value interface{}) string {
 	case uint64:
 		return strconv.FormatUint(x, 10)
 	case int8, int16, int32, uint, uint8, uint16, uint32:
-		return fmt.Sprintf("%d", value)
+		return fmt.Sprintf("%d", x)
+	case float32, float64:
+		return fmt.Sprintf("%f", x)
 	case []byte:
 		return string(value.([]byte))
 	case string:
