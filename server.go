@@ -603,9 +603,9 @@ func (this *Server) buildHandle(actionPtr interface{}) func(writer http.Response
 
 		// POST参数
 		if request.Method == "POST" {
-			maxSize := int64(this.config.MaxSize())
+			var maxSize = int64(this.config.MaxSize())
 			if maxSize <= 0 {
-				maxSize = 2 << 10
+				maxSize = 32 << 20
 			}
 			err := request.ParseMultipartForm(maxSize)
 			if err != nil {
@@ -619,7 +619,7 @@ func (this *Server) buildHandle(actionPtr interface{}) func(writer http.Response
 			}
 		}
 
-		actionObject := actionWrapper.Object()
+		var actionObject = actionWrapper.Object()
 		actionObject.SetMaxSize(this.config.MaxSize())
 		actionObject.SetSessionManager(this.sessionManager)
 		actionObject.SetSessionCookieName(this.sessionCookieName)
