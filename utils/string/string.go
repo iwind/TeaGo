@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/iwind/TeaGo/rands"
+	"hash"
 	"math"
 	"regexp"
 	"strconv"
@@ -16,7 +17,7 @@ import (
 var reuseRegexpMap = map[string]*regexp.Regexp{}
 var reuseRegexpMutex = &sync.RWMutex{}
 
-// 判断slice中是否包含某个字符串
+// Contains 判断slice中是否包含某个字符串
 func Contains(slice []string, item string) bool {
 	for _, value := range slice {
 		if value == item {
@@ -26,7 +27,7 @@ func Contains(slice []string, item string) bool {
 	return false
 }
 
-// 生成可重用的正则
+// RegexpCompile 生成可重用的正则
 func RegexpCompile(pattern string) (*regexp.Regexp, error) {
 	reuseRegexpMutex.Lock()
 	defer reuseRegexpMutex.Unlock()
@@ -43,19 +44,29 @@ func RegexpCompile(pattern string) (*regexp.Regexp, error) {
 	return reg, err
 }
 
-// 计算字符串的md5
-func Md5(source string) string {
-	hash := md5.New()
-	hash.Write([]byte(source))
-	return fmt.Sprintf("%x", hash.Sum(nil))
+// Md5 Pool
+var md5Pool = &sync.Pool{
+	New: func() any {
+		return md5.New()
+	},
 }
 
-// 取得随机字符串
+// Md5 计算字符串的md5
+func Md5(source string) string {
+	var m = md5Pool.Get().(hash.Hash)
+	m.Write([]byte(source))
+	var result = fmt.Sprintf("%x", m.Sum(nil))
+	m.Reset()
+	md5Pool.Put(m)
+	return result
+}
+
+// Rand 取得随机字符串
 func Rand(n int) string {
 	return rands.String(n)
 }
 
-// 转换数字ID到字符串
+// ConvertID 转换数字ID到字符串
 func ConvertID(intId int64) string {
 	const mapping = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
@@ -73,7 +84,7 @@ func ConvertID(intId int64) string {
 	return code
 }
 
-// 翻转字符串
+// Reverse 翻转字符串
 func Reverse(s string) string {
 	runes := []rune(s)
 	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
@@ -82,7 +93,7 @@ func Reverse(s string) string {
 	return string(runes)
 }
 
-// 从字符串中分析尺寸
+// ParseFileSize 从字符串中分析尺寸
 func ParseFileSize(sizeString string) (float64, error) {
 	if len(sizeString) == 0 {
 		return 0, nil
@@ -120,7 +131,7 @@ func ParseFileSize(sizeString string) (float64, error) {
 	return 0, errors.New("invalid string:" + sizeString)
 }
 
-// 对比版本号，返回-1，0，1三个值
+// VersionCompare 对比版本号，返回-1，0，1三个值
 func VersionCompare(version1 string, version2 string) int8 {
 	if len(version1) == 0 {
 		if len(version2) == 0 {
@@ -185,7 +196,7 @@ func VersionCompare(version1 string, version2 string) int8 {
 	return -1
 }
 
-// JSON Encode
+// JSONEncode JSON Encode
 func JSONEncode(v interface{}) string {
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -194,7 +205,7 @@ func JSONEncode(v interface{}) string {
 	return string(b)
 }
 
-// JSON Encode Pretty
+// JSONEncodePretty JSON Encode Pretty
 func JSONEncodePretty(v interface{}) string {
 	b, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {

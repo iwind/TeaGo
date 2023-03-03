@@ -64,3 +64,14 @@ func TestParseFileSize(t *testing.T) {
 		t.Logf("%f", s)
 	}
 }
+
+func BenchmarkMd5Pool(b *testing.B) {
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			var sum = Md5("123456")
+			if sum != "e10adc3949ba59abbe56e057f20f883e" {
+				b.Fatal("fail:", sum)
+			}
+		}
+	})
+}
