@@ -75,6 +75,9 @@ func TestString(t *testing.T) {
 	t.Log(String(123456))
 	t.Log(String(123456.123456))
 	t.Log(String(123456890123456))
+	t.Log(String(float64(12345)))
+	t.Log(String(float32(12345)))
+	t.Log(String(12345.12345))
 }
 
 func TestIsSlice(t *testing.T) {
