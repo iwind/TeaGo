@@ -108,19 +108,19 @@ type Query struct {
 
 	filterFn func(one maps.Map) bool
 	mapFn    func(one maps.Map) maps.Map
-	slicePtr interface{}
+	slicePtr any
 
 	namedParamPrefix string // 命名参数名前缀
-	namedParams      map[string]interface{}
+	namedParams      map[string]any
 	namedParamIndex  int
 
-	params []interface{}
+	params []any
 
 	isSub bool // 是否为子查询
 }
 
 type QueryOrder struct {
-	Field interface{}
+	Field any
 	Type  int
 }
 
@@ -141,13 +141,13 @@ type QueryUseIndex struct {
 	Indexes []string
 }
 
-func NewQuery(model interface{}) *Query {
+func NewQuery(model any) *Query {
 	var query = &Query{}
 	query.init(model)
 	return query
 }
 
-func (this *Query) init(model interface{}) *Query {
+func (this *Query) init(model any) *Query {
 	if model != nil {
 		this.model = NewModel(model)
 	}
@@ -168,7 +168,7 @@ func (this *Query) init(model interface{}) *Query {
 	this.savingFields = maps.NewOrderedMap()
 	this.replacingFields = maps.NewOrderedMap()
 
-	this.namedParams = map[string]interface{}{}
+	this.namedParams = map[string]any{}
 	this.namedParamIndex = 0
 
 	this.namedParamPrefix = ""
@@ -208,7 +208,7 @@ func (this *Query) Reuse(canReuse bool) *Query {
 
 // State 设置状态查询快捷函数
 // 相当于：Attr("state", state)
-func (this *Query) State(state interface{}) *Query {
+func (this *Query) State(state any) *Query {
 	return this.Attr("state", state)
 }
 
@@ -227,7 +227,7 @@ func (this *Query) PkName(pkName string) *Query {
 }
 
 // Attr 设置查询的字段
-func (this *Query) Attr(name string, value interface{}) *Query {
+func (this *Query) Attr(name string, value any) *Query {
 	placeholder, isSlice := this.wrapAttr(value)
 	if isSlice {
 		this.attrs.Put(name, this.wrapKeyword(name)+" "+placeholder)
@@ -257,7 +257,7 @@ func (this *Query) Limit(size int64) *Query {
 
 // Result 设置查询要返回的字段
 // 字段名中支持星号(*)通配符
-func (this *Query) Result(fields ...interface{}) *Query {
+func (this *Query) Result(fields ...any) *Query {
 	for _, field := range fields {
 		if _, ok := field.(string); ok {
 			this.results = append(this.results, field.(string))
@@ -288,7 +288,7 @@ func (this *Query) Debug(debug bool) *Query {
 }
 
 // Order 添加排序条件
-func (this *Query) Order(field interface{}, orderType int) *Query {
+func (this *Query) Order(field any, orderType int) *Query {
 	this.orders = append(this.orders, QueryOrder{
 		Field: field,
 		Type:  orderType,
@@ -325,7 +325,7 @@ func (this *Query) DescPk() *Query {
 }
 
 // Join 设置单个联合查询条件
-func (this *Query) Join(dao interface{}, joinType int, on string) *Query {
+func (this *Query) Join(dao any, joinType int, on string) *Query {
 	this.joins = append(this.joins, QueryJoin{
 		DAO:  dao.(DAOWrapper).Object(),
 		Type: joinType,
@@ -354,7 +354,7 @@ func (this *Query) Where(wheres ...string) *Query {
 }
 
 // Gt 设置大于条件
-func (this *Query) Gt(attr string, value interface{}) *Query {
+func (this *Query) Gt(attr string, value any) *Query {
 	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
 	this.namedParams[param] = value
 	this.namedParamIndex++
@@ -365,7 +365,7 @@ func (this *Query) Gt(attr string, value interface{}) *Query {
 }
 
 // Gte 设置大于等于条件
-func (this *Query) Gte(attr string, value interface{}) *Query {
+func (this *Query) Gte(attr string, value any) *Query {
 	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
 	this.namedParams[param] = value
 	this.namedParamIndex++
@@ -376,7 +376,7 @@ func (this *Query) Gte(attr string, value interface{}) *Query {
 }
 
 // Lt 设置小于条件
-func (this *Query) Lt(attr string, value interface{}) *Query {
+func (this *Query) Lt(attr string, value any) *Query {
 	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
 	this.namedParams[param] = value
 	this.namedParamIndex++
@@ -387,7 +387,7 @@ func (this *Query) Lt(attr string, value interface{}) *Query {
 }
 
 // Lte 设置小于等于条件
-func (this *Query) Lte(attr string, value interface{}) *Query {
+func (this *Query) Lte(attr string, value any) *Query {
 	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
 	this.namedParams[param] = value
 	this.namedParamIndex++
@@ -398,7 +398,7 @@ func (this *Query) Lte(attr string, value interface{}) *Query {
 }
 
 // Neq 设置不等于条件
-func (this *Query) Neq(attr string, value interface{}) *Query {
+func (this *Query) Neq(attr string, value any) *Query {
 	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
 	this.namedParams[param] = value
 	this.namedParamIndex++
@@ -432,7 +432,7 @@ func (this *Query) Like(field string, expr string) *Query {
 }
 
 // JSONContains JSON包含
-func (this *Query) JSONContains(attr string, value interface{}) *Query {
+func (this *Query) JSONContains(attr string, value any) *Query {
 	var param = "TEA_PARAM_" + this.namedParamPrefix + strconv.Itoa(this.namedParamIndex)
 	this.namedParams[param] = value
 	this.namedParamIndex++
@@ -515,8 +515,8 @@ func (this *Query) partitionsSQL() string {
 }
 
 // Pk 设置要查询的主键值
-func (this *Query) Pk(pks ...interface{}) *Query {
-	var realPks = []interface{}{}
+func (this *Query) Pk(pks ...any) *Query {
+	var realPks = []any{}
 	for _, pk := range pks {
 		var value = reflect.ValueOf(pk)
 		if value.Kind() == reflect.Slice {
@@ -535,7 +535,7 @@ func (this *Query) Pk(pks ...interface{}) *Query {
 }
 
 // Between 设置between条件
-func (this *Query) Between(field string, min interface{}, max interface{}) *Query {
+func (this *Query) Between(field string, min any, max any) *Query {
 	minValue, _ := this.wrapAttr(min)
 	maxValue, _ := this.wrapAttr(max)
 	this.Where(field + " BETWEEN " + minValue + " AND " + maxValue)
@@ -563,13 +563,13 @@ func (this *Query) Decrease(field string, count int) *Query {
 }
 
 // Set 设置字段值，以便用于删除和修改操作
-func (this *Query) Set(field string, value interface{}) *Query {
+func (this *Query) Set(field string, value any) *Query {
 	this.savingFields.Put(field, this.wrapValue(value))
 	return this
 }
 
 // Sets 设置一组字段值，以便用于删除和修改操作
-func (this *Query) Sets(values map[string]interface{}) *Query {
+func (this *Query) Sets(values map[string]any) *Query {
 	for field, value := range values {
 		this.savingFields.Put(field, this.wrapValue(value))
 	}
@@ -578,7 +578,7 @@ func (this *Query) Sets(values map[string]interface{}) *Query {
 
 // Param 设定查询语句中的参数值
 // 只有指定where和sql后，才能使用该方法
-func (this *Query) Param(name string, value interface{}) *Query {
+func (this *Query) Param(name string, value any) *Query {
 	this.namedParams[name] = value
 	return this
 }
@@ -603,7 +603,7 @@ func (this *Query) Map(mapFn func(one maps.Map) maps.Map) *Query {
 
 // Slice 设置返回的Slice指针
 // 在FindAll()方法中生效
-func (this *Query) Slice(slicePtr interface{}) *Query {
+func (this *Query) Slice(slicePtr any) *Query {
 	this.slicePtr = slicePtr
 	return this
 }
@@ -693,7 +693,7 @@ func (this *Query) AsSQL() (string, error) {
 			if this.savingFields.Len() > 0 {
 				var mapping = []string{}
 				this.savingFields.SortKeys()
-				this.savingFields.Range(func(field interface{}, value interface{}) {
+				this.savingFields.Range(func(field any, value any) {
 					mapping = append(mapping, this.wrapKeyword(field.(string))+"="+value.(string))
 				})
 				sql += " " + strings.Join(mapping, ", ")
@@ -705,7 +705,7 @@ func (this *Query) AsSQL() (string, error) {
 				var fieldNames = []string{}
 				var fieldValues = []string{}
 				this.savingFields.SortKeys()
-				this.savingFields.Range(func(field interface{}, value interface{}) {
+				this.savingFields.Range(func(field any, value any) {
 					fieldNames = append(fieldNames, this.wrapKeyword(field.(string)))
 					fieldValues = append(fieldValues, value.(string))
 				})
@@ -717,7 +717,7 @@ func (this *Query) AsSQL() (string, error) {
 				var fieldNames = []string{}
 				var fieldValues = []string{}
 				this.savingFields.SortKeys()
-				this.savingFields.Range(func(field interface{}, value interface{}) {
+				this.savingFields.Range(func(field any, value any) {
 					fieldNames = append(fieldNames, this.wrapKeyword(field.(string)))
 					fieldValues = append(fieldValues, value.(string))
 				})
@@ -729,7 +729,7 @@ func (this *Query) AsSQL() (string, error) {
 				var fieldNames = []string{}
 				var fieldValues = []string{}
 				this.savingFields.SortKeys()
-				this.savingFields.Range(func(field interface{}, value interface{}) {
+				this.savingFields.Range(func(field any, value any) {
 					fieldNames = append(fieldNames, this.wrapKeyword(field.(string)))
 					fieldValues = append(fieldValues, value.(string))
 				})
@@ -741,7 +741,7 @@ func (this *Query) AsSQL() (string, error) {
 			if this.replacingFields.Len() > 0 {
 				var mapping = []string{}
 				this.replacingFields.SortKeys()
-				this.replacingFields.Range(func(field interface{}, value interface{}) {
+				this.replacingFields.Range(func(field any, value any) {
 					mapping = append(mapping, this.wrapKeyword(field.(string))+"="+value.(string))
 				})
 				sql += strings.Join(mapping, ", ")
@@ -754,7 +754,7 @@ func (this *Query) AsSQL() (string, error) {
 	// attrs
 	var wheres = []string{}
 	if this.attrs.Len() > 0 {
-		this.attrs.Range(func(_ interface{}, placeholder interface{}) {
+		this.attrs.Range(func(_ any, placeholder any) {
 			wheres = append(wheres, placeholder.(string))
 		})
 	}
@@ -839,7 +839,7 @@ func (this *Query) AsSQL() (string, error) {
 	// 处理:NamedParam
 	var resultSQL = sql
 	if !this.isSub {
-		this.params = []interface{}{}
+		this.params = []any{}
 		resultSQL = this.parsePlaceholders(sql)
 	}
 
@@ -914,13 +914,13 @@ func (this *Query) FindOne() (results maps.Map, columnNames []string, err error)
 }
 
 // FindAll 查询一组数据， 并返回模型数据
-func (this *Query) FindAll() ([]interface{}, error) {
+func (this *Query) FindAll() ([]any, error) {
 	var ones, _, err = this.FindOnes()
 	if err != nil {
 		return nil, err
 	}
 
-	var results = []interface{}{}
+	var results = []any{}
 	if this.slicePtr == nil {
 		for _, one := range ones {
 			var value = this.copyModelValue(this.model.Type, one)
@@ -940,7 +940,7 @@ func (this *Query) FindAll() ([]interface{}, error) {
 }
 
 // Find 查询单条数据，返回模型对象
-func (this *Query) Find() (interface{}, error) {
+func (this *Query) Find() (any, error) {
 	this.Limit(1)
 	var results, err = this.FindAll()
 	if err != nil {
@@ -955,7 +955,7 @@ func (this *Query) Find() (interface{}, error) {
 }
 
 // FindCol 查询单个字段值
-func (this *Query) FindCol(defaultValue interface{}) (interface{}, error) {
+func (this *Query) FindCol(defaultValue any) (any, error) {
 	this.noPk = true
 	var one, columnNames, err = this.FindOne()
 	if err != nil {
@@ -1589,7 +1589,7 @@ func (this *Query) DeleteQuickly() error {
 	return err
 }
 
-func (this *Query) stringValue(value interface{}) interface{} {
+func (this *Query) stringValue(value any) any {
 	if value == nil {
 		return nil
 	}
@@ -1612,7 +1612,7 @@ func (this *Query) stringValue(value interface{}) interface{} {
 }
 
 // 包装值
-func (this *Query) wrapAttr(value interface{}) (placeholder string, isArray bool) {
+func (this *Query) wrapAttr(value any) (placeholder string, isArray bool) {
 	switch value1 := value.(type) {
 	case SQL:
 		return string(value1), false
@@ -1673,7 +1673,7 @@ func (this *Query) wrapAttr(value interface{}) (placeholder string, isArray bool
 }
 
 // 包装值
-func (this *Query) wrapValue(value interface{}) (placeholder string) {
+func (this *Query) wrapValue(value any) (placeholder string) {
 	if value == nil {
 		value = ""
 	}
@@ -1753,7 +1753,7 @@ func (this *Query) orderCode(order int) string {
 }
 
 // 拷贝模型值
-func (this *Query) copyModelValue(valueType reflect.Type, data maps.Map) interface{} {
+func (this *Query) copyModelValue(valueType reflect.Type, data maps.Map) any {
 	var pointerValue = reflect.New(valueType)
 	var value = reflect.Indirect(pointerValue)
 	for index, fieldName := range this.model.Fields {
@@ -1892,7 +1892,7 @@ func (this *Query) parsePlaceholders(sql string) string {
 			}
 		}
 
-		sqlCacheMap[sql] = map[string]interface{}{
+		sqlCacheMap[sql] = map[string]any{
 			"sql":    string(result),
 			"params": paramNames,
 		}
