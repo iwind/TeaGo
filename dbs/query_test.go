@@ -114,6 +114,19 @@ func TestQuery_AsSQL_Many(t *testing.T) {
 	}
 }
 
+func TestQuery_ExceptResult(t *testing.T) {
+	var dao = NewUserDAO()
+	user, err := dao.Query(nil).
+		Debug(true).
+		Pk(1).
+		ResultExcept("id", "birthday").
+		Find()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("%#v", user)
+}
+
 func TestQuery_FindOnes(t *testing.T) {
 	var now = time.Now()
 

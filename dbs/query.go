@@ -93,10 +93,11 @@ type Query struct {
 	limit  int64
 	offset int64
 
-	results    []string
-	joins      []QueryJoin
-	partitions []string
-	useIndexes []*QueryUseIndex
+	results       []string
+	exceptResults []string
+	joins         []QueryJoin
+	partitions    []string
+	useIndexes    []*QueryUseIndex
 
 	sqlCache int
 	lock     string
@@ -272,6 +273,12 @@ func (this *Query) Result(fields ...any) *Query {
 			this.results = append(this.results, "("+sql+")")
 		}
 	}
+	return this
+}
+
+// ResultExcept 设置查询不需要返回的字段
+func (this *Query) ResultExcept(fields ...string) *Query {
+	this.exceptResults = append(this.exceptResults, fields...)
 	return this
 }
 
@@ -627,9 +634,27 @@ func (this *Query) AsSQL() (string, error) {
 				}
 				var newResults = []string{}
 				for _, result := range this.results {
+					// check except fields ...
+					if len(this.exceptResults) > 0 && lists.ContainsString(this.exceptResults, result) {
+						continue
+					}
+
 					newResults = append(newResults, this.wrapKeyword(result))
 				}
-				resultString = strings.Join(newResults, ", ")
+				if len(newResults) > 0 {
+					resultString = strings.Join(newResults, ", ")
+				}
+			} else if len(this.exceptResults) > 0 && this.dao != nil && len(this.dao.fields) > 0 {
+				var newResults = []string{}
+				for _, fieldObj := range this.dao.fields {
+					if lists.ContainsString(this.exceptResults, fieldObj.Name) {
+						continue
+					}
+					newResults = append(newResults, this.wrapKeyword(fieldObj.Name))
+				}
+				if len(newResults) > 0 { // make sure we have result fields
+					resultString = strings.Join(newResults, ", ")
+				}
 			}
 
 			sql = "SELECT"

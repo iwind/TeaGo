@@ -3,6 +3,7 @@ package dbs
 import (
 	"encoding/json"
 	"fmt"
+	_ "github.com/iwind/TeaGo/bootstrap"
 	"github.com/iwind/TeaGo/maps"
 	"log"
 	"testing"
@@ -21,24 +22,26 @@ type User struct {
 	State      int    `field:"state"`
 	IsShop     bool   `field:"is_shop"`
 	CountViews int    `field:"count_views"`
+	Books      JSON   `field:"books"`
 }
 
 type UserOperator struct {
-	Id         interface{}
-	Gender     interface{}
-	Birthday   interface{}
-	Name       interface{}
-	CreatedAt  interface{}
-	UpdatedAt  interface{}
-	State      interface{}
-	IsShop     interface{}
-	CountViews interface{}
+	Id         any
+	Gender     any
+	Birthday   any
+	Name       any
+	CreatedAt  any
+	UpdatedAt  any
+	State      any
+	IsShop     any
+	CountViews any
+	Books      any
 }
 
 func NewUserDAO() *UserDAO {
 	return NewDAO(&UserDAO{
 		DAOObject{
-			DB:     "db2",
+			DB:     "dev",
 			Table:  "pp_users",
 			Model:  new(User),
 			PkName: "id",
@@ -61,7 +64,7 @@ func (dao *UserDAO) FindUsers() ([]maps.Map, []string, error) {
 
 func (dao *UserDAO) FindUser(userId int) (*User, error) {
 	var value, err = dao.Find(nil, userId)
-	if err != nil {
+	if err != nil || value == nil {
 		return nil, err
 	}
 	return value.(*User), nil
