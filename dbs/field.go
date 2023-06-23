@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+type FieldName = string
+
 type Field struct {
 	Name               string       // 字段名
 	Type               string       // 字段类型

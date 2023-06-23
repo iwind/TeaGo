@@ -8,14 +8,14 @@ import (
 	"text/template"
 )
 
-// 模板定义
+// Template 模板定义
 type Template struct {
 	native *template.Template
 	vars   maps.Map
 	data   interface{}
 }
 
-// 创建新模板
+// NewTemplate 创建新模板
 func NewTemplate(name string) *Template {
 	return &Template{
 		native: template.New(name),
@@ -23,25 +23,25 @@ func NewTemplate(name string) *Template {
 	}
 }
 
-// 设置分隔符
+// Delims 设置分隔符
 func (this *Template) Delims(left, right string) *Template {
 	this.native.Delims(left, right)
 	return this
 }
 
-// 设置函数
+// Funcs 设置函数
 func (this *Template) Funcs(funcMap template.FuncMap) *Template {
 	this.native.Funcs(funcMap)
 	return this
 }
 
-// 分析文本
+// Parse 分析文本
 func (this *Template) Parse(text string) (*Template, error) {
 	_, err := this.native.Parse(text)
 	return this, err
 }
 
-// 执行模板
+// ExecuteTemplate 执行模板
 func (this *Template) ExecuteTemplate(wr io.Writer, name string, data interface{}) error {
 	if this.vars.Len() > 0 {
 		this.data = data
@@ -49,7 +49,7 @@ func (this *Template) ExecuteTemplate(wr io.Writer, name string, data interface{
 	return this.native.ExecuteTemplate(wr, name, data)
 }
 
-// 执行模板
+// Execute 执行模板
 func (this *Template) Execute(wr io.Writer, data interface{}) error {
 	if this.vars.Len() > 0 {
 		this.data = data
@@ -57,7 +57,7 @@ func (this *Template) Execute(wr io.Writer, data interface{}) error {
 	return this.native.Execute(wr, data)
 }
 
-// 获取子模板
+// NewChild 获取子模板
 func (this *Template) NewChild(name string) *Template {
 	childTemplate := this.native.New(name)
 	return &Template{
@@ -66,7 +66,7 @@ func (this *Template) NewChild(name string) *Template {
 	}
 }
 
-// 设置变量
+// SetVars 设置变量
 func (this *Template) SetVars(vars maps.Map) *Template {
 	for name, value := range vars {
 		oldValue, found := this.vars[name]
@@ -91,13 +91,13 @@ func (this *Template) SetVars(vars maps.Map) *Template {
 	return this
 }
 
-// 添加变量
+// AddVar 添加变量
 func (this *Template) AddVar(varName, value string) *Template {
 	this.vars[varName] = value
 	return this
 }
 
-// 取得变量值
+// VarValue 取得变量值
 func (this *Template) VarValue(varName string) string {
 	value := this.vars.GetString(varName)
 	tpl, err := template.New("").Delims("{$", "}").Parse(value)
@@ -115,7 +115,7 @@ func (this *Template) VarValue(varName string) string {
 	return value
 }
 
-// 判断是否有某个变量
+// HasVar 判断是否有某个变量
 func (this *Template) HasVar(varName string) bool {
 	return this.vars.Has(varName)
 }

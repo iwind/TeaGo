@@ -25,6 +25,17 @@ func TestConvert(t *testing.T) {
 	}
 }
 
+func TestCompare(t *testing.T) {
+	assert(t, Compare(1, 2) < 0)
+	assert(t, Compare(3, 2) > 0)
+	assert(t, Compare(2, 2) == 0)
+	assert(t, Compare(12.345, "12.345") == 0)
+	assert(t, Compare(12.345, "12.39") < 0)
+	assert(t, Compare("a", "b") < 0)
+	assert(t, Compare("Abc", "abc") < 0)
+	assert(t, Compare("abc", "abc") == 0)
+}
+
 func TestIntN(t *testing.T) {
 	assert(t, Int8("1") == 1)
 	assert(t, Int8("1024") == math.MaxInt8)

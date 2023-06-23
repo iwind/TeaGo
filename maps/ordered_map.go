@@ -24,20 +24,20 @@ func (this *OrderedMap) Keys() []interface{} {
 // Sort 根据元素值进行排序
 func (this *OrderedMap) Sort() {
 	lists.Sort(this.keys, func(i int, j int) bool {
-		value1 := this.valuesMap[this.keys[i]]
-		value2 := this.valuesMap[this.keys[j]]
+		var value1 = this.valuesMap[this.keys[i]]
+		var value2 = this.valuesMap[this.keys[j]]
 
-		return !types.Compare(value1, value2)
+		return types.Compare(value1, value2) <= 0
 	})
 }
 
 // SortKeys 根据Key进行排序
 func (this *OrderedMap) SortKeys() {
 	lists.Sort(this.keys, func(i int, j int) bool {
-		key1 := this.keys[i]
-		key2 := this.keys[j]
+		var key1 = this.keys[i]
+		var key2 = this.keys[j]
 
-		return !types.Compare(key1, key2)
+		return types.Compare(key1, key2) <= 0
 	})
 }
 

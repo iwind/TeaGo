@@ -56,7 +56,7 @@ func TestOrderedMap_SortKeys(t *testing.T) {
 	om.Put("Name4", "Ma Zi")
 	om.Put("Name3", "Wang Er 2")
 	om.SortKeys()
-	om.Reverse()
+	//om.Reverse()
 	om.Range(func(key interface{}, value interface{}) {
 		t.Log(key, value)
 	})

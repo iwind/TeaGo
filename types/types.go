@@ -10,12 +10,12 @@ import (
 )
 
 // Byte 将值转换成byte
-func Byte(value interface{}) byte {
+func Byte(value any) byte {
 	return Uint8(value)
 }
 
 // Int 将值转换成int
-func Int(value interface{}) int {
+func Int(value any) int {
 	if value == nil {
 		return 0
 	}
@@ -79,7 +79,7 @@ func Int(value interface{}) int {
 }
 
 // Int8 将值转换成int8
-func Int8(value interface{}) int8 {
+func Int8(value any) int8 {
 	if value == nil {
 		return 0
 	}
@@ -191,7 +191,7 @@ func Int8(value interface{}) int8 {
 }
 
 // Int16 将值转换成int16
-func Int16(value interface{}) int16 {
+func Int16(value any) int16 {
 	if value == nil {
 		return 0
 	}
@@ -297,7 +297,7 @@ func Int16(value interface{}) int16 {
 }
 
 // Int32 将值转换成int32
-func Int32(value interface{}) int32 {
+func Int32(value any) int32 {
 	if value == nil {
 		return 0
 	}
@@ -391,7 +391,7 @@ func Int32(value interface{}) int32 {
 }
 
 // Int64 将值转换成int64
-func Int64(value interface{}) int64 {
+func Int64(value any) int64 {
 	if value == nil {
 		return 0
 	}
@@ -467,7 +467,7 @@ func Int64(value interface{}) int64 {
 }
 
 // Uint 将值转换成uint
-func Uint(value interface{}) uint {
+func Uint(value any) uint {
 	if value == nil {
 		return 0
 	}
@@ -552,7 +552,7 @@ func Uint(value interface{}) uint {
 }
 
 // Uint8 将值转换成uint8
-func Uint8(value interface{}) uint8 {
+func Uint8(value any) uint8 {
 	if value == nil {
 		return 0
 	}
@@ -667,7 +667,7 @@ func Uint8(value interface{}) uint8 {
 }
 
 // Uint16 将值转换成uint16
-func Uint16(value interface{}) uint16 {
+func Uint16(value any) uint16 {
 	if value == nil {
 		return 0
 	}
@@ -773,7 +773,7 @@ func Uint16(value interface{}) uint16 {
 }
 
 // Uint32 将值转换成uint32
-func Uint32(value interface{}) uint32 {
+func Uint32(value any) uint32 {
 	if value == nil {
 		return 0
 	}
@@ -870,7 +870,7 @@ func Uint32(value interface{}) uint32 {
 }
 
 // Uint64 将值转换成uint64
-func Uint64(value interface{}) uint64 {
+func Uint64(value any) uint64 {
 	if value == nil {
 		return 0
 	}
@@ -958,7 +958,7 @@ func Uint64(value interface{}) uint64 {
 }
 
 // Float64 将值转换成float64
-func Float64(value interface{}) float64 {
+func Float64(value any) float64 {
 	if value == nil {
 		return 0
 	}
@@ -1017,7 +1017,7 @@ func Float64(value interface{}) float64 {
 }
 
 // Float32 将值转换成float32
-func Float32(value interface{}) float32 {
+func Float32(value any) float32 {
 	if value == nil {
 		return 0
 	}
@@ -1082,7 +1082,7 @@ func Float32(value interface{}) float32 {
 }
 
 // Bool 将值转换成bool类型
-func Bool(value interface{}) bool {
+func Bool(value any) bool {
 	if value == nil {
 		return false
 	}
@@ -1096,7 +1096,7 @@ func Bool(value interface{}) bool {
 }
 
 // String 将值转换成字符串
-func String(value interface{}) string {
+func String(value any) string {
 	if value == nil {
 		return ""
 	}
@@ -1121,46 +1121,57 @@ func String(value interface{}) string {
 }
 
 // Compare 比较两个值大小
-func Compare(value1 interface{}, value2 interface{}) bool {
+// 返回值可能时-1, 0, 1
+func Compare(value1 any, value2 any) int8 {
 	if value1 == nil {
-		return false
+		return -1
 	}
 
-	switch value1 := value1.(type) {
+	switch value1.(type) {
 	case bool:
-		return Int(value1) > Int(value2)
+		return compare(Int(value1), Int(value2))
 	case int:
-		return Int(value1) > Int(value2)
+		return compare(Int(value1), Int(value2))
 	case int8:
-		return Int8(value1) > Int8(value2)
+		return compare(Int8(value1), Int8(value2))
 	case int16:
-		return Int16(value1) > Int16(value2)
+		return compare(Int16(value1), Int16(value2))
 	case int32:
-		return Int32(value1) > Int32(value2)
+		return compare(Int32(value1), Int32(value2))
 	case int64:
-		return Int64(value1) > Int64(value2)
+		return compare(Int64(value1), Int64(value2))
 	case uint:
-		return Uint(value1) > Uint(value2)
+		return compare(Uint(value1), Uint(value2))
 	case uint8:
-		return Uint8(value1) > Uint8(value2)
+		return compare(Uint8(value1), Uint8(value2))
 	case uint16:
-		return Uint16(value1) > Uint16(value2)
+		return compare(Uint16(value1), Uint16(value2))
 	case uint32:
-		return Uint32(value1) > Uint32(value2)
+		return compare(Uint32(value1), Uint32(value2))
 	case uint64:
-		return Uint64(value1) > Uint64(value2)
+		return compare(Uint64(value1), Uint64(value2))
 	case float32:
-		return Float32(value1) > Float32(value2)
+		return compare(Float32(value1), Float32(value2))
 	case float64:
-		return Float64(value1) > Float64(value2)
+		return compare(Float64(value1), Float64(value2))
 	case string:
-		return String(value1) > String(value2)
+		return compare(String(value1), String(value2))
 	}
-	return String(value1) > String(value2)
+	return compare(String(value1), String(value2))
+}
+
+func compare[T int | int8 | int16 | int32 | int64 | uint | uint8 | uint16 | uint32 | uint64 | string | float32 | float64](v1, v2 T) int8 {
+	if v1 > v2 {
+		return 1
+	}
+	if v1 == v2 {
+		return 0
+	}
+	return -1
 }
 
 // IsNumber 判断是否为数字
-func IsNumber(value interface{}) bool {
+func IsNumber(value any) bool {
 	switch value.(type) {
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64:
 		return true
@@ -1188,7 +1199,7 @@ func IsNumberKind(kind reflect.Kind) (unsigned bool, isFloat bool, ok bool) {
 }
 
 // IsInteger 判断是否为整形数字
-func IsInteger(value interface{}) bool {
+func IsInteger(value any) bool {
 	switch value.(type) {
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 		return true
@@ -1197,7 +1208,7 @@ func IsInteger(value interface{}) bool {
 }
 
 // IsFloat 判断是否为浮点型数字
-func IsFloat(value interface{}) bool {
+func IsFloat(value any) bool {
 	switch value.(type) {
 	case float32, float64:
 		return true
@@ -1206,7 +1217,7 @@ func IsFloat(value interface{}) bool {
 }
 
 // IsSlice 判断是否为Slice
-func IsSlice(value interface{}) bool {
+func IsSlice(value any) bool {
 	if value == nil {
 		return false
 	}
@@ -1214,7 +1225,7 @@ func IsSlice(value interface{}) bool {
 }
 
 // IsMap 判断是否为Map
-func IsMap(value interface{}) bool {
+func IsMap(value any) bool {
 	if value == nil {
 		return false
 	}
@@ -1222,7 +1233,7 @@ func IsMap(value interface{}) bool {
 }
 
 // IsNil 判断是否为nil
-func IsNil(value interface{}) bool {
+func IsNil(value any) bool {
 	if value == nil {
 		return true
 	}
@@ -1231,7 +1242,7 @@ func IsNil(value interface{}) bool {
 }
 
 // Slice 转换Slice类型
-func Slice(fromSlice interface{}, toSliceType reflect.Type) (interface{}, error) {
+func Slice(fromSlice any, toSliceType reflect.Type) (any, error) {
 	if fromSlice == nil {
 		return nil, errors.New("'fromSlice' should not be nil")
 	}
