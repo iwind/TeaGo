@@ -135,7 +135,7 @@ import "github.com/iwind/TeaGo/dbs"`
 	modelString += "const (\n"
 	for _, field := range table.Fields {
 		var attr = this.convertFieldNameStyle(field.Name)
-		modelString += "\t" + model + "Field" + attr + " dbs.FieldName = \"" + field.Name + "\" // " + field.Comment + "\n"
+		modelString += "\t" + model + "Field_" + attr + " dbs.FieldName = \"" + field.Name + "\" // " + field.Comment + "\n"
 	}
 	modelString += ")\n"
 
