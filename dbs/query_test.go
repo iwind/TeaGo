@@ -53,7 +53,7 @@ func TestQuerySQL(t *testing.T) {
 }
 
 func TestQuerySlice(t *testing.T) {
-	var s = []interface{}{"Hello", 123, false, 1.234}
+	var s = []any{"Hello", 123, false, 1.234}
 	var v = reflect.ValueOf(s)
 
 	t.Log(v.Kind())
@@ -159,7 +159,7 @@ func TestQuery_FindOnes(t *testing.T) {
 	//query.Lock(QUERY_LOCK_SHARE_MODE)
 	//query.Partitions("p1", "p2")
 	//query.Between("id", 1, 3)
-	/**query.Attrs(map[string]interface{}{
+	/**query.Attrs(map[string]any{
 		"id": 1,
 		"state": 1,
 	})**/
@@ -306,7 +306,7 @@ func TestQuery_Avg(t *testing.T) {
 
 func TestQuery_FindAll(t *testing.T) {
 	var query = setupUserQuery()
-	query.Where("id>300 AND id<500")
+	query.Where("id>300 AND id<5000")
 	query.Limit(5)
 
 	var values, err = query.FindAll()
@@ -373,7 +373,7 @@ func TestQueryUpdate(t *testing.T) {
 
 func TestQueryReplace(t *testing.T) {
 	var query = setupUserQuery()
-	query.Sets(map[string]interface{}{
+	query.Sets(map[string]any{
 		"id":  8272,
 		"tel": "010-8888888",
 	})
@@ -382,11 +382,11 @@ func TestQueryReplace(t *testing.T) {
 
 func TestQueryInsertOrUpdate(t *testing.T) {
 	var query = setupUserQuery()
-	var inserting = map[string]interface{}{
+	var inserting = map[string]any{
 		"id":   8273,
 		"name": "李白",
 	}
-	var updating = map[string]interface{}{
+	var updating = map[string]any{
 		"name":        "李白2",
 		"mobile":      "138",
 		"version":     SQL("version+1"),
@@ -411,14 +411,14 @@ func TestQueryJoin(t *testing.T) {
 	query.Result("self.id, self.createdAt,TestDb.name AS dbName")
 	query.Join(dao, QueryJoinRight, "TestUser.id=TestDb.userId")
 	query.Where("self.id>0")
-	/**query.Filter(func (one map[string]interface{}) bool {
+	/**query.Filter(func (one map[string]any) bool {
 		id, ok := one["id"]
 		if !ok {
 			return false
 		}
 		return types.Int32(id) > 0
 	})
-	query.Map(func (one map[string]interface{}) map[string]interface{} {
+	query.Map(func (one map[string]any) map[string]any {
 		one["id"] = rand.Int()
 		return one
 	})**/
@@ -541,7 +541,7 @@ func BenchmarkQuery_AsSQL(b *testing.B) {
 
 func BenchmarkQuery_AsSQL2(b *testing.B) {
 	for i := 0; i < 90_000; i++ {
-		sqlCacheMap["sql"+types.String(i)] = map[string]interface{}{}
+		sqlCacheMap["sql"+types.String(i)] = map[string]any{}
 	}
 
 	for i := 0; i < b.N; i++ {
@@ -655,7 +655,7 @@ func setupUserQuery() *Query {
 	return query
 }
 
-func outputQueryResult(t *testing.T, result interface{}) {
+func outputQueryResult(t *testing.T, result any) {
 	jsonBytes, err := json.MarshalIndent(result, "", "    ")
 	if err != nil {
 		t.Fatal(err)

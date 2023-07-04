@@ -6,7 +6,7 @@ import "encoding/json"
 
 type JSON []byte
 
-func (this JSON) UnmarshalTo(ptr interface{}) error {
+func (this JSON) UnmarshalTo(ptr any) error {
 	return json.Unmarshal(this, ptr)
 }
 

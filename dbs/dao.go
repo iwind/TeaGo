@@ -16,7 +16,7 @@ type DAOObject struct {
 	DB           string
 	Table        string
 	PkName       string
-	Model        interface{}
+	Model        any
 	pkAttr       string
 	modelWrapper *Model
 	fields       map[string]*Field
@@ -113,22 +113,22 @@ func (this *DAOObject) Query(tx *Tx) *Query {
 }
 
 // Find 查找
-func (this *DAOObject) Find(tx *Tx, pk interface{}) (modelPtr interface{}, err error) {
+func (this *DAOObject) Find(tx *Tx, pk any) (modelPtr any, err error) {
 	return this.Query(tx).Pk(pk).Find()
 }
 
 // Exist 检查是否存在
-func (this *DAOObject) Exist(tx *Tx, pk interface{}) (bool bool, err error) {
+func (this *DAOObject) Exist(tx *Tx, pk any) (bool bool, err error) {
 	return this.Query(tx).Pk(pk).Exist()
 }
 
 // Delete 删除
-func (this *DAOObject) Delete(tx *Tx, pk interface{}) (rowsAffected int64, err error) {
+func (this *DAOObject) Delete(tx *Tx, pk any) (rowsAffected int64, err error) {
 	return this.Query(tx).Pk(pk).Delete()
 }
 
 // Save 保存
-func (this *DAOObject) Save(tx *Tx, operatorPtr interface{}) (err error) {
+func (this *DAOObject) Save(tx *Tx, operatorPtr any) (err error) {
 	var modelValue = reflect.Indirect(reflect.ValueOf(operatorPtr))
 	var hasPk = false
 	var pkTypeValue reflect.Value
@@ -239,7 +239,7 @@ func (this *DAOObject) Save(tx *Tx, operatorPtr interface{}) (err error) {
 }
 
 // SaveInt64 保存并返回整型ID
-func (this *DAOObject) SaveInt64(tx *Tx, operatorPtr interface{}) (pkValue int64, err error) {
+func (this *DAOObject) SaveInt64(tx *Tx, operatorPtr any) (pkValue int64, err error) {
 	err = this.Save(tx, operatorPtr)
 	if err != nil {
 		return 0, err
@@ -301,7 +301,7 @@ var daoMapping = sync.Map{}
 var daoMappingLocker = &sync.Mutex{}
 
 // NewDAO 初始化DAO
-func NewDAO(daoPointer interface{}) interface{} {
+func NewDAO(daoPointer any) any {
 	daoMappingLocker.Lock()
 	defer daoMappingLocker.Unlock()
 

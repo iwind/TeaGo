@@ -61,7 +61,7 @@ func TestJSON_IsNotNull(t *testing.T) {
 }
 
 func TestJSON_IsBytes(t *testing.T) {
-	var v interface{} = dbs.JSON("123")
+	var v any = dbs.JSON("123")
 	_, ok := v.([]byte)
 	// should be false
 	t.Log(ok)

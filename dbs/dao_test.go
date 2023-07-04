@@ -140,9 +140,9 @@ func TestDaoSave(t *testing.T) {
 
 func TestDaoSaveEmpty(t *testing.T) {
 	type UserOperator struct {
-		Id   interface{}
-		Name interface{}
-		Age  interface{}
+		Id   any
+		Name any
+		Age  any
 	}
 	var user = new(UserOperator)
 	t.Log(user)

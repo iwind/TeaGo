@@ -15,7 +15,7 @@ type Field struct {
 	DataKind           reflect.Kind // 数据类型
 	Length             int          // @TODO 暂未实现
 	DefaultValueString string
-	DefaultValue       interface{}
+	DefaultValue       any
 	AutoIncrement      bool
 	IsPrimaryKey       bool   // 是否为主键
 	IsNotNull          bool   // 是否为非NULL
