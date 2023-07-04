@@ -149,6 +149,15 @@ func loadConfig() {
 
 		if dbConfig.DBs != nil {
 			for key, config := range dbConfig.DBs {
+				// set 'multiStatements=true'
+				if !strings.Contains(config.Dsn, "multiStatements=") {
+					if strings.Contains(config.Dsn, "?") {
+						config.Dsn += "&multiStatements=true"
+					} else {
+						config.Dsn += "?multiStatements=true"
+					}
+				}
+
 				if len(config.Connections.Life) > 0 {
 					duration, err := time.ParseDuration(config.Connections.Life)
 					if err != nil {
