@@ -152,6 +152,9 @@ func TestDB_FindCol_Empty(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer func() {
+		_ = db.Close()
+	}()
 
 	colValue, err := db.FindCol(1, "SELECT id, name FROM users WHERE id=?", 2)
 	if err != nil {
@@ -159,6 +162,22 @@ func TestDB_FindCol_Empty(t *testing.T) {
 	}
 
 	t.Log("col:", colValue)
+}
+
+func TestDB_MultipleStatements(t *testing.T) {
+	db, err := Default()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		_ = db.Close()
+	}()
+
+	one, err := db.FindOne("UPDATE users SET state=1 WHERE id=1; SELECT state FROM users WHERE id=1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	logs.PrintAsJSON(one, t)
 }
 
 func BenchmarkDB_FindOne(b *testing.B) {

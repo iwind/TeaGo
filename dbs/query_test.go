@@ -610,19 +610,44 @@ func BenchmarkQuery_FindOne(b *testing.B) {
 		}
 	}
 
-	for i := 0; i < b.N; i++ {
-		var query = setupUserQuery()
-		query.Debug(false)
+	b.ResetTimer()
 
-		query.Result("id", "name", "gender", "state")
-		query.Where("id=100")
-		query.SQLCache(QuerySqlCacheOn)
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			var query = setupUserQuery()
+			query.Debug(false)
 
-		_, _, err := query.FindOne()
-		if err != nil {
-			b.Fatal(err)
+			query.Result("id", "name", "gender", "state")
+			query.Where("id=1")
+			//query.SQLCache(QuerySqlCacheOn)
+
+			_, _, err := query.FindOne()
+			if err != nil {
+				b.Fatal(err)
+			}
 		}
+	})
+}
+
+func BenchmarkQuery_FindOne_DB(b *testing.B) {
+	db, err := Default()
+	if err != nil {
+		b.Fatal(err)
 	}
+
+	// preloading
+	_, _ = db.FindOne("SELECT id, name, gender, state FROM `users` WHERE id=1 LIMIT 1")
+
+	b.ResetTimer()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_, err = db.FindOne("SELECT id, name, gender, state FROM `users` WHERE id=1 LIMIT 1")
+			if err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
 }
 
 var testDBInstance *DB
@@ -641,7 +666,7 @@ func setupUserQuery() *Query {
 				Max          int           `yaml:"max"`
 				Life         string        `yaml:"life"`
 				LifeDuration time.Duration `yaml:",omitempty"`
-			}{Pool: 100, Max: 1000},
+			}{Pool: 128, Max: 1000},
 		})
 		if err != nil {
 			logs.Errorf(err.Error())
