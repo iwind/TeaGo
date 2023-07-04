@@ -2,6 +2,7 @@ package dbs
 
 import (
 	"encoding/json"
+	"github.com/iwind/TeaGo/logs"
 	"log"
 	"testing"
 	"time"
@@ -101,4 +102,79 @@ func TestDB_FindPreparedOnes(t *testing.T) {
 		}
 	}
 	t.Log("FindOnes:", time.Since(before).Seconds()*1000, "ms")
+}
+
+func TestDB_FindOnes(t *testing.T) {
+	db, err := Default()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ones, columnNames, err := db.FindOnes("SELECT id, name FROM users LIMIT 2")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(columnNames)
+	logs.PrintAsJSON(ones, t)
+}
+
+func TestDB_FindOne(t *testing.T) {
+	db, err := Default()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	one, err := db.FindOne("SELECT id, name FROM users WHERE id=?", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	logs.PrintAsJSON(one, t)
+}
+
+func TestDB_FindCol(t *testing.T) {
+	db, err := Default()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	colValue, err := db.FindCol(1, "SELECT id, name FROM users WHERE id=?", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log("col:", colValue)
+}
+
+func TestDB_FindCol_Empty(t *testing.T) {
+	db, err := Default()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	colValue, err := db.FindCol(1, "SELECT id, name FROM users WHERE id=?", 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log("col:", colValue)
+}
+
+func BenchmarkDB_FindOne(b *testing.B) {
+	db, err := Default()
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		func() {
+			_, err = db.FindOne("SELECT id, name FROM users LIMIT 1")
+			if err != nil {
+				b.Fatal(err)
+			}
+		}()
+	}
 }

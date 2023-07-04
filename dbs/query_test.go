@@ -6,6 +6,7 @@ import (
 	"github.com/iwind/TeaGo/assert"
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/types"
+	stringutil "github.com/iwind/TeaGo/utils/string"
 	"github.com/iwind/TeaGo/utils/time"
 	"reflect"
 	"regexp"
@@ -65,7 +66,7 @@ func TestQuery_AsSQL(t *testing.T) {
 	}()
 
 	var query = NewQuery(nil)
-	query.Table("pp_users")
+	query.Table("users")
 	query.DB(&DB{})
 	query.action = QueryActionFind
 
@@ -95,14 +96,21 @@ func TestQuery_AsSQL(t *testing.T) {
 	t.Logf("Params:%#v\n", query.params)
 
 	t.Log(sql)
+	t.Logf("sum: %s", stringutil.Md5(sql))
+}
 
-	_ = sql
+func TestQuery_AsSQL_Cache(t *testing.T) {
+	var query = NewQuery(nil)
+	query.Table("users")
+	query.DB(&DB{})
+	query.action = QueryActionFind
+	t.Log(query.AsSQL())
 }
 
 func TestQuery_AsSQL_Many(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		var query = NewQuery(nil)
-		query.Table("pp_users_" + types.String(i))
+		query.Table("users_" + types.String(i))
 		query.DB(&DB{})
 		query.action = QueryActionFind
 
@@ -208,7 +216,7 @@ func TestQuery_FindOne(t *testing.T) {
 
 func TestQuery_FindCol(t *testing.T) {
 	var query = setupUserQuery()
-	query.Attr("name", "刘祥超")
+	//query.Attr("name", "刘祥超")
 	//query.ResultPk()
 	query.Result("name", "gender")
 
@@ -314,6 +322,7 @@ func TestQuery_FindAll(t *testing.T) {
 func TestQuery_Find(t *testing.T) {
 	var query = setupUserQuery()
 	query.Where("id=1024")
+	//query.Reuse(false)
 	//query.Attr("id", 1024)
 	var result, err = query.Find()
 	if err != nil {
@@ -327,8 +336,10 @@ func TestQuery_Find(t *testing.T) {
 
 func TestQuery_Exec(t *testing.T) {
 	var query = setupUserQuery()
-	query.SQL("UPDATE pp_users SET password='1234567' WHERE id=:userId").
+	query.SQL("UPDATE `users` SET password='1234567' WHERE id=:userId").
 		Param("userId", 1024)
+
+	//query.Reuse(false)
 	var result, err = query.Exec()
 	if err != nil {
 		t.Fatal(err)
@@ -509,12 +520,14 @@ func TestIsKeyword(t *testing.T) {
 // old 5500 ns/op -> new 3700
 func BenchmarkQuery_AsSQL(b *testing.B) {
 	for i := 0; i < 90_000; i++ {
-		sqlCacheMap["sql"+types.String(i)] = map[string]interface{}{}
+		sqlCacheMap["sql"+types.String(i)] = map[string]any{}
 	}
+
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		var query = NewQuery(nil)
-		query.Table("pp_user")
+		query.Table("users" + types.String(i%1024))
 		query.DB(&DB{})
 		query.action = QueryActionFind
 		query.Attr("name", "lily")
@@ -533,7 +546,7 @@ func BenchmarkQuery_AsSQL2(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		var query = NewQuery(nil)
-		query.Table("pp_users_" + types.String(i%1000))
+		query.Table("users_" + types.String(i%1000))
 		query.DB(&DB{})
 		query.action = QueryActionFind
 
@@ -564,7 +577,7 @@ func BenchmarkQuery_AsSQL2(b *testing.B) {
 func BenchmarkQuery_wrapAttr(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var query = NewQuery(nil)
-		query.Table("pp_users")
+		query.Table("users")
 		query.DB(&DB{})
 		_, _ = query.wrapAttr("123")
 	}
@@ -637,7 +650,7 @@ func setupUserQuery() *Query {
 	}
 
 	var query = NewQuery(new(TestUser))
-	query.Table("pp_users")
+	query.Table("users")
 	query.DB(testDBInstance)
 	return query
 }

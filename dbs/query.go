@@ -1,6 +1,7 @@
 package dbs
 
 import (
+	"database/sql"
 	"errors"
 	"github.com/iwind/TeaGo/lists"
 	"github.com/iwind/TeaGo/logs"
@@ -65,7 +66,7 @@ const (
 var ErrNotFound = errors.New("record not found")
 
 // SQL缓存
-var sqlCacheMap = map[string]map[string]interface{}{} // sql => { params:[]string{} sql:string }
+var sqlCacheMap = map[string]map[string]any{} // sql => { params:[]string{} sql:string }
 var sqlCacheLocker = sync.RWMutex{}
 
 type Query struct {
@@ -265,12 +266,12 @@ func (this *Query) Result(fields ...any) *Query {
 		} else if _, ok := field.(*DBFunc); ok {
 			this.results = append(this.results, field.(*DBFunc).prepareForQuery(this))
 		} else if _, ok := field.(*Query); ok {
-			sql, err := field.(*Query).AsSQL()
+			sqlString, err := field.(*Query).AsSQL()
 			if err != nil {
 				logs.Errorf("%s", err.Error())
 				return this
 			}
-			this.results = append(this.results, "("+sql+")")
+			this.results = append(this.results, "("+sqlString+")")
 		}
 	}
 	return this
@@ -618,9 +619,9 @@ func (this *Query) Slice(slicePtr any) *Query {
 // AsSQL 将查询转换为SQL语句
 func (this *Query) AsSQL() (string, error) {
 	// SQL
-	var sql = this.sql
+	var sqlString = this.sql
 
-	if len(sql) == 0 {
+	if len(sqlString) == 0 {
 		if len(this.table) == 0 {
 			return "", errors.New("you need specify a table name")
 		}
@@ -657,28 +658,28 @@ func (this *Query) AsSQL() (string, error) {
 				}
 			}
 
-			sql = "SELECT"
+			sqlString = "SELECT"
 			if this.sqlCache == QuerySqlCacheOn {
-				sql += " SQL_CACHE "
+				sqlString += " SQL_CACHE "
 			} else if this.sqlCache == QuerySqlCacheOff {
-				sql += " SQL_NO_CACHE "
+				sqlString += " SQL_NO_CACHE "
 			}
 
-			sql += "\n  " + resultString + "\n FROM "
-			sql += this.wrapTable(this.table)
+			sqlString += "\n  " + resultString + "\n FROM "
+			sqlString += this.wrapTable(this.table)
 
 			// use indexes
 			if len(this.useIndexes) > 0 {
 				for _, useIndex := range this.useIndexes {
-					sql += "\n  " + useIndex.Keyword + " INDEX"
+					sqlString += "\n  " + useIndex.Keyword + " INDEX"
 					if len(useIndex.For) > 0 {
-						sql += " FOR " + useIndex.For
+						sqlString += " FOR " + useIndex.For
 					}
 					quotedIndexes := []string{}
 					for _, indexName := range useIndex.Indexes {
 						quotedIndexes = append(quotedIndexes, this.wrapKeyword(indexName))
 					}
-					sql += " (" + strings.Join(quotedIndexes, ", ") + ")"
+					sqlString += " (" + strings.Join(quotedIndexes, ", ") + ")"
 				}
 			}
 
@@ -686,7 +687,7 @@ func (this *Query) AsSQL() (string, error) {
 			if len(this.joins) > 0 {
 				for _, join := range this.joins {
 					if join.Type == QueryJoinDefault {
-						sql += ", " + this.wrapTable(join.DAO.Table)
+						sqlString += ", " + this.wrapTable(join.DAO.Table)
 						if len(join.On) > 0 {
 							this.wheres = append(this.wheres, join.On)
 						}
@@ -699,33 +700,33 @@ func (this *Query) AsSQL() (string, error) {
 					}
 					switch join.Type {
 					case QueryJoinLeft:
-						sql += "\n LEFT JOIN " + this.wrapTable(join.DAO.Table)
+						sqlString += "\n LEFT JOIN " + this.wrapTable(join.DAO.Table)
 					case QueryJoinRight:
-						sql += "\n RIGHT JOIN " + this.wrapTable(join.DAO.Table)
+						sqlString += "\n RIGHT JOIN " + this.wrapTable(join.DAO.Table)
 					}
-					sql += this.partitionsSQL()
+					sqlString += this.partitionsSQL()
 					if len(join.On) > 0 {
-						sql += " ON " + join.On
+						sqlString += " ON " + join.On
 					}
 				}
 			} else {
-				sql += this.partitionsSQL()
+				sqlString += this.partitionsSQL()
 			}
 		} else if this.action == QueryActionDelete {
-			sql = "DELETE FROM " + this.wrapTable(this.table) + "\n " + this.partitionsSQL()
+			sqlString = "DELETE FROM " + this.wrapTable(this.table) + "\n " + this.partitionsSQL()
 		} else if this.action == QueryActionUpdate {
-			sql = "UPDATE " + this.wrapTable(this.table) + "\n " + this.partitionsSQL() + "SET"
+			sqlString = "UPDATE " + this.wrapTable(this.table) + "\n " + this.partitionsSQL() + "SET"
 			if this.savingFields.Len() > 0 {
 				var mapping = []string{}
 				this.savingFields.SortKeys()
 				this.savingFields.Range(func(field any, value any) {
 					mapping = append(mapping, this.wrapKeyword(field.(string))+"="+value.(string))
 				})
-				sql += " " + strings.Join(mapping, ", ")
+				sqlString += " " + strings.Join(mapping, ", ")
 			}
 
 		} else if this.action == QueryActionInsert {
-			sql = "INSERT INTO " + this.wrapTable(this.table) + "\n" + this.partitionsSQL()
+			sqlString = "INSERT INTO " + this.wrapTable(this.table) + "\n" + this.partitionsSQL()
 			if this.savingFields.Len() > 0 {
 				var fieldNames = []string{}
 				var fieldValues = []string{}
@@ -734,10 +735,10 @@ func (this *Query) AsSQL() (string, error) {
 					fieldNames = append(fieldNames, this.wrapKeyword(field.(string)))
 					fieldValues = append(fieldValues, value.(string))
 				})
-				sql += " (" + strings.Join(fieldNames, ", ") + ") VALUES (" + strings.Join(fieldValues, ", ") + ")"
+				sqlString += " (" + strings.Join(fieldNames, ", ") + ") VALUES (" + strings.Join(fieldValues, ", ") + ")"
 			}
 		} else if this.action == QueryActionReplace {
-			sql = "REPLACE " + this.wrapTable(this.table) + "\n" + this.partitionsSQL()
+			sqlString = "REPLACE " + this.wrapTable(this.table) + "\n" + this.partitionsSQL()
 			if this.savingFields.Len() > 0 {
 				var fieldNames = []string{}
 				var fieldValues = []string{}
@@ -746,10 +747,10 @@ func (this *Query) AsSQL() (string, error) {
 					fieldNames = append(fieldNames, this.wrapKeyword(field.(string)))
 					fieldValues = append(fieldValues, value.(string))
 				})
-				sql += " (" + strings.Join(fieldNames, ", ") + ") VALUES (" + strings.Join(fieldValues, ", ") + ")"
+				sqlString += " (" + strings.Join(fieldNames, ", ") + ") VALUES (" + strings.Join(fieldValues, ", ") + ")"
 			}
 		} else if this.action == QueryActionInsertOrUpdate {
-			sql = "INSERT INTO " + this.wrapTable(this.table) + "\n" + this.partitionsSQL()
+			sqlString = "INSERT INTO " + this.wrapTable(this.table) + "\n" + this.partitionsSQL()
 			if this.savingFields.Len() > 0 {
 				var fieldNames = []string{}
 				var fieldValues = []string{}
@@ -758,10 +759,10 @@ func (this *Query) AsSQL() (string, error) {
 					fieldNames = append(fieldNames, this.wrapKeyword(field.(string)))
 					fieldValues = append(fieldValues, value.(string))
 				})
-				sql += " (" + strings.Join(fieldNames, ", ") + ") VALUES (" + strings.Join(fieldValues, ", ") + ")"
+				sqlString += " (" + strings.Join(fieldNames, ", ") + ") VALUES (" + strings.Join(fieldValues, ", ") + ")"
 			}
 
-			sql += "\nON DUPLICATE KEY UPDATE\n"
+			sqlString += "\nON DUPLICATE KEY UPDATE\n"
 
 			if this.replacingFields.Len() > 0 {
 				var mapping = []string{}
@@ -769,11 +770,11 @@ func (this *Query) AsSQL() (string, error) {
 				this.replacingFields.Range(func(field any, value any) {
 					mapping = append(mapping, this.wrapKeyword(field.(string))+"="+value.(string))
 				})
-				sql += strings.Join(mapping, ", ")
+				sqlString += strings.Join(mapping, ", ")
 			}
 		}
 	} else {
-		sql = this.sql
+		sqlString = this.sql
 	}
 
 	// attrs
@@ -789,7 +790,7 @@ func (this *Query) AsSQL() (string, error) {
 		wheres = append(wheres, this.wheres...)
 	}
 	if this.action != QueryActionInsert && this.action != QueryActionReplace && this.action != QueryActionInsertOrUpdate && len(wheres) > 0 {
-		sql += "\n WHERE " + strings.Join(wheres, " AND ")
+		sqlString += "\n WHERE " + strings.Join(wheres, " AND ")
 	}
 
 	// group
@@ -798,12 +799,12 @@ func (this *Query) AsSQL() (string, error) {
 		for _, group := range this.groups {
 			groupStrings = append(groupStrings, this.wrapKeyword(group.Field)+" "+this.orderCode(group.Order))
 		}
-		sql += "\n GROUP BY " + strings.Join(groupStrings, ", ")
+		sqlString += "\n GROUP BY " + strings.Join(groupStrings, ", ")
 	}
 
 	// having
 	if len(this.havings) > 0 {
-		sql += "\n HAVING " + strings.Join(this.havings, " AND ")
+		sqlString += "\n HAVING " + strings.Join(this.havings, " AND ")
 	}
 
 	// orders
@@ -824,7 +825,7 @@ func (this *Query) AsSQL() (string, error) {
 			}
 			orderStrings = append(orderStrings, this.wrapKeyword(fieldString)+" "+this.orderCode(order.Type))
 		}
-		sql += "\n ORDER BY " + strings.Join(orderStrings, ", ")
+		sqlString += "\n ORDER BY " + strings.Join(orderStrings, ", ")
 	}
 
 	// limit & offset
@@ -833,10 +834,10 @@ func (this *Query) AsSQL() (string, error) {
 			if this.offset > -1 {
 				offsetValue, _ := this.wrapAttr(this.offset)
 				limitValue, _ := this.wrapAttr(this.limit)
-				sql += "\n LIMIT " + types.String(offsetValue) + ", " + types.String(limitValue)
+				sqlString += "\n LIMIT " + types.String(offsetValue) + ", " + types.String(limitValue)
 			} else {
 				limitValue, _ := this.wrapAttr(this.limit)
-				sql += "\n LIMIT " + types.String(limitValue)
+				sqlString += "\n LIMIT " + types.String(limitValue)
 			}
 		}
 	}
@@ -844,33 +845,33 @@ func (this *Query) AsSQL() (string, error) {
 	// JOIN
 	if len(this.joins) > 0 {
 		reg, _ := stringutil.RegexpCompile("\\b" + "self" + "\\s*\\.")
-		sql = reg.ReplaceAllString(sql, this.wrapTable(this.table)+".")
+		sqlString = reg.ReplaceAllString(sqlString, this.wrapTable(this.table)+".")
 
 		reg, _ = stringutil.RegexpCompile("\\b" + this.model.Type.Name() + "\\s*\\.")
-		sql = reg.ReplaceAllString(sql, this.wrapTable(this.table)+".")
+		sqlString = reg.ReplaceAllString(sqlString, this.wrapTable(this.table)+".")
 
 		for _, join := range this.joins {
 			modelName := join.DAO.modelWrapper.Type.Name()
 			reg, _ := stringutil.RegexpCompile("\\b" + modelName + "\\s*\\.")
-			sql = reg.ReplaceAllString(sql, this.wrapTable(join.DAO.Table)+".")
+			sqlString = reg.ReplaceAllString(sqlString, this.wrapTable(join.DAO.Table)+".")
 		}
 	}
 
 	// lock
 	if this.action == QueryActionFind && len(this.lock) > 0 {
-		sql += "\n " + this.lock
+		sqlString += "\n " + this.lock
 	}
 
 	// 处理:NamedParam
-	var resultSQL = sql
+	var resultSQL = sqlString
 	if !this.isSub {
 		this.params = []any{}
-		resultSQL = this.parsePlaceholders(sql)
+		resultSQL = this.parsePlaceholders(sqlString)
 	}
 
 	// debug
 	if this.debug {
-		logs.Debugf("SQL:" + sql)
+		logs.Debugf("SQL:" + sqlString)
 		logs.Debugf("params:%#v", this.namedParams)
 	}
 
@@ -878,43 +879,47 @@ func (this *Query) AsSQL() (string, error) {
 }
 
 // FindOnes 查找一组数据，返回map数据
-func (this *Query) FindOnes() (results []maps.Map, columnNames []string, err error) {
+func (this *Query) FindOnes() (ones []maps.Map, columnNames []string, err error) {
 	this.action = QueryActionFind
-	sql, err := this.AsSQL()
+	sqlString, err := this.AsSQL()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	var stmt *Stmt
-	var cached bool
 	if this.canReuse {
-		stmt, cached, err = this.preparer().PrepareOnce(sql)
+		stmt, cached, prepareErr := this.executor().PrepareOnce(sqlString)
+		if prepareErr != nil {
+			return nil, nil, prepareErr
+		}
+		if !cached {
+			defer func() {
+				_ = stmt.Close()
+			}()
+		}
+
+		ones, columnNames, err = stmt.FindOnes(this.params...)
 	} else {
-		stmt, err = this.preparer().Prepare(sql)
+		ones, columnNames, err = this.executor().FindOnes(sqlString, this.params...)
 	}
 	if err != nil {
 		return nil, nil, err
 	}
-	if !cached {
-		defer func() {
-			_ = stmt.Close()
-		}()
-	}
-
-	ones, columnNames, err := stmt.FindOnes(this.params...)
 
 	// 执行 filterFn 和 mapFn
-	results = []maps.Map{}
-	for _, one := range ones {
-		if this.filterFn != nil {
-			if !this.filterFn(one) {
-				continue
+	if this.filterFn != nil || this.mapFn != nil {
+		var results = []maps.Map{}
+		for _, one := range ones {
+			if this.filterFn != nil {
+				if !this.filterFn(one) {
+					continue
+				}
 			}
+			if this.mapFn != nil {
+				one = this.mapFn(one)
+			}
+			results = append(results, one)
 		}
-		if this.mapFn != nil {
-			one = this.mapFn(one)
-		}
-		results = append(results, one)
+		ones = results
 	}
 
 	return
@@ -1230,31 +1235,34 @@ func (this *Query) Avg(attr string, defaultValue float64) (float64, error) {
 func (this *Query) Exec() (*Result, error) {
 	this.action = QueryActionExec
 
-	sql, err := this.AsSQL()
+	sqlString, err := this.AsSQL()
 	if err != nil {
 		return nil, err
 	}
 
-	var stmt *Stmt
-	var cached bool
+	var result sql.Result
+
 	if this.canReuse {
-		stmt, cached, err = this.preparer().PrepareOnce(sql)
+		var stmt *Stmt
+		var cached bool
+		stmt, cached, err = this.executor().PrepareOnce(sqlString)
+		if err != nil {
+			return nil, err
+		}
+		if !cached {
+			defer func() {
+				_ = stmt.Close()
+			}()
+		}
+
+		result, err = stmt.Exec(this.params...)
 	} else {
-		stmt, err = this.preparer().Prepare(sql)
+		result, err = this.executor().Exec(sqlString, this.params...)
 	}
 	if err != nil {
 		return nil, err
-	}
-	if !cached {
-		defer func() {
-			_ = stmt.Close()
-		}()
 	}
 
-	result, err := stmt.Exec(this.params...)
-	if err != nil {
-		return nil, err
-	}
 	return NewResult(result), nil
 }
 
@@ -1265,28 +1273,30 @@ func (this *Query) Replace() (rowsAffected int64, lastInsertId int64, err error)
 	}
 
 	this.action = QueryActionReplace
-	sql, err := this.AsSQL()
+	sqlString, err := this.AsSQL()
 	if err != nil {
 		return 0, 0, err
 	}
 
-	var stmt *Stmt
-	var cached bool
+	var result sql.Result
+
 	if this.canReuse {
-		stmt, cached, err = this.preparer().PrepareOnce(sql)
-	} else {
-		stmt, err = this.preparer().Prepare(sql)
-	}
-	if err != nil {
-		return 0, 0, err
-	}
-	if !cached {
-		defer func() {
-			_ = stmt.Close()
-		}()
-	}
+		var stmt *Stmt
+		var cached bool
+		stmt, cached, err = this.executor().PrepareOnce(sqlString)
+		if err != nil {
+			return 0, 0, err
+		}
+		if !cached {
+			defer func() {
+				_ = stmt.Close()
+			}()
+		}
 
-	result, err := stmt.Exec(this.params...)
+		result, err = stmt.Exec(this.params...)
+	} else {
+		result, err = this.executor().Exec(sqlString, this.params...)
+	}
 	if err != nil {
 		return 0, 0, err
 	}
@@ -1309,28 +1319,30 @@ func (this *Query) Insert() (lastInsertId int64, err error) {
 	}
 
 	this.action = QueryActionInsert
-	sql, err := this.AsSQL()
+	sqlString, err := this.AsSQL()
 	if err != nil {
 		return 0, err
 	}
 
-	var stmt *Stmt
-	var cached bool
+	var result sql.Result
+
 	if this.canReuse {
-		stmt, cached, err = this.preparer().PrepareOnce(sql)
-	} else {
-		stmt, err = this.preparer().Prepare(sql)
-	}
-	if err != nil {
-		return 0, err
-	}
-	if !cached {
-		defer func() {
-			_ = stmt.Close()
-		}()
-	}
+		var stmt *Stmt
+		var cached bool
+		stmt, cached, err = this.executor().PrepareOnce(sqlString)
+		if err != nil {
+			return 0, err
+		}
+		if !cached {
+			defer func() {
+				_ = stmt.Close()
+			}()
+		}
 
-	result, err := stmt.Exec(this.params...)
+		result, err = stmt.Exec(this.params...)
+	} else {
+		result, err = this.executor().Exec(sqlString, this.params...)
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -1352,28 +1364,30 @@ func (this *Query) Update() (rowsAffected int64, err error) {
 	}
 
 	this.action = QueryActionUpdate
-	sql, err := this.AsSQL()
+	sqlString, err := this.AsSQL()
 	if err != nil {
 		return 0, err
 	}
 
-	var stmt *Stmt
-	var cached bool
+	var result sql.Result
+
 	if this.canReuse {
-		stmt, cached, err = this.preparer().PrepareOnce(sql)
-	} else {
-		stmt, err = this.preparer().Prepare(sql)
-	}
-	if err != nil {
-		return 0, err
-	}
-	if !cached {
-		defer func() {
-			_ = stmt.Close()
-		}()
-	}
+		var stmt *Stmt
+		var cached bool
+		stmt, cached, err = this.executor().PrepareOnce(sqlString)
+		if err != nil {
+			return 0, err
+		}
+		if !cached {
+			defer func() {
+				_ = stmt.Close()
+			}()
+		}
 
-	result, err := stmt.Exec(this.params...)
+		result, err = stmt.Exec(this.params...)
+	} else {
+		result, err = this.executor().Exec(sqlString, this.params...)
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -1395,28 +1409,28 @@ func (this *Query) UpdateQuickly() error {
 	}
 
 	this.action = QueryActionUpdate
-	sql, err := this.AsSQL()
+	sqlString, err := this.AsSQL()
 	if err != nil {
 		return err
 	}
 
-	var stmt *Stmt
-	var cached bool
 	if this.canReuse {
-		stmt, cached, err = this.preparer().PrepareOnce(sql)
-	} else {
-		stmt, err = this.preparer().Prepare(sql)
-	}
-	if err != nil {
-		return err
-	}
-	if !cached {
-		defer func() {
-			_ = stmt.Close()
-		}()
-	}
+		var stmt *Stmt
+		var cached bool
+		stmt, cached, err = this.executor().PrepareOnce(sqlString)
+		if err != nil {
+			return err
+		}
+		if !cached {
+			defer func() {
+				_ = stmt.Close()
+			}()
+		}
 
-	_, err = stmt.Exec(this.params...)
+		_, err = stmt.Exec(this.params...)
+	} else {
+		_, err = this.executor().Exec(sqlString, this.params...)
+	}
 	if err != nil {
 		return err
 	}
@@ -1447,28 +1461,30 @@ func (this *Query) InsertOrUpdate(insertingValues maps.Map, updatingValues maps.
 	}
 
 	this.action = QueryActionInsertOrUpdate
-	sql, err := this.AsSQL()
+	sqlString, err := this.AsSQL()
 	if err != nil {
 		return 0, 0, err
 	}
 
-	var stmt *Stmt
-	var cached bool
+	var result sql.Result
+
 	if this.canReuse {
-		stmt, cached, err = this.preparer().PrepareOnce(sql)
-	} else {
-		stmt, err = this.preparer().Prepare(sql)
-	}
-	if err != nil {
-		return 0, 0, err
-	}
-	if !cached {
-		defer func() {
-			_ = stmt.Close()
-		}()
-	}
+		var stmt *Stmt
+		var cached bool
+		stmt, cached, err = this.executor().PrepareOnce(sqlString)
+		if err != nil {
+			return 0, 0, err
+		}
+		if !cached {
+			defer func() {
+				_ = stmt.Close()
+			}()
+		}
 
-	result, err := stmt.Exec(this.params...)
+		result, err = stmt.Exec(this.params...)
+	} else {
+		result, err = this.executor().Exec(sqlString, this.params...)
+	}
 	if err != nil {
 		return 0, 0, err
 	}
@@ -1512,28 +1528,28 @@ func (this *Query) InsertOrUpdateQuickly(insertingValues maps.Map, updatingValue
 	}
 
 	this.action = QueryActionInsertOrUpdate
-	sql, err := this.AsSQL()
+	sqlString, err := this.AsSQL()
 	if err != nil {
 		return err
 	}
 
-	var stmt *Stmt
-	var cached bool
 	if this.canReuse {
-		stmt, cached, err = this.preparer().PrepareOnce(sql)
-	} else {
-		stmt, err = this.preparer().Prepare(sql)
-	}
-	if err != nil {
-		return err
-	}
-	if !cached {
-		defer func() {
-			_ = stmt.Close()
-		}()
-	}
+		var stmt *Stmt
+		var cached bool
+		stmt, cached, err = this.executor().PrepareOnce(sqlString)
+		if err != nil {
+			return err
+		}
+		if !cached {
+			defer func() {
+				_ = stmt.Close()
+			}()
+		}
 
-	_, err = stmt.Exec(this.params...)
+		_, err = stmt.Exec(this.params...)
+	} else {
+		_, err = this.executor().Exec(sqlString, this.params...)
+	}
 	if err != nil {
 		return err
 	}
@@ -1549,30 +1565,34 @@ func (this *Query) InsertOrUpdateQuickly(insertingValues maps.Map, updatingValue
 // Delete 执行DELETE
 func (this *Query) Delete() (rowsAffected int64, err error) {
 	this.action = QueryActionDelete
-	sql, err := this.AsSQL()
+	sqlString, err := this.AsSQL()
 	if err != nil {
 		return 0, err
-	}
-	var stmt *Stmt
-	var cached bool
-	if this.canReuse {
-		stmt, cached, err = this.preparer().PrepareOnce(sql)
-	} else {
-		stmt, err = this.preparer().Prepare(sql)
-	}
-	if err != nil {
-		return 0, err
-	}
-	if !cached {
-		defer func() {
-			_ = stmt.Close()
-		}()
 	}
 
-	result, err := stmt.Exec(this.params...)
+	var result sql.Result
+
+	if this.canReuse {
+		var stmt *Stmt
+		var cached bool
+		stmt, cached, err = this.executor().PrepareOnce(sqlString)
+		if err != nil {
+			return 0, err
+		}
+		if !cached {
+			defer func() {
+				_ = stmt.Close()
+			}()
+		}
+
+		result, err = stmt.Exec(this.params...)
+	} else {
+		result, err = this.executor().Exec(sqlString, this.params...)
+	}
 	if err != nil {
 		return 0, err
 	}
+
 	rows, err := result.RowsAffected()
 	if err != nil {
 		return 0, err
@@ -1590,27 +1610,28 @@ func (this *Query) Delete() (rowsAffected int64, err error) {
 // DeleteQuickly 删除Delete，但不返回影响的行数
 func (this *Query) DeleteQuickly() error {
 	this.action = QueryActionDelete
-	sql, err := this.AsSQL()
+	sqlString, err := this.AsSQL()
 	if err != nil {
 		return err
-	}
-	var stmt *Stmt
-	var cached bool
-	if this.canReuse {
-		stmt, cached, err = this.preparer().PrepareOnce(sql)
-	} else {
-		stmt, err = this.preparer().Prepare(sql)
-	}
-	if err != nil {
-		return err
-	}
-	if !cached {
-		defer func() {
-			_ = stmt.Close()
-		}()
 	}
 
-	_, err = stmt.Exec(this.params...)
+	if this.canReuse {
+		var stmt *Stmt
+		var cached bool
+		stmt, cached, err = this.executor().PrepareOnce(sqlString)
+		if err != nil {
+			return err
+		}
+		if !cached {
+			defer func() {
+				_ = stmt.Close()
+			}()
+		}
+
+		_, err = stmt.Exec(this.params...)
+	} else {
+		_, err = this.executor().Exec(sqlString, this.params...)
+	}
 	return err
 }
 
@@ -1646,7 +1667,7 @@ func (this *Query) wrapAttr(value any) (placeholder string, isArray bool) {
 	case *Query:
 		value1.isSub = true
 		value1.sqlCache = QuerySqlCacheDefault // 子查询不支持SQL_CACHE
-		sql, err := value1.AsSQL()
+		sqlString, err := value1.AsSQL()
 		if err != nil {
 			logs.Errorf("%s", err.Error())
 			return
@@ -1657,7 +1678,7 @@ func (this *Query) wrapAttr(value any) (placeholder string, isArray bool) {
 			this.namedParamIndex++
 		}
 
-		return "IN (" + sql + ")", true
+		return "IN (" + sqlString + ")", true
 	case *lists.List:
 		return this.wrapAttr(value1.Slice)
 	case JSON:
@@ -1810,8 +1831,8 @@ func (this *Query) copyModelValue(valueType reflect.Type, data maps.Map) any {
 	return pointerValue.Interface()
 }
 
-// 获取Preparer
-func (this *Query) preparer() SQLPreparer {
+// 获取Executor
+func (this *Query) executor() SQLExecutor {
 	if this.tx != nil {
 		return this.tx
 	}
@@ -1830,10 +1851,10 @@ func (this *Query) isKeyword(s string) bool {
 }
 
 // 分析语句中的占位
-func (this *Query) parsePlaceholders(sql string) string {
-	if len(sql) < 1024 {
+func (this *Query) parsePlaceholders(sqlString string) string {
+	if len(sqlString) < 1024 {
 		sqlCacheLocker.RLock()
-		cache, ok := sqlCacheMap[sql]
+		cache, ok := sqlCacheMap[sqlString]
 		if ok {
 			for _, param := range cache["params"].([]string) {
 				value, ok2 := this.namedParams[param]
@@ -1854,7 +1875,7 @@ func (this *Query) parsePlaceholders(sql string) string {
 	var isStarted = false
 	var result = []rune{}
 	var paramNames = []string{}
-	for _, r := range sql {
+	for _, r := range sqlString {
 		if isStarted {
 			if r == '_' || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
 				word = append(word, r)
@@ -1901,7 +1922,7 @@ func (this *Query) parsePlaceholders(sql string) string {
 		}
 	}
 
-	if len(sql) < 1024 {
+	if len(sqlString) < 1024 {
 		sqlCacheLocker.Lock()
 
 		// 防止过载
@@ -1917,7 +1938,7 @@ func (this *Query) parsePlaceholders(sql string) string {
 			}
 		}
 
-		sqlCacheMap[sql] = map[string]any{
+		sqlCacheMap[sqlString] = map[string]any{
 			"sql":    string(result),
 			"params": paramNames,
 		}

@@ -235,7 +235,7 @@ func (this *StmtManager) purge() {
 	// too many left, we purge again
 	if count < total/100 {
 		for cacheKey, stmt := range this.stmtMap {
-			if stmt.accessAt < nowTime-1800 {
+			if stmt.accessAt < nowTime-900 {
 				_ = stmt.Close()
 				delete(this.stmtMap, cacheKey)
 				count++

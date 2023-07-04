@@ -19,7 +19,7 @@ import (
 type DB struct {
 	id     string
 	config *DBConfig
-	sqlDB  *sql.DB
+	rawDB  *sql.DB
 
 	stmtManager *StmtManager
 }
@@ -118,7 +118,7 @@ func NewInstanceFromConfig(config *DBConfig) (*DB, error) {
 	})
 
 	db.config = config
-	db.sqlDB = sqlDb
+	db.rawDB = sqlDb
 
 	// setup stmt manager
 	var maxStmtCount = db.queryMaxPreparedStmtCount()
@@ -199,7 +199,7 @@ func (this *DB) init() error {
 	}
 	sqlDb.SetConnMaxIdleTime(2 * time.Minute)
 
-	this.sqlDB = sqlDb
+	this.rawDB = sqlDb
 
 	// setup stmt manager
 	if this.stmtManager == nil {
@@ -266,7 +266,7 @@ func (this *DB) Name() string {
 
 // Begin 开始一个事务
 func (this *DB) Begin() (*Tx, error) {
-	tx, err := this.sqlDB.Begin()
+	tx, err := this.rawDB.Begin()
 	if err != nil {
 		return nil, err
 	}
@@ -306,37 +306,44 @@ func (this *DB) Close() error {
 	err1 := this.stmtManager.Close()
 
 	// 关闭连接
-	err := this.sqlDB.Close()
+	err := this.rawDB.Close()
 
 	return anyError(err, err1)
 }
 
-func (db *DB) Exec(query string, params ...interface{}) (sql.Result, error) {
-	return db.sqlDB.Exec(query, params...)
+func (db *DB) Exec(query string, params ...any) (sql.Result, error) {
+	return db.rawDB.Exec(query, params...)
 }
 
 func (this *DB) Prepare(query string) (*Stmt, error) {
-	return this.stmtManager.Prepare(this.sqlDB, query)
+	return this.stmtManager.Prepare(this.rawDB, query)
 }
 
 func (this *DB) PrepareOnce(query string) (*Stmt, bool, error) {
-	return this.stmtManager.PrepareOnce(this.sqlDB, query, 0)
+	return this.stmtManager.PrepareOnce(this.rawDB, query, 0)
 }
 
-func (this *DB) FindOnes(query string, args ...interface{}) (results []maps.Map, columnNames []string, err error) {
-	stmt, err := this.Prepare(query)
+func (this *DB) FindOnes(query string, args ...any) (ones []maps.Map, columnNames []string, err error) {
+	rawRows, err := this.rawDB.Query(query, args...)
 	if err != nil {
 		return nil, nil, err
 	}
 
+	var rows = NewRows(rawRows)
 	defer func() {
-		_ = stmt.Close()
+		_ = rows.Close()
 	}()
 
-	return stmt.FindOnes(args...)
+	columnNames, err = rows.Columns()
+	if err != nil {
+		return
+	}
+
+	ones, err = rows.FindOnes()
+	return
 }
 
-func (this *DB) FindPreparedOnes(query string, args ...interface{}) (results []maps.Map, columnNames []string, err error) {
+func (this *DB) FindPreparedOnes(query string, args ...any) (results []maps.Map, columnNames []string, err error) {
 	stmt, cached, err := this.PrepareOnce(query)
 	if err != nil {
 		return nil, nil, err
@@ -351,71 +358,32 @@ func (this *DB) FindPreparedOnes(query string, args ...interface{}) (results []m
 	return stmt.FindOnes(args...)
 }
 
-func (this *DB) FindOne(query string, args ...interface{}) (maps.Map, error) {
-	results, _, err := this.FindOnes(query, args...)
+func (this *DB) FindOne(query string, args ...any) (maps.Map, error) {
+	rawRows, err := this.rawDB.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(results) > 0 {
-		return results[0], nil
-	}
-	return nil, nil
-}
-
-func (this *DB) FindCol(colIndex int, query string, args ...interface{}) (interface{}, error) {
-	stmt, err := this.Prepare(query)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		_ = stmt.Close()
-	}()
-
-	rows, err := stmt.Query(args...)
-	if err != nil {
-		return nil, err
-	}
-
+	var rows = NewRows(rawRows)
 	defer func() {
 		_ = rows.Close()
 	}()
 
-	columnNames, err := rows.Columns()
+	return rows.FindOne()
+}
+
+func (this *DB) FindCol(colIndex int, query string, args ...any) (any, error) {
+	rawRows, err := this.rawDB.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
-	var countColumns = len(columnNames)
-	if colIndex < 0 || countColumns <= colIndex {
-		return nil, nil
-	}
 
-	var valuePointers = []interface{}{}
-	for i := 0; i < countColumns; i++ {
-		var v interface{}
-		valuePointers = append(valuePointers, &v)
-	}
+	var rows = NewRows(rawRows)
+	defer func() {
+		_ = rows.Close()
+	}()
 
-	if rows.Next() {
-		err := rows.Scan(valuePointers...)
-		if err != nil {
-			return nil, err
-		}
-
-		var pointer = valuePointers[colIndex]
-		var value = *pointer.(*interface{})
-
-		if value != nil {
-			bytes, ok := value.([]byte)
-			if ok {
-				value = string(bytes)
-			}
-		}
-		return value, nil
-	}
-
-	return nil, nil
+	return rows.FindCol(colIndex)
 }
 
 // TableNames 取得所有表格名
@@ -812,12 +780,12 @@ func (this *DB) TablePrefix() string {
 
 // Raw 取得原始的数据库连接句柄
 func (this *DB) Raw() *sql.DB {
-	return this.sqlDB
+	return this.rawDB
 }
 
 func (this *DB) queryMaxPreparedStmtCount() int {
 	// query global variable
-	var row = this.sqlDB.QueryRow("SELECT @@max_prepared_stmt_count")
+	var row = this.rawDB.QueryRow("SELECT @@max_prepared_stmt_count")
 	if row != nil {
 		var count int
 		err := row.Scan(&count)

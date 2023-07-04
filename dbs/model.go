@@ -19,7 +19,7 @@ type Model struct {
 	Type        reflect.Type
 }
 
-func NewModel(modelPointer interface{}) *Model {
+func NewModel(modelPointer any) *Model {
 	var sample = reflect.Indirect(reflect.ValueOf(modelPointer))
 	var valueType = sample.Type()
 	var modelName = valueType.Name()
@@ -71,7 +71,7 @@ func NewModel(modelPointer interface{}) *Model {
 	return model
 }
 
-func (this *Model) convertValue(value interface{}, toKind reflect.Kind) interface{} {
+func (this *Model) convertValue(value any, toKind reflect.Kind) any {
 	switch toKind {
 	case reflect.Bool:
 		return types.Bool(value)
