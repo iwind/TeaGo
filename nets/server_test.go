@@ -1,11 +1,11 @@
 package nets
 
 import (
-	"testing"
+	"fmt"
 	"log"
 	"strings"
 	"sync"
-	"fmt"
+	"testing"
 	"time"
 )
 
@@ -29,11 +29,11 @@ func TestNewServer(t *testing.T) {
 		log.Println("receive ", client.id, " ", message)
 		for i, c := range clients {
 			if i != client.id {
-				go func(c *Client) {
+				go func(i int, c *Client) {
 					log.Println("write message to ", i)
 					now := time.Now()
 					c.WriteString(message + "|" + fmt.Sprintf("%d", now.Nanosecond()) + "\n")
-				}(c)
+				}(i, c)
 			}
 		}
 	})

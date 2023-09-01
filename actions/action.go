@@ -519,7 +519,7 @@ func runHelperMethodBefore(method reflect.Value, actionPtr reflect.Value, field 
 		}
 	} else if numIn == 2 {
 		actionIn := methodType.In(0)
-		firstArg := reflect.Value{}
+		var firstArg reflect.Value
 		if actionIn != reflect.TypeOf((*ActionWrapper)(nil)).Elem() {
 			var actionInString = actionIn.String()
 			if actionInString == "actions.ActionObject" {
@@ -570,7 +570,7 @@ func runHelperMethodAfter(method reflect.Value, actionPtr reflect.Value, field r
 	paramName := field.Name
 
 	methodType := method.Type()
-	returnValues := []reflect.Value{}
+	var returnValues []reflect.Value
 	numIn := methodType.NumIn()
 	if numIn == 0 {
 		returnValues = method.Call([]reflect.Value{})

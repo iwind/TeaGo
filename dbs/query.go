@@ -811,7 +811,7 @@ func (this *Query) AsSQL() (string, error) {
 	if len(this.orders) > 0 {
 		var orderStrings = []string{}
 		for _, order := range this.orders {
-			var fieldString = ""
+			var fieldString string
 			if _, ok := order.Field.(string); ok {
 				fieldString = order.Field.(string)
 			} else if _, ok := order.Field.(SQL); ok {

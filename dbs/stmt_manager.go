@@ -96,7 +96,7 @@ func (this *StmtManager) Prepare(preparer sqlPreparer, querySQL string) (*Stmt, 
 
 // PrepareOnce prepare statement for reuse
 func (this *StmtManager) PrepareOnce(preparer sqlPreparer, querySQL string, parentId int64) (resultStmt *Stmt, wasCached bool, err error) {
-	var cacheKey = ""
+	var cacheKey string
 	if parentId == 0 {
 		cacheKey = "0$" + querySQL
 	} else {
