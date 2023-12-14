@@ -9,6 +9,7 @@ import (
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/maps"
 	"github.com/iwind/TeaGo/utils/string"
+	"html"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -31,10 +32,10 @@ var templateFileStatCache = sync.Map{} // filename => html
 
 // 渲染模板
 func (this *ActionObject) render(dir string) error {
-	module := this.Module
-	filename := this.viewTemplate
-	data := this.Data
-	viewFuncMap := this.viewFuncMap
+	var module = this.Module
+	var filename = this.viewTemplate
+	var data = this.Data
+	var viewFuncMap = this.viewFuncMap
 
 	// 去除末尾的.html
 	tailReplacer, err := stringutil.RegexpCompile("\\.html")
@@ -81,7 +82,7 @@ func (this *ActionObject) render(dir string) error {
 		}
 	}
 
-	watchingFiles := map[string]int64{}
+	var watchingFiles = map[string]int64{}
 
 	var originFilename = filename
 	_, err = os.Stat(filename + ".html")
@@ -100,7 +101,7 @@ func (this *ActionObject) render(dir string) error {
 	if err != nil {
 		return err
 	}
-	body := string(bodyBytes)
+	var body = string(bodyBytes)
 
 	// 布局模板
 	{
@@ -487,6 +488,14 @@ window.TEA = {
 
 	funcMap["isNil"] = func(s interface{}) bool {
 		return s == nil
+	}
+
+	funcMap["htmlEncode"] = func(s string) string {
+		return html.EscapeString(s)
+	}
+
+	funcMap["urlEncode"] = func(s string) string {
+		return url.QueryEscape(s)
 	}
 
 	return funcMap
