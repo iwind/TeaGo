@@ -44,6 +44,8 @@ type ActionObject struct {
 	layoutTemplate string
 	viewFuncMap    template.FuncMap
 
+	templateFilter func(body []byte) []byte
+
 	maxSize float64
 
 	Files []*File
@@ -399,7 +401,7 @@ func (this *ActionObject) Show() {
 	} else {
 		fullDir = Tea.ViewsDir() + "/" + this.viewDir
 	}
-	err := this.render(fullDir)
+	err := this.render(fullDir, this.templateFilter)
 	if err != nil {
 		logs.Errorf("%s", err.Error())
 		this.Error(err.Error(), 500)
@@ -446,6 +448,11 @@ func (this *ActionObject) Cache() *caches.Factory {
 func (this *ActionObject) Pretty() *ActionObject {
 	this.pretty = true
 	return this
+}
+
+// TemplateFilter 设置模板过滤器
+func (this *ActionObject) TemplateFilter(filter func(body []byte) []byte) {
+	this.templateFilter = filter
 }
 
 // marshal json

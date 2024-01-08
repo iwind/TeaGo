@@ -31,7 +31,7 @@ var templateCacheTime = time.Now().Unix()
 var templateFileStatCache = sync.Map{} // filename => html
 
 // 渲染模板
-func (this *ActionObject) render(dir string) error {
+func (this *ActionObject) render(dir string, templateFilter func(body []byte) []byte) error {
 	var module = this.Module
 	var filename = this.viewTemplate
 	var data = this.Data
@@ -97,10 +97,13 @@ func (this *ActionObject) render(dir string) error {
 	}
 
 	bodyBytes, err := os.ReadFile(filename + ".html")
-
 	if err != nil {
 		return err
 	}
+	if templateFilter != nil {
+		bodyBytes = templateFilter(bodyBytes)
+	}
+
 	var body = string(bodyBytes)
 
 	// 布局模板
