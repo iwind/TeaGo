@@ -10,6 +10,7 @@ import (
 	"github.com/iwind/TeaGo/types"
 	"net"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"sync"
 	"text/template"
@@ -392,7 +393,13 @@ func (this *ActionObject) ViewFunc(name string, f interface{}) {
 func (this *ActionObject) Show() {
 	this.AddHeader("Content-Type", "text/html; charset=utf-8")
 
-	err := this.render(Tea.ViewsDir() + "/" + this.viewDir)
+	var fullDir string
+	if len(this.viewDir) > 0 && filepath.IsAbs(this.viewDir) {
+		fullDir = this.viewDir
+	} else {
+		fullDir = Tea.ViewsDir() + "/" + this.viewDir
+	}
+	err := this.render(fullDir)
 	if err != nil {
 		logs.Errorf("%s", err.Error())
 		this.Error(err.Error(), 500)
