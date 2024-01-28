@@ -131,6 +131,10 @@ func NewInstanceFromConfig(config *DBConfig) (*DB, error) {
 
 func loadConfig() {
 	dbInitOnce.Do(func() {
+		if len(dbConfig.DBs) > 0 {
+			return
+		}
+
 		var dbConfigFile = Tea.ConfigFile("db.yaml")
 		var fileBytes, err = os.ReadFile(dbConfigFile)
 		if err != nil {
