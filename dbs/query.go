@@ -3,6 +3,7 @@ package dbs
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/iwind/TeaGo/lists"
 	"github.com/iwind/TeaGo/logs"
 	"github.com/iwind/TeaGo/maps"
@@ -1315,7 +1316,7 @@ func (this *Query) Replace() (rowsAffected int64, lastInsertId int64, err error)
 // Insert 执行INSERT
 func (this *Query) Insert() (lastInsertId int64, err error) {
 	if this.savingFields.Len() == 0 {
-		return 0, errors.New("[Query.Insert()]inserting fields should be set")
+		return 0, this.wrapErr(errors.New("[Query.Insert()]inserting fields should be set"))
 	}
 
 	this.action = QueryActionInsert
@@ -1785,6 +1786,14 @@ func (this *Query) wrapTable(keyword string) string {
 		return "[" + keyword + "]"
 	}
 	return "\"" + keyword + "\""
+}
+
+// 包装错误提示
+func (this *Query) wrapErr(err error) error {
+	if err == nil {
+		return err
+	}
+	return fmt.Errorf("table '%s' error: %w", this.table, err)
 }
 
 // 排序SQL代码
