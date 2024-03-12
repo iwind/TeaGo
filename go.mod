@@ -1,6 +1,6 @@
 module github.com/iwind/TeaGo
 
-go 1.18
+go 1.21
 
 require (
 	github.com/go-sql-driver/mysql v1.5.0
