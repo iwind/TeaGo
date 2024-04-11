@@ -2,6 +2,7 @@ package stringutil
 
 import (
 	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -55,7 +56,7 @@ var md5Pool = &sync.Pool{
 func Md5(source string) string {
 	var m = md5Pool.Get().(hash.Hash)
 	m.Write([]byte(source))
-	var result = fmt.Sprintf("%x", m.Sum(nil))
+	var result = hex.EncodeToString(m.Sum(nil))
 	m.Reset()
 	md5Pool.Put(m)
 	return result
