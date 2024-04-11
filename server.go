@@ -173,7 +173,8 @@ func (this *Server) StartOn(address string) {
 
 	// 静态资源目录
 	for _, staticDir := range this.staticDirs {
-		var prefix = staticDir.prefix
+		var staticDirCopy = staticDir
+		var prefix = staticDirCopy.prefix
 		if len(prefix) > 0 {
 			if !strings.HasPrefix(prefix, "/") {
 				prefix = "/" + prefix
@@ -201,7 +202,7 @@ func (this *Server) StartOn(address string) {
 					}
 				}
 
-				http.StripPrefix(strings.TrimSuffix(prefix, "/"), http.FileServer(http.Dir(staticDir.dir+"/"))).ServeHTTP(writer, request)
+				http.StripPrefix(strings.TrimSuffix(prefix, "/"), http.FileServer(http.Dir(staticDirCopy.dir+"/"))).ServeHTTP(writer, request)
 			})
 		}
 	}
