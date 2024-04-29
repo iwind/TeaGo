@@ -437,9 +437,7 @@ func (this *Server) StartOn(address string) {
 	//tasks.Start(runtime.NumCPU() * 4)
 
 	// 等待
-	for {
-		time.Sleep(365 * 24 * time.Hour)
-	}
+	select {}
 }
 
 func (this *Server) Stop() {
