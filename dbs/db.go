@@ -135,19 +135,27 @@ func loadConfig() {
 			return
 		}
 
-		var dbConfigFile = Tea.ConfigFile("db.yaml")
-		var fileBytes, err = os.ReadFile(dbConfigFile)
-		if err != nil {
-			dbConfigFile = Tea.ConfigFile("db.conf")
-			fileBytes, err = os.ReadFile(dbConfigFile)
-			if err != nil {
-				logs.Errorf("[DB]%s", err.Error())
-				return
+		// try .db.yaml
+		var configFileData []byte
+		var found bool
+		for _, configFilename := range []string{".db.yaml", "db.yaml", "db.conf"} {
+			var filename = Tea.ConfigFile(configFilename)
+			data, err := os.ReadFile(filename)
+			if err == nil {
+				configFileData = data
+				found = true
+				break
 			}
 		}
-		err = yaml.Unmarshal(fileBytes, &dbConfig)
+
+		if !found {
+			logs.Errorf("[DB]could not load database config file from '" + Tea.ConfigDir() + "'/[.db.yaml, db.yaml, db.conf]")
+			return
+		}
+
+		err := yaml.Unmarshal(configFileData, &dbConfig)
 		if err != nil {
-			logs.Errorf("[DB]%s", err.Error())
+			logs.Errorf("[DB]decode database config failed: %s", err.Error())
 			return
 		}
 
