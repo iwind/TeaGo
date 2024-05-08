@@ -2,11 +2,10 @@ package dbs
 
 import (
 	"errors"
-	"github.com/iwind/TeaGo/logs"
+	"fmt"
 	"github.com/iwind/TeaGo/types"
 	"log"
 	"reflect"
-	"sync"
 	"time"
 )
 
@@ -64,7 +63,7 @@ func (this *DAOObject) Init() error {
 			return errors.New("fail to fetch table fields '" + this.Table + " from db '" + this.DB + "'")
 		}
 		if table == nil {
-			return errors.New("can not find table '" + this.Table + "' from db '" + this.DB + "'")
+			return fmt.Errorf("can not find table '%s' from db '%s': %w", this.Table, this.DB, ErrTableNotFound)
 		}
 		for _, field := range table.Fields {
 			kind, found := this.modelWrapper.KindsMap[field.Name]
@@ -86,7 +85,7 @@ func (this *DAOObject) Init() error {
 	return nil
 }
 
-// Object 取得封装的对象
+// Object get internal object
 func (this *DAOObject) Object() *DAOObject {
 	return this
 }
@@ -295,36 +294,4 @@ func (this *DAOObject) NotifyUpdate() error {
 		}
 	}
 	return nil
-}
-
-var daoMapping = sync.Map{}
-var daoMappingLocker = &sync.Mutex{}
-
-// NewDAO 初始化DAO
-func NewDAO(daoPointer any) any {
-	daoMappingLocker.Lock()
-	defer daoMappingLocker.Unlock()
-
-	// 如果已经在缓存里直接返回
-	var pointerType = reflect.TypeOf(daoPointer).String()
-	cachedDAO, ok := daoMapping.Load(pointerType)
-	if ok {
-		return cachedDAO
-	}
-
-	// 初始化
-	var pointerValue = reflect.ValueOf(daoPointer)
-	v := pointerValue.MethodByName("Init").Call([]reflect.Value{})
-	if len(v) > 0 {
-		v0 := v[0].Interface()
-		if v0 != nil {
-			err, ok := v0.(error)
-			if ok {
-				logs.Println("[DAO]" + err.Error())
-			}
-		}
-	}
-
-	daoMapping.Store(pointerType, daoPointer)
-	return daoPointer
 }
